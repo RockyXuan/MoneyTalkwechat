@@ -49,6 +49,17 @@ export class ExpensesController {
     source_type?: string
     raw_text?: string
     expense_date: string
+  } | {
+    user_id: string
+    items: Array<{
+      amount: number | null
+      category: string
+      tag?: string
+      note?: string
+      expense_date: string
+    }>
+    source_type?: string
+    raw_text?: string
   }) {
     console.log('POST /api/expenses', body)
     const data = await this.expensesService.create(body)

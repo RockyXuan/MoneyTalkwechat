@@ -4,9 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChartNoAxesColumn, ChevronLeft, ChevronRight } from 'lucide-react-taro'
-import { Network } from '@/network'
-
-const DEFAULT_USER_ID = 'default_user'
+import { useExpenseStore } from '@/store/expense-store'
 
 interface CategoryStat {
   category: string
@@ -36,25 +34,18 @@ const StatsPage = () => {
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([])
   const [dailyStats, setDailyStats] = useState<{ date: string; total: number }[]>([])
 
+  // Subscribe to store changes so stats refresh when data changes
+  const storeExpenses = useExpenseStore(state => state.expenses)
+
   useEffect(() => {
     fetchStats()
-  }, [currentMonth])
+  }, [currentMonth, storeExpenses])
 
   const fetchStats = async () => {
-    try {
-      const res = await Network.request({
-        url: `/api/expenses/stats?user_id=${DEFAULT_USER_ID}&month=${currentMonth}`,
-      })
-      console.log('GET /api/expenses/stats response:', res.data)
-      const data = res.data as { code: number; msg: string; data: { month_total: number; categories: CategoryStat[]; daily: { date: string; total: number }[] } }
-      if (data?.data) {
-        setMonthTotal(data.data.month_total)
-        setCategoryStats(data.data.categories.sort((a, b) => b.total - a.total))
-        setDailyStats(data.data.daily)
-      }
-    } catch (err) {
-      console.error('获取统计失败', err)
-    }
+    const data = await useExpenseStore.getState().getStats(currentMonth)
+    setMonthTotal(data.month_total)
+    setCategoryStats(data.categories.sort((a, b) => b.total - a.total))
+    setDailyStats(data.daily)
   }
 
   const prevMonth = () => {

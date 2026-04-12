@@ -5,81 +5,69 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Receipt, Trash2, ChevronLeft, ChevronRight } from 'lucide-react-taro'
-import { Network } from '@/network'
-
-const DEFAULT_USER_ID = 'default_user'
-
-interface ExpenseRecord {
-  id: string
-  amount: string
-  category: string
-  tag: string | null
-  note: string | null
-  source_type: string
-  raw_text: string | null
-  expense_date: string
-  created_at: string
-}
+import { useExpenseStore, ExpenseRecord } from '@/store/expense-store'
 
 interface GroupedExpenses {
   [date: string]: ExpenseRecord[]
 }
 
 const BillsPage = () => {
-  const [expenses, setExpenses] = useState<GroupedExpenses>({})
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  const [groupedExpenses, setGroupedExpenses] = useState<GroupedExpenses>({})
   const [monthTotal, setMonthTotal] = useState(0)
+
+  const { deleteExpense } = useExpenseStore()
 
   useEffect(() => {
     fetchExpenses()
   }, [currentMonth])
 
   const fetchExpenses = async () => {
-    try {
-      const startDate = `${currentMonth}-01`
-      const [year, month] = currentMonth.split('-')
-      const nextMonth = month === '12' ? `${Number(year) + 1}-01` : `${year}-${String(Number(month) + 1).padStart(2, '0')}`
-      const endDate = `${nextMonth}-01`
+    const startDate = `${currentMonth}-01`
+    const [year, month] = currentMonth.split('-')
+    const nextMonth = month === '12' ? `${Number(year) + 1}-01` : `${year}-${String(Number(month) + 1).padStart(2, '0')}`
+    const endDate = `${nextMonth}-01`
 
-      const res = await Network.request({
-        url: `/api/expenses?user_id=${DEFAULT_USER_ID}&start_date=${startDate}&end_date=${endDate}&limit=100`,
-      })
-      console.log('GET /api/expenses bills response:', res.data)
-      const data = res.data as { code: number; msg: string; data: ExpenseRecord[] }
-      if (data?.data) {
-        const grouped: GroupedExpenses = {}
-        let total = 0
-        data.data.forEach((item) => {
-          if (!grouped[item.expense_date]) {
-            grouped[item.expense_date] = []
-          }
-          grouped[item.expense_date].push(item)
-          total += Number(item.amount)
-        })
-        setExpenses(grouped)
-        setMonthTotal(total)
+    const data = await useExpenseStore.getState().fetchExpensesByMonth(startDate, endDate)
+    const grouped: GroupedExpenses = {}
+    let total = 0
+    data.forEach((item) => {
+      if (!grouped[item.expense_date]) {
+        grouped[item.expense_date] = []
       }
-    } catch (err) {
-      console.error('获取账单失败', err)
-    }
+      grouped[item.expense_date].push(item)
+      total += Number(item.amount)
+    })
+    setGroupedExpenses(grouped)
+    setMonthTotal(total)
   }
 
   const handleDelete = async (id: string) => {
-    try {
-      await Network.request({
-        url: `/api/expenses/${id}`,
-        method: 'DELETE',
-        data: { user_id: DEFAULT_USER_ID },
+    const res = await Taro.showModal({
+      title: '确认删除',
+      content: '删除后不可恢复，确定要删除这条记录吗？',
+    })
+    if (!res.confirm) return
+
+    await deleteExpense(id)
+    // Optimistic update: also remove from local grouped state
+    setGroupedExpenses(prev => {
+      const next: GroupedExpenses = {}
+      let total = 0
+      Object.entries(prev).forEach(([date, items]) => {
+        const filtered = items.filter(item => item.id !== id)
+        if (filtered.length > 0) {
+          next[date] = filtered
+          filtered.forEach(item => { total += Number(item.amount) })
+        }
       })
-      Taro.showToast({ title: '已删除', icon: 'success' })
-      fetchExpenses()
-    } catch (err) {
-      console.error('删除失败', err)
-      Taro.showToast({ title: '删除失败', icon: 'none' })
-    }
+      setMonthTotal(total)
+      return next
+    })
+    Taro.showToast({ title: '已删除', icon: 'success' })
   }
 
   const prevMonth = () => {
@@ -94,7 +82,7 @@ const BillsPage = () => {
     setCurrentMonth(next)
   }
 
-  const sortedDates = Object.keys(expenses).sort().reverse()
+  const sortedDates = Object.keys(groupedExpenses).sort().reverse()
 
   return (
     <View className="min-h-full bg-[#F7F5F0] pb-20">
@@ -121,14 +109,14 @@ const BillsPage = () => {
 
       {/* Expense List by Date */}
       {sortedDates.map((date) => {
-        const dayTotal = expenses[date].reduce((sum, item) => sum + Number(item.amount), 0)
+        const dayTotal = groupedExpenses[date].reduce((sum, item) => sum + Number(item.amount), 0)
         return (
           <View key={date} className="px-4 mb-3">
             <View className="flex flex-row items-center justify-between mb-1 px-1">
               <Text className="block text-sm font-medium text-[#1A1A1A]">{date}</Text>
               <Text className="block text-sm text-[#E8913A]">¥{dayTotal.toFixed(2)}</Text>
             </View>
-            {expenses[date].map((item) => (
+            {groupedExpenses[date].map((item) => (
               <Card key={item.id} className="border-[#E5E1D8] mb-2">
                 <CardContent className="p-3 flex flex-row items-center justify-between">
                   <View className="flex flex-col flex-1">

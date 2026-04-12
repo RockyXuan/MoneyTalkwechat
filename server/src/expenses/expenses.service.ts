@@ -43,16 +43,31 @@ export class ExpensesService {
     return data
   }
 
-  async create(body: {
-    user_id: string
-    amount: number | null
-    category: string
-    tag?: string
-    note?: string
-    source_type?: string
-    raw_text?: string
-    expense_date: string
-  }) {
+  async create(body: any) {
+    // Batch create: body.items is an array
+    if (body.items && Array.isArray(body.items)) {
+      const rows = body.items.map((item: any) => ({
+        user_id: body.user_id,
+        amount: item.amount ?? 0,
+        category: item.category || '其他',
+        tag: item.tag || null,
+        note: item.note || null,
+        source_type: body.source_type || 'text',
+        raw_text: body.raw_text || null,
+        expense_date: item.expense_date,
+      }))
+      const { data, error } = await this.supabase
+        .from('expenses')
+        .insert(rows)
+        .select()
+      if (error) {
+        console.error('批量创建记账记录失败:', error)
+        throw new Error('创建失败')
+      }
+      return data
+    }
+
+    // Single create
     const { data, error } = await this.supabase
       .from('expenses')
       .insert({
