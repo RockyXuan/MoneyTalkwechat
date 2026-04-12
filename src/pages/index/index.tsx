@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import Taro, { useDidShow } from '@tarojs/taro'
+import { useState } from 'react'
+import Taro from '@tarojs/taro'
 import { View, Text, Picker } from '@tarojs/components'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -29,19 +29,7 @@ const IndexPage = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  const { expenses, fetchExpenses, addExpenses, deleteExpense, dataVersion } = useExpenseStore()
-
-  // Refresh on every tab switch
-  useDidShow(() => {
-    fetchExpenses(10)
-  })
-
-  // Also refresh when dataVersion changes (in-case same tab mutation)
-  useEffect(() => {
-    if (dataVersion > 0) {
-      fetchExpenses(10)
-    }
-  }, [dataVersion])
+  const { addExpenses } = useExpenseStore()
 
   const getDefaultDate = () => {
     if (dateMode === 'month') {
@@ -110,11 +98,6 @@ const IndexPage = () => {
     setParsedResults(prev => prev.map((item, i) =>
       i === idx ? { ...item, [field]: value, _edited: true } : item
     ))
-  }
-
-  const handleDeleteRecent = async (id: string) => {
-    await deleteExpense(id)
-    Taro.showToast({ title: '已删除', icon: 'success' })
   }
 
   const totalParsedAmount = parsedResults.reduce((sum, r) => sum + (r.amount || 0), 0)
@@ -334,37 +317,11 @@ const IndexPage = () => {
         </View>
       )}
 
-      {/* Recent Records */}
-      {expenses.length > 0 && (
-        <View className="px-4 mt-4">
-          <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">最近记录</Text>
-          {expenses.slice(0, 10).map((item) => (
-            <Card key={item.id} className="border-[#E5E1D8] mb-2">
-              <CardContent className="p-3 flex flex-row items-center justify-between">
-                <View className="flex flex-col flex-1">
-                  <View className="flex flex-row items-center gap-2">
-                    <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
-                    {item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
-                  </View>
-                  <Text className="block text-sm text-gray-500 mt-1">{item.note || item.raw_text || ''}</Text>
-                </View>
-                <View className="flex flex-row items-center gap-2">
-                  <Text className="block text-lg font-bold text-[#E8913A]">¥{item.amount}</Text>
-                  <Button className="bg-transparent p-0" onClick={() => handleDeleteRecent(item.id)}>
-                    <X size={14} color="#999" />
-                  </Button>
-                </View>
-              </CardContent>
-            </Card>
-          ))}
-        </View>
-      )}
-
       {/* Empty State */}
-      {expenses.length === 0 && parsedResults.length === 0 && (
+      {parsedResults.length === 0 && (
         <View className="flex flex-col items-center justify-center mt-16">
           <PenLine size={48} color="#E5E1D8" />
-          <Text className="block text-gray-400 mt-4 text-sm">还没有记录，说点什么开始记账吧</Text>
+          <Text className="block text-gray-400 mt-4 text-sm">说点什么开始记账吧</Text>
         </View>
       )}
     </View>
