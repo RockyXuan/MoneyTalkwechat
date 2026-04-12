@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,18 +35,27 @@ const StatsPage = () => {
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([])
   const [dailyStats, setDailyStats] = useState<{ date: string; total: number }[]>([])
 
-  // Subscribe to store changes so stats refresh when data changes
-  const storeExpenses = useExpenseStore(state => state.expenses)
+  const { dataVersion } = useExpenseStore()
 
-  useEffect(() => {
-    fetchStats()
-  }, [currentMonth, storeExpenses])
-
-  const fetchStats = async () => {
+  const loadData = async () => {
     const data = await useExpenseStore.getState().getStats(currentMonth)
     setMonthTotal(data.month_total)
     setCategoryStats(data.categories.sort((a, b) => b.total - a.total))
     setDailyStats(data.daily)
+  }
+
+  // Refresh on every tab switch
+  useDidShow(() => {
+    loadData()
+  })
+
+  // Refresh when dataVersion changes (other tabs mutated data)
+  const [lastVersion, setLastVersion] = useState(0)
+  if (dataVersion !== lastVersion) {
+    setLastVersion(dataVersion)
+    if (dataVersion > 0) {
+      loadData()
+    }
   }
 
   const prevMonth = () => {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import Taro from '@tarojs/taro'
+import { useState } from 'react'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,13 +19,9 @@ const BillsPage = () => {
   const [groupedExpenses, setGroupedExpenses] = useState<GroupedExpenses>({})
   const [monthTotal, setMonthTotal] = useState(0)
 
-  const { deleteExpense } = useExpenseStore()
+  const { deleteExpense, dataVersion } = useExpenseStore()
 
-  useEffect(() => {
-    fetchExpenses()
-  }, [currentMonth])
-
-  const fetchExpenses = async () => {
+  const loadData = async () => {
     const startDate = `${currentMonth}-01`
     const [year, month] = currentMonth.split('-')
     const nextMonth = month === '12' ? `${Number(year) + 1}-01` : `${year}-${String(Number(month) + 1).padStart(2, '0')}`
@@ -43,6 +39,20 @@ const BillsPage = () => {
     })
     setGroupedExpenses(grouped)
     setMonthTotal(total)
+  }
+
+  // Refresh on every tab switch
+  useDidShow(() => {
+    loadData()
+  })
+
+  // Refresh when dataVersion changes (other tabs mutated data)
+  const [lastVersion, setLastVersion] = useState(0)
+  if (dataVersion !== lastVersion) {
+    setLastVersion(dataVersion)
+    if (dataVersion > 0) {
+      loadData()
+    }
   }
 
   const handleDelete = async (id: string) => {

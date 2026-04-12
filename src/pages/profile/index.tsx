@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import Taro from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +24,11 @@ const ProfilePage = () => {
   useEffect(() => {
     fetchPreferences()
   }, [])
+
+  // Refresh on every tab switch
+  useDidShow(() => {
+    fetchPreferences()
+  })
 
   const fetchPreferences = async () => {
     try {

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import Taro from '@tarojs/taro'
-import { View, Text } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
+import { View, Text, Picker } from '@tarojs/components'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, PenLine, X, Pencil } from 'lucide-react-taro'
+import { Send, Loader, PenLine, X, Pencil, Calendar } from 'lucide-react-taro'
 import { useExpenseStore, ParsedExpense } from '@/store/expense-store'
 
 const DEFAULT_CATEGORIES = ['餐饮', '交通', '购物', '日用品', '娱乐', '医疗', '教育', '居住', '通讯', '其他']
@@ -18,11 +18,37 @@ const IndexPage = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
 
-  const { expenses, fetchExpenses, addExpenses, deleteExpense } = useExpenseStore()
+  // Date mode: 'today' or 'month'
+  const [dateMode, setDateMode] = useState<'today' | 'month'>('today')
+  // For today mode: specific date
+  const today = new Date().toISOString().slice(0, 10)
+  const [selectedDate, setSelectedDate] = useState(today)
+  // For month mode: month string like "2025-05"
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
 
-  useEffect(() => {
+  const { expenses, fetchExpenses, addExpenses, deleteExpense, dataVersion } = useExpenseStore()
+
+  // Refresh on every tab switch
+  useDidShow(() => {
     fetchExpenses(10)
-  }, [])
+  })
+
+  // Also refresh when dataVersion changes (in-case same tab mutation)
+  useEffect(() => {
+    if (dataVersion > 0) {
+      fetchExpenses(10)
+    }
+  }, [dataVersion])
+
+  const getDefaultDate = () => {
+    if (dateMode === 'month') {
+      return `${selectedMonth}-01`
+    }
+    return selectedDate
+  }
 
   const handleParse = async () => {
     if (!inputText.trim()) {
@@ -31,10 +57,23 @@ const IndexPage = () => {
     }
     setIsParsing(true)
     try {
-      const results = await useExpenseStore.getState().parseText(inputText)
+      const defaultDate = getDefaultDate()
+      const results = await useExpenseStore.getState().parseText(inputText, defaultDate)
       if (results.length > 0) {
-        // Append to existing results so user can accumulate
-        setParsedResults(prev => [...prev, ...results])
+        // In month mode, override all expense_date to selectedMonth + the day
+        const adjusted = results.map(r => {
+          if (dateMode === 'month') {
+            // Keep the day part from AI result if it has a specific day, otherwise use month-01
+            const dayMatch = r.expense_date?.match(/(\d{4})-(\d{2})-(\d{2})/)
+            if (dayMatch) {
+              // Replace year-month with selected month
+              return { ...r, expense_date: `${selectedMonth}-${dayMatch[3]}` }
+            }
+            return { ...r, expense_date: `${selectedMonth}-01` }
+          }
+          return r
+        })
+        setParsedResults(prev => [...prev, ...adjusted])
       } else {
         Taro.showToast({ title: '未识别到消费信息', icon: 'none' })
       }
@@ -79,18 +118,73 @@ const IndexPage = () => {
   }
 
   const totalParsedAmount = parsedResults.reduce((sum, r) => sum + (r.amount || 0), 0)
-  const today = new Date().toISOString().slice(0, 10)
 
   return (
     <View className="min-h-full bg-[#F7F5F0] pb-20">
       {/* Header */}
       <View className="px-4 pt-4 pb-2">
         <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
-        <Text className="block text-sm text-gray-500 mt-1">{today}</Text>
       </View>
 
-      {/* Input Area - two-line height textarea */}
-      <View className="px-4 mt-2">
+      {/* Date Selector */}
+      <View className="px-4 mb-2">
+        <Card className="border-[#E5E1D8]">
+          <CardContent className="p-3">
+            <View className="flex flex-row items-center gap-3">
+              <Calendar size={18} color="#3D7C5F" />
+              {/* Mode toggle */}
+              <View className="flex flex-row bg-[#F7F5F0] rounded-lg p-1">
+                <View
+                  className={`px-3 py-1 rounded-md ${dateMode === 'today' ? 'bg-[#3D7C5F]' : ''}`}
+                  onClick={() => setDateMode('today')}
+                >
+                  <Text className={`block text-xs ${dateMode === 'today' ? 'text-white' : 'text-gray-500'}`}>
+                    按日期
+                  </Text>
+                </View>
+                <View
+                  className={`px-3 py-1 rounded-md ${dateMode === 'month' ? 'bg-[#3D7C5F]' : ''}`}
+                  onClick={() => setDateMode('month')}
+                >
+                  <Text className={`block text-xs ${dateMode === 'month' ? 'text-white' : 'text-gray-500'}`}>
+                    按月份
+                  </Text>
+                </View>
+              </View>
+              {/* Date/Month picker */}
+              {dateMode === 'today' ? (
+                <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
+                  <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
+                    <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedDate}</Text>
+                  </View>
+                </Picker>
+              ) : (
+                <Picker
+                  mode="date"
+                  fields="month"
+                  value={`${selectedMonth}-01`}
+                  onChange={(e) => {
+                    const val = e.detail.value as string
+                    setSelectedMonth(val.slice(0, 7))
+                  }}
+                >
+                  <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
+                    <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedMonth}</Text>
+                  </View>
+                </Picker>
+              )}
+            </View>
+            {dateMode === 'month' && (
+              <Text className="block text-xs text-gray-400 mt-2">
+                按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
+              </Text>
+            )}
+          </CardContent>
+        </Card>
+      </View>
+
+      {/* Input Area */}
+      <View className="px-4">
         <Card className="border-[#E5E1D8]">
           <CardContent className="p-4">
             <View className="bg-[#F7F5F0] rounded-xl p-3">
@@ -102,7 +196,6 @@ const IndexPage = () => {
                 maxlength={500}
               />
             </View>
-
             <View className="mt-3">
               <Button
                 className="w-full bg-[#3D7C5F] text-white rounded-xl"
@@ -179,15 +272,23 @@ const IndexPage = () => {
                       )}
                     </View>
 
-                    {/* Note */}
+                    {/* Note + Date */}
                     {editingIdx === idx ? (
-                      <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 mt-2">
-                        <Input
-                          className="border-0 bg-transparent text-sm text-gray-600 ring-0 focus-within:ring-0"
-                          value={result.note}
-                          onInput={(e) => handleUpdateResult(idx, 'note', e.detail.value)}
-                          placeholder="备注"
-                        />
+                      <View className="mt-2 flex flex-col gap-2">
+                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1">
+                          <Input
+                            className="border-0 bg-transparent text-sm text-gray-600 ring-0 focus-within:ring-0"
+                            value={result.note}
+                            onInput={(e) => handleUpdateResult(idx, 'note', e.detail.value)}
+                            placeholder="备注"
+                          />
+                        </View>
+                        <Picker mode="date" value={result.expense_date} onChange={(e) => handleUpdateResult(idx, 'expense_date', e.detail.value)}>
+                          <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1">
+                            <Calendar size={12} color="#3D7C5F" />
+                            <Text className="text-sm text-[#3D7C5F]">{result.expense_date}</Text>
+                          </View>
+                        </Picker>
                       </View>
                     ) : (
                       <Text className="block text-sm text-gray-500 mt-1">

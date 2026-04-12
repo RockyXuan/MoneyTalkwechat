@@ -22,7 +22,7 @@ const SYSTEM_PROMPT = `你是一个智能记账助手。用户会说出自己的
 ## 注意事项
 1. 如果用户说了多笔消费，必须拆分为数组中的多个条目，每笔消费单独一条
 2. 仔细计算每笔的金额，不要算错
-3. 日期若未说明，默认为今天
+3. 日期若未说明，使用系统提供的默认日期
 4. 金额若未明确，设为 null
 5. 优先使用用户偏好上下文中的分类映射
 6. 只输出 JSON 数组，不要有任何其他文字
@@ -38,13 +38,14 @@ export class AiService {
     this.llmClient = new LLMClient(config)
   }
 
-  async parseExpense(text: string, userId: string) {
+  async parseExpense(text: string, userId: string, defaultDate?: string) {
     const preferenceContext = await this.preferencesService.getPreferenceContext(userId)
     const today = new Date().toISOString().slice(0, 10)
+    const effectiveDefaultDate = defaultDate || today
 
     const systemPrompt = SYSTEM_PROMPT
       .replace('{USER_PREFERENCE_CONTEXT}', preferenceContext || '（暂无用户偏好）')
-      + `\n\n今天是 ${today}。`
+      + `\n\n今天是 ${today}。默认日期为 ${effectiveDefaultDate}（如果用户没有提及具体日期，请使用默认日期 ${effectiveDefaultDate}）。`
 
     console.log('AI parse - user text:', text)
 

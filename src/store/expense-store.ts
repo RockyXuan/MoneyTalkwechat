@@ -22,7 +22,6 @@ export interface ParsedExpense {
   note: string
   expense_date: string
   confidence: number
-  // Front-end editable fields
   _edited?: boolean
 }
 
@@ -30,6 +29,8 @@ interface ExpenseStore {
   // Data
   expenses: ExpenseRecord[]
   isLoading: boolean
+  // Bump this on every mutation (add/delete) so subscribers know to refresh
+  dataVersion: number
 
   // Actions
   fetchExpenses: (limit?: number) => Promise<void>
@@ -41,12 +42,13 @@ interface ExpenseStore {
     categories: { category: string; total: number; count: number }[]
     daily: { date: string; total: number }[]
   }>
-  parseText: (text: string) => Promise<ParsedExpense[]>
+  parseText: (text: string, defaultDate?: string) => Promise<ParsedExpense[]>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
   expenses: [],
   isLoading: false,
+  dataVersion: 0,
 
   fetchExpenses: async (limit = 20) => {
     set({ isLoading: true })
@@ -100,7 +102,8 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
       })
       console.log('store addExpenses:', res.data)
       const data = res.data as { code: number; msg: string; data: ExpenseRecord[] }
-      // Refresh list after add
+      // Bump version + refresh list
+      set(state => ({ dataVersion: state.dataVersion + 1 }))
       get().fetchExpenses()
       return Array.isArray(data?.data) ? data.data : []
     } catch (err) {
@@ -117,13 +120,13 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
         data: { user_id: DEFAULT_USER_ID },
       })
       console.log('store deleteExpense:', id)
-      // Optimistic update: remove from local state immediately
+      // Bump version + optimistically remove from local
       set(state => ({
+        dataVersion: state.dataVersion + 1,
         expenses: state.expenses.filter(e => e.id !== id),
       }))
     } catch (err) {
       console.error('deleteExpense error:', err)
-      // Re-fetch on error to ensure consistency
       get().fetchExpenses()
     }
   },
@@ -142,12 +145,12 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     }
   },
 
-  parseText: async (text: string) => {
+  parseText: async (text: string, defaultDate?: string) => {
     try {
       const res = await Network.request({
         url: '/api/ai/parse',
         method: 'POST',
-        data: { text, user_id: DEFAULT_USER_ID },
+        data: { text, user_id: DEFAULT_USER_ID, default_date: defaultDate },
       })
       console.log('store parseText:', res.data)
       const data = res.data as { code: number; msg: string; data: ParsedExpense[] }
