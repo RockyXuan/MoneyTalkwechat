@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,6 +18,10 @@ const BillsPage = () => {
   })
   const [groupedExpenses, setGroupedExpenses] = useState<GroupedExpenses>({})
   const [monthTotal, setMonthTotal] = useState(0)
+
+  // Track the dataVersion we last fetched at, skip re-fetch if we just mutated
+  const lastFetchedVersion = useRef(0)
+  const skipNextVersionBump = useRef(false)
 
   const { deleteExpense, dataVersion } = useExpenseStore()
 
@@ -39,6 +43,7 @@ const BillsPage = () => {
     })
     setGroupedExpenses(grouped)
     setMonthTotal(total)
+    lastFetchedVersion.current = dataVersion
   }
 
   // Refresh on every tab switch
@@ -47,10 +52,15 @@ const BillsPage = () => {
   })
 
   // Refresh when dataVersion changes (other tabs mutated data)
-  const [lastVersion, setLastVersion] = useState(0)
-  if (dataVersion !== lastVersion) {
-    setLastVersion(dataVersion)
-    if (dataVersion > 0) {
+  // But skip if we just did a local delete (to avoid race with optimistic update)
+  if (dataVersion !== lastFetchedVersion.current && dataVersion > 0) {
+    if (skipNextVersionBump.current) {
+      // We caused this version bump ourselves, just update the ref
+      lastFetchedVersion.current = dataVersion
+      skipNextVersionBump.current = false
+    } else {
+      // Another tab caused it, re-fetch
+      lastFetchedVersion.current = dataVersion
       loadData()
     }
   }
@@ -61,6 +71,9 @@ const BillsPage = () => {
       content: '删除后不可恢复，确定要删除这条记录吗？',
     })
     if (!res.confirm) return
+
+    // Mark that we're causing the next version bump ourselves
+    skipNextVersionBump.current = true
 
     await deleteExpense(id)
     // Optimistic update: also remove from local grouped state

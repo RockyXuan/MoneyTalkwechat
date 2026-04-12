@@ -115,9 +115,8 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
   deleteExpense: async (id: string) => {
     try {
       await Network.request({
-        url: `/api/expenses/${id}`,
+        url: `/api/expenses/${id}?user_id=${DEFAULT_USER_ID}`,
         method: 'DELETE',
-        data: { user_id: DEFAULT_USER_ID },
       })
       console.log('store deleteExpense:', id)
       // Bump version + optimistically remove from local

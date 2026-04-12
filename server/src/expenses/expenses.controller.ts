@@ -70,10 +70,10 @@ export class ExpensesController {
   @HttpCode(200)
   async remove(
     @Param('id') id: string,
-    @Body() body: { user_id: string },
+    @Query('user_id') userId: string,
   ) {
-    console.log('DELETE /api/expenses/:id', { id, userId: body.user_id })
-    await this.expensesService.remove(id, body.user_id)
+    console.log('DELETE /api/expenses/:id', { id, userId })
+    await this.expensesService.remove(id, userId)
     return { code: 200, msg: 'success', data: null }
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
@@ -37,11 +37,14 @@ const StatsPage = () => {
 
   const { dataVersion } = useExpenseStore()
 
+  const lastFetchedVersion = useRef(0)
+
   const loadData = async () => {
     const data = await useExpenseStore.getState().getStats(currentMonth)
     setMonthTotal(data.month_total)
     setCategoryStats(data.categories.sort((a, b) => b.total - a.total))
     setDailyStats(data.daily)
+    lastFetchedVersion.current = dataVersion
   }
 
   // Refresh on every tab switch
@@ -50,12 +53,9 @@ const StatsPage = () => {
   })
 
   // Refresh when dataVersion changes (other tabs mutated data)
-  const [lastVersion, setLastVersion] = useState(0)
-  if (dataVersion !== lastVersion) {
-    setLastVersion(dataVersion)
-    if (dataVersion > 0) {
-      loadData()
-    }
+  if (dataVersion !== lastFetchedVersion.current && dataVersion > 0) {
+    lastFetchedVersion.current = dataVersion
+    loadData()
   }
 
   const prevMonth = () => {
