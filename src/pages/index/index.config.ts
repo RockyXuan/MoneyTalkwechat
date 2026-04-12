@@ -1,3 +1,3 @@
-export default definePageConfig({
-  navigationBarTitleText: '首页'
-})
+export default typeof definePageConfig === 'function'
+  ? definePageConfig({ navigationBarTitleText: '记一笔' })
+  : { navigationBarTitleText: '记一笔' }
