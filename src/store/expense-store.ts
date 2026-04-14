@@ -25,9 +25,19 @@ export interface ParsedExpense {
   _edited?: boolean
 }
 
+export interface CategoryItem {
+  id: string
+  user_id: string | null
+  name: string
+  icon: string | null
+  is_default: boolean
+  sort_order: number
+}
+
 interface ExpenseStore {
   // Data
   expenses: ExpenseRecord[]
+  categories: CategoryItem[]
   isLoading: boolean
   // Bump this on every mutation (add/delete) so subscribers know to refresh
   dataVersion: number
@@ -36,6 +46,7 @@ interface ExpenseStore {
   fetchExpenses: (limit?: number) => Promise<void>
   fetchExpensesByMonth: (startDate: string, endDate: string) => Promise<ExpenseRecord[]>
   addExpenses: (items: ParsedExpense[], rawText: string) => Promise<ExpenseRecord[]>
+  updateExpense: (id: string, updates: Partial<ExpenseRecord>) => Promise<ExpenseRecord>
   deleteExpense: (id: string) => Promise<void>
   getStats: (month: string) => Promise<{
     month_total: number
@@ -43,10 +54,14 @@ interface ExpenseStore {
     daily: { date: string; total: number }[]
   }>
   parseText: (text: string, defaultDate?: string) => Promise<ParsedExpense[]>
+  fetchCategories: () => Promise<CategoryItem[]>
+  createCategory: (name: string) => Promise<CategoryItem>
+  savePreference: (keyWord: string, mappedValue: string) => Promise<void>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
   expenses: [],
+  categories: [],
   isLoading: false,
   dataVersion: 0,
 
@@ -112,6 +127,30 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     }
   },
 
+  updateExpense: async (id: string, updates: Partial<ExpenseRecord>) => {
+    try {
+      const body: Record<string, any> = { user_id: DEFAULT_USER_ID }
+      if (updates.amount !== undefined) body.amount = Number(updates.amount)
+      if (updates.category !== undefined) body.category = updates.category
+      if (updates.tag !== undefined) body.tag = updates.tag
+      if (updates.note !== undefined) body.note = updates.note
+      if (updates.expense_date !== undefined) body.expense_date = updates.expense_date
+
+      const res = await Network.request({
+        url: `/api/expenses/${id}`,
+        method: 'PATCH',
+        data: body,
+      })
+      console.log('store updateExpense:', res.data)
+      const data = res.data as { code: number; msg: string; data: ExpenseRecord }
+      set(state => ({ dataVersion: state.dataVersion + 1 }))
+      return data?.data
+    } catch (err) {
+      console.error('updateExpense error:', err)
+      throw err
+    }
+  },
+
   deleteExpense: async (id: string) => {
     try {
       await Network.request({
@@ -157,6 +196,59 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     } catch (err) {
       console.error('parseText error:', err)
       return []
+    }
+  },
+
+  fetchCategories: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/categories?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store fetchCategories:', res.data)
+      const data = res.data as { code: number; msg: string; data: CategoryItem[] }
+      const cats = data?.data || []
+      set({ categories: cats })
+      return cats
+    } catch (err) {
+      console.error('fetchCategories error:', err)
+      return []
+    }
+  },
+
+  createCategory: async (name: string) => {
+    try {
+      const res = await Network.request({
+        url: '/api/categories',
+        method: 'POST',
+        data: { user_id: DEFAULT_USER_ID, name },
+      })
+      console.log('store createCategory:', res.data)
+      const data = res.data as { code: number; msg: string; data: CategoryItem }
+      // Refresh categories list
+      get().fetchCategories()
+      return data?.data
+    } catch (err) {
+      console.error('createCategory error:', err)
+      throw err
+    }
+  },
+
+  savePreference: async (keyWord: string, mappedValue: string) => {
+    try {
+      await Network.request({
+        url: '/api/preferences',
+        method: 'POST',
+        data: {
+          user_id: DEFAULT_USER_ID,
+          preference_type: 'category_mapping',
+          key_word: keyWord,
+          mapped_value: mappedValue,
+          source: 'user_correction',
+        },
+      })
+      console.log('store savePreference:', keyWord, '→', mappedValue)
+    } catch (err) {
+      console.error('savePreference error:', err)
     }
   },
 }))

@@ -90,6 +90,36 @@ export class ExpensesService {
     return data
   }
 
+  async update(id: string, body: {
+    user_id: string
+    amount?: number
+    category?: string
+    tag?: string
+    note?: string
+    expense_date?: string
+  }) {
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() }
+    if (body.amount !== undefined) updates.amount = body.amount
+    if (body.category !== undefined) updates.category = body.category
+    if (body.tag !== undefined) updates.tag = body.tag
+    if (body.note !== undefined) updates.note = body.note
+    if (body.expense_date !== undefined) updates.expense_date = body.expense_date
+
+    const { data, error } = await this.supabase
+      .from('expenses')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', body.user_id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('更新记账记录失败:', error)
+      throw new Error('更新失败')
+    }
+    return data
+  }
+
   async remove(id: string, userId: string) {
     const { error } = await this.supabase
       .from('expenses')

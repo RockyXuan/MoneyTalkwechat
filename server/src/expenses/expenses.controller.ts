@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Query, Body, Param, HttpCode } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Query, Body, Param, HttpCode } from '@nestjs/common'
 import { ExpensesService } from './expenses.service'
 
 @Controller('expenses')
@@ -63,6 +63,24 @@ export class ExpensesController {
   }) {
     console.log('POST /api/expenses', body)
     const data = await this.expensesService.create(body)
+    return { code: 200, msg: 'success', data }
+  }
+
+  @Patch(':id')
+  @HttpCode(200)
+  async update(
+    @Param('id') id: string,
+    @Body() body: {
+      user_id: string
+      amount?: number
+      category?: string
+      tag?: string
+      note?: string
+      expense_date?: string
+    },
+  ) {
+    console.log('PATCH /api/expenses/:id', { id, ...body })
+    const data = await this.expensesService.update(id, body)
     return { code: 200, msg: 'success', data }
   }
 

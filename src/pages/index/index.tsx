@@ -1,15 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, Picker } from '@tarojs/components'
+import { View, Text, Picker, ScrollView } from '@tarojs/components'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, PenLine, X, Pencil, Calendar } from 'lucide-react-taro'
+import { Send, Loader, PenLine, X, Pencil, Calendar, Plus, Search } from 'lucide-react-taro'
 import { useExpenseStore, ParsedExpense } from '@/store/expense-store'
-
-const DEFAULT_CATEGORIES = ['餐饮', '交通', '购物', '日用品', '娱乐', '医疗', '教育', '居住', '通讯', '其他']
 
 const IndexPage = () => {
   const [inputText, setInputText] = useState('')
@@ -20,16 +18,24 @@ const IndexPage = () => {
 
   // Date mode: 'today' or 'month'
   const [dateMode, setDateMode] = useState<'today' | 'month'>('today')
-  // For today mode: specific date
   const today = new Date().toISOString().slice(0, 10)
   const [selectedDate, setSelectedDate] = useState(today)
-  // For month mode: month string like "2025-05"
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  const { addExpenses } = useExpenseStore()
+  // Category selector state
+  const [catSearch, setCatSearch] = useState('')
+  const [showCatInput, setShowCatInput] = useState(false)
+  const [newCatName, setNewCatName] = useState('')
+
+  const { addExpenses, categories, fetchCategories, createCategory, savePreference } = useExpenseStore()
+
+  // Load categories on mount
+  useEffect(() => {
+    fetchCategories()
+  }, [])
 
   const getDefaultDate = () => {
     if (dateMode === 'month') {
@@ -48,13 +54,10 @@ const IndexPage = () => {
       const defaultDate = getDefaultDate()
       const results = await useExpenseStore.getState().parseText(inputText, defaultDate)
       if (results.length > 0) {
-        // In month mode, override all expense_date to selectedMonth + the day
         const adjusted = results.map(r => {
           if (dateMode === 'month') {
-            // Keep the day part from AI result if it has a specific day, otherwise use month-01
             const dayMatch = r.expense_date?.match(/(\d{4})-(\d{2})-(\d{2})/)
             if (dayMatch) {
-              // Replace year-month with selected month
               return { ...r, expense_date: `${selectedMonth}-${dayMatch[3]}` }
             }
             return { ...r, expense_date: `${selectedMonth}-01` }
@@ -78,6 +81,12 @@ const IndexPage = () => {
     setIsSaving(true)
     try {
       await addExpenses(parsedResults, inputText)
+      // Save preferences for any edited categories
+      for (const r of parsedResults) {
+        if (r._edited && r.category && r.note) {
+          savePreference(r.note, r.category)
+        }
+      }
       Taro.showToast({ title: `成功保存 ${parsedResults.length} 笔`, icon: 'success' })
       setParsedResults([])
       setInputText('')
@@ -100,7 +109,25 @@ const IndexPage = () => {
     ))
   }
 
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) return
+    try {
+      await createCategory(newCatName.trim())
+      setNewCatName('')
+      setShowCatInput(false)
+      setCatSearch('')
+      Taro.showToast({ title: '分类已添加', icon: 'success' })
+    } catch (err) {
+      console.error('创建分类失败', err)
+    }
+  }
+
   const totalParsedAmount = parsedResults.reduce((sum, r) => sum + (r.amount || 0), 0)
+
+  // Filtered categories for the selector
+  const filteredCategories = categories.filter(c =>
+    !catSearch || c.name.includes(catSearch)
+  )
 
   return (
     <View className="min-h-full bg-[#F7F5F0] pb-20">
@@ -115,7 +142,6 @@ const IndexPage = () => {
           <CardContent className="p-3">
             <View className="flex flex-row items-center gap-3">
               <Calendar size={18} color="#3D7C5F" />
-              {/* Mode toggle */}
               <View className="flex flex-row bg-[#F7F5F0] rounded-lg p-1">
                 <View
                   className={`px-3 py-1 rounded-md ${dateMode === 'today' ? 'bg-[#3D7C5F]' : ''}`}
@@ -134,7 +160,6 @@ const IndexPage = () => {
                   </Text>
                 </View>
               </View>
-              {/* Date/Month picker */}
               {dateMode === 'today' ? (
                 <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
                   <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
@@ -219,6 +244,11 @@ const IndexPage = () => {
               <CardContent className="p-3">
                 <View className="flex flex-row items-start justify-between">
                   <View className="flex flex-col flex-1">
+                    {/* Name (note) - first line, large */}
+                    <Text className="block text-lg font-semibold text-[#1A1A1A] mb-1">
+                      {result.note || '未命名'}
+                    </Text>
+
                     {/* Amount */}
                     {editingIdx === idx ? (
                       <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 mb-2">
@@ -235,17 +265,57 @@ const IndexPage = () => {
                       </Text>
                     )}
 
-                    {/* Category + Tag */}
+                    {/* Category + Tag - second line */}
                     <View className="flex flex-row items-center gap-2 mt-1 flex-wrap">
                       {editingIdx === idx ? (
-                        <View className="flex flex-row flex-wrap gap-1">
-                          {DEFAULT_CATEGORIES.map(cat => (
-                            <View key={cat} onClick={() => handleUpdateResult(idx, 'category', cat)}>
-                              <Badge className={`${result.category === cat ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
-                                {cat}
-                              </Badge>
+                        <View className="flex flex-col gap-2 w-full">
+                          {/* Search input for categories */}
+                          <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-2">
+                            <Search size={14} color="#999" />
+                            <Input
+                              className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0 flex-1"
+                              placeholder="搜索分类..."
+                              value={catSearch}
+                              onInput={(e) => setCatSearch(e.detail.value)}
+                            />
+                          </View>
+                          {/* Scrollable category badges */}
+                          <ScrollView scrollY className="w-full" style={{ maxHeight: '120px' }}>
+                            <View className="flex flex-row flex-wrap gap-1">
+                              {filteredCategories.map(cat => (
+                                <View key={cat.id} onClick={() => { handleUpdateResult(idx, 'category', cat.name); setCatSearch('') }}>
+                                  <Badge className={`${result.category === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
+                                    {cat.name}
+                                  </Badge>
+                                </View>
+                              ))}
                             </View>
-                          ))}
+                          </ScrollView>
+                          {/* Add custom category */}
+                          {showCatInput ? (
+                            <View className="flex flex-row items-center gap-2">
+                              <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1">
+                                <Input
+                                  className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                                  placeholder="输入新分类名称"
+                                  value={newCatName}
+                                  onInput={(e) => setNewCatName(e.detail.value)}
+                                  onConfirm={() => handleCreateCategory()}
+                                />
+                              </View>
+                              <Button className="bg-[#3D7C5F] text-white text-xs px-3 py-1 rounded-lg" onClick={handleCreateCategory}>
+                                <Text className="text-white text-xs">添加</Text>
+                              </Button>
+                            </View>
+                          ) : (
+                            <View
+                              className="flex flex-row items-center gap-1 px-2 py-1 bg-[#FFF7ED] rounded-lg"
+                              onClick={() => setShowCatInput(true)}
+                            >
+                              <Plus size={12} color="#E8913A" />
+                              <Text className="text-xs text-[#E8913A]">自定义分类</Text>
+                            </View>
+                          )}
                         </View>
                       ) : (
                         <>
@@ -255,15 +325,15 @@ const IndexPage = () => {
                       )}
                     </View>
 
-                    {/* Note + Date */}
-                    {editingIdx === idx ? (
+                    {/* Date + Note edit */}
+                    {editingIdx === idx && (
                       <View className="mt-2 flex flex-col gap-2">
                         <View className="bg-[#F7F5F0] rounded-lg px-2 py-1">
                           <Input
                             className="border-0 bg-transparent text-sm text-gray-600 ring-0 focus-within:ring-0"
                             value={result.note}
                             onInput={(e) => handleUpdateResult(idx, 'note', e.detail.value)}
-                            placeholder="备注"
+                            placeholder="备注名称"
                           />
                         </View>
                         <Picker mode="date" value={result.expense_date} onChange={(e) => handleUpdateResult(idx, 'expense_date', e.detail.value)}>
@@ -273,16 +343,25 @@ const IndexPage = () => {
                           </View>
                         </Picker>
                       </View>
-                    ) : (
-                      <Text className="block text-sm text-gray-500 mt-1">
-                        {result.note || '无备注'} · {result.expense_date}
+                    )}
+
+                    {/* Non-editing date display */}
+                    {editingIdx !== idx && (
+                      <Text className="block text-xs text-gray-400 mt-1">
+                        {result.expense_date}
                       </Text>
                     )}
                   </View>
 
                   {/* Action buttons */}
                   <View className="flex flex-row items-center gap-1 ml-2">
-                    <Button className="bg-transparent p-1" onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}>
+                    <Button className="bg-transparent p-1"
+                      onClick={() => {
+                        setEditingIdx(editingIdx === idx ? null : idx)
+                        setCatSearch('')
+                        setShowCatInput(false)
+                      }}
+                    >
                       <Pencil size={14} color={editingIdx === idx ? '#3D7C5F' : '#999'} />
                     </Button>
                     <Button className="bg-transparent p-1" onClick={() => handleRemoveResult(idx)}>
