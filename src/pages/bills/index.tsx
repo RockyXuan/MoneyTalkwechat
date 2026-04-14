@@ -242,18 +242,20 @@ const BillsPage = () => {
               <Card key={item.id} className="border-[#E5E1D8] mb-2">
                 <CardContent className="p-3 flex flex-row items-center justify-between">
                   <View className="flex flex-col flex-1" onClick={() => openEditModal(item)}>
-                    {/* Name first, large */}
-                    <Text className="block text-base font-semibold text-[#1A1A1A]">
-                      {item.note || item.raw_text || '未命名'}
-                    </Text>
-                    {/* Category below, smaller */}
+                    {/* Line 1: Name + Amount */}
+                    <View className="flex flex-row items-center gap-2">
+                      <Text className="block text-base font-semibold text-[#1A1A1A]">
+                        {item.note || item.raw_text || '未命名'}
+                      </Text>
+                      <Text className="block text-lg font-bold text-[#E8913A]">¥{item.amount}</Text>
+                    </View>
+                    {/* Line 2: Category */}
                     <View className="flex flex-row items-center gap-2 mt-1">
                       <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
                       {item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
                     </View>
                   </View>
-                  <View className="flex flex-row items-center gap-2">
-                    <Text className="block text-lg font-bold text-[#E8913A]">¥{item.amount}</Text>
+                  <View className="flex flex-row items-center">
                     <Button className="bg-transparent p-0" onClick={() => handleDelete(item.id)}>
                       <Trash2 size={16} color="#EF4444" />
                     </Button>
@@ -276,7 +278,7 @@ const BillsPage = () => {
       {/* Edit Modal */}
       {editingRecord && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl p-5 pb-8">
+          <View className="w-full bg-[#F7F5F0] rounded-t-2xl p-5 pb-4">
             {/* Header */}
             <View className="flex flex-row items-center justify-between mb-4">
               <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
@@ -285,30 +287,30 @@ const BillsPage = () => {
               </Button>
             </View>
 
-            {/* Note/Name */}
-            <View className="mb-3">
-              <Text className="block text-sm text-gray-500 mb-1">名称</Text>
-              <View className="bg-white rounded-lg px-3 py-2">
-                <Input
-                  className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                  value={editNote}
-                  onInput={(e) => setEditNote(e.detail.value)}
-                  placeholder="消费名称"
-                />
+            {/* Name + Amount on same line */}
+            <View className="flex flex-row items-center gap-3 mb-3">
+              <View className="flex-1">
+                <Text className="block text-sm text-gray-500 mb-1">名称</Text>
+                <View className="bg-white rounded-lg px-3 py-2">
+                  <Input
+                    className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                    value={editNote}
+                    onInput={(e) => setEditNote(e.detail.value)}
+                    placeholder="消费名称"
+                  />
+                </View>
               </View>
-            </View>
-
-            {/* Amount */}
-            <View className="mb-3">
-              <Text className="block text-sm text-gray-500 mb-1">金额</Text>
-              <View className="bg-white rounded-lg px-3 py-2">
-                <Input
-                  className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                  type="digit"
-                  value={editAmount}
-                  onInput={(e) => setEditAmount(e.detail.value)}
-                  placeholder="金额"
-                />
+              <View style={{ width: '100px' }}>
+                <Text className="block text-sm text-gray-500 mb-1">金额</Text>
+                <View className="bg-white rounded-lg px-3 py-2">
+                  <Input
+                    className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                    type="digit"
+                    value={editAmount}
+                    onInput={(e) => setEditAmount(e.detail.value)}
+                    placeholder="金额"
+                  />
+                </View>
               </View>
             </View>
 
@@ -365,7 +367,7 @@ const BillsPage = () => {
             </View>
 
             {/* Date */}
-            <View className="mb-4">
+            <View className="mb-2">
               <Text className="block text-sm text-gray-500 mb-1">日期</Text>
               <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
                 <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">

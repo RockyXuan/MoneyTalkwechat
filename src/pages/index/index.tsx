@@ -335,17 +335,21 @@ const IndexPage = () => {
                       </Button>
                     </View>
                   ) : (
-                    /* ===== VIEW MODE: name + amount on same line ===== */
+                    /* ===== VIEW MODE: name+amount line 1, category line 2 ===== */
                     <View className="flex flex-row items-center justify-between">
-                      <View className="flex flex-row items-center gap-2 flex-1">
-                        <Text className="block text-base font-semibold text-[#1A1A1A]">
-                          {result.note || '未命名'}
-                        </Text>
-                        <Text className="block text-lg font-bold text-[#E8913A]">
-                          {result.amount != null ? `¥${result.amount}` : '--'}
-                        </Text>
-                        <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
-                        {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
+                      <View className="flex flex-col flex-1">
+                        <View className="flex flex-row items-center gap-2">
+                          <Text className="block text-base font-semibold text-[#1A1A1A]">
+                            {result.note || '未命名'}
+                          </Text>
+                          <Text className="block text-lg font-bold text-[#E8913A]">
+                            {result.amount != null ? `¥${result.amount}` : '--'}
+                          </Text>
+                        </View>
+                        <View className="flex flex-row items-center gap-2 mt-1">
+                          <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
+                          {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
+                        </View>
                       </View>
                       <View className="flex flex-row items-center gap-1">
                         <Button
