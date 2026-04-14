@@ -384,7 +384,7 @@ const IndexPage = () => {
       {parsedResults.length > 0 && (
         <View
           style={{
-            position: 'fixed', bottom: 50, left: 0, right: 0,
+            position: 'fixed', bottom: 0, left: 0, right: 0,
             display: 'flex', flexDirection: 'row', gap: '12px',
             padding: '12px 16px', backgroundColor: '#F7F5F0',
             borderTop: '1px solid #E5E1D8', zIndex: 100,
