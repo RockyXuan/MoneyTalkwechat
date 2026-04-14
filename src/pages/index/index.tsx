@@ -231,7 +231,7 @@ const IndexPage = () => {
 
         {/* Parsed Results */}
         {parsedResults.length > 0 && (
-          <View className="px-4 mt-4 pb-4">
+          <View className="px-4 mt-4 pb-28">
             <View className="flex flex-row items-center justify-between mb-2">
               <View className="flex flex-row items-center gap-2">
                 <PenLine size={16} color="#3D7C5F" />
@@ -335,24 +335,19 @@ const IndexPage = () => {
                       </Button>
                     </View>
                   ) : (
-                    /* ===== VIEW MODE: compact two-row layout ===== */
+                    /* ===== VIEW MODE: name + amount on same line ===== */
                     <View className="flex flex-row items-center justify-between">
-                      <View className="flex flex-col flex-1">
-                        {/* Row 1: Name + Category Badge */}
-                        <View className="flex flex-row items-center gap-2">
-                          <Text className="block text-base font-semibold text-[#1A1A1A]">
-                            {result.note || '未命名'}
-                          </Text>
-                          <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
-                          {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
-                        </View>
-                        {/* Row 2: Date */}
-                        <Text className="block text-xs text-gray-400 mt-1">{result.expense_date}</Text>
-                      </View>
-                      <View className="flex flex-row items-center gap-2">
-                        <Text className="block text-xl font-bold text-[#E8913A]">
+                      <View className="flex flex-row items-center gap-2 flex-1">
+                        <Text className="block text-base font-semibold text-[#1A1A1A]">
+                          {result.note || '未命名'}
+                        </Text>
+                        <Text className="block text-lg font-bold text-[#E8913A]">
                           {result.amount != null ? `¥${result.amount}` : '--'}
                         </Text>
+                        <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
+                        {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
+                      </View>
+                      <View className="flex flex-row items-center gap-1">
                         <Button
                           className="bg-transparent p-0"
                           onClick={() => { setEditingIdx(idx); setCatSearch(''); setShowCatInput(false) }}
