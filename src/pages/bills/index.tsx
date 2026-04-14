@@ -278,7 +278,9 @@ const BillsPage = () => {
       {/* Edit Modal */}
       {editingRecord && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl p-5 pb-4">
+          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh' }}>
+            <ScrollView scrollY className="w-full">
+              <View className="p-5 pb-4">
             {/* Header */}
             <View className="flex flex-row items-center justify-between mb-4">
               <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
@@ -385,6 +387,8 @@ const BillsPage = () => {
             >
               {isUpdating ? '保存中...' : '保存修改'}
             </Button>
+            </View>
+            </ScrollView>
           </View>
         </View>
       )}
