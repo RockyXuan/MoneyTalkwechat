@@ -130,277 +130,283 @@ const IndexPage = () => {
   )
 
   return (
-    <View className="min-h-full bg-[#F7F5F0] pb-20">
-      {/* Header */}
-      <View className="px-4 pt-4 pb-2">
-        <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
-      </View>
+    <View className="h-full bg-[#F7F5F0] flex flex-col">
+      {/* Scrollable content area */}
+      <ScrollView scrollY className="flex-1">
+        {/* Header */}
+        <View className="px-4 pt-4 pb-2">
+          <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
+        </View>
 
-      {/* Date Selector */}
-      <View className="px-4 mb-2">
-        <Card className="border-[#E5E1D8]">
-          <CardContent className="p-3">
-            <View className="flex flex-row items-center gap-3">
-              <Calendar size={18} color="#3D7C5F" />
-              <View className="flex flex-row bg-[#F7F5F0] rounded-lg p-1">
-                <View
-                  className={`px-3 py-1 rounded-md ${dateMode === 'today' ? 'bg-[#3D7C5F]' : ''}`}
-                  onClick={() => setDateMode('today')}
-                >
-                  <Text className={`block text-xs ${dateMode === 'today' ? 'text-white' : 'text-gray-500'}`}>
-                    按日期
-                  </Text>
-                </View>
-                <View
-                  className={`px-3 py-1 rounded-md ${dateMode === 'month' ? 'bg-[#3D7C5F]' : ''}`}
-                  onClick={() => setDateMode('month')}
-                >
-                  <Text className={`block text-xs ${dateMode === 'month' ? 'text-white' : 'text-gray-500'}`}>
-                    按月份
-                  </Text>
-                </View>
-              </View>
-              {dateMode === 'today' ? (
-                <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
-                  <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
-                    <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedDate}</Text>
-                  </View>
-                </Picker>
-              ) : (
-                <Picker
-                  mode="date"
-                  fields="month"
-                  value={`${selectedMonth}-01`}
-                  onChange={(e) => {
-                    const val = e.detail.value as string
-                    setSelectedMonth(val.slice(0, 7))
-                  }}
-                >
-                  <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
-                    <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedMonth}</Text>
-                  </View>
-                </Picker>
-              )}
-            </View>
-            {dateMode === 'month' && (
-              <Text className="block text-xs text-gray-400 mt-2">
-                按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
-              </Text>
-            )}
-          </CardContent>
-        </Card>
-      </View>
-
-      {/* Input Area */}
-      <View className="px-4">
-        <Card className="border-[#E5E1D8]">
-          <CardContent className="p-4">
-            <View className="bg-[#F7F5F0] rounded-xl p-3">
-              <Textarea
-                style={{ width: '100%', minHeight: '64px', backgroundColor: 'transparent', fontSize: '15px', lineHeight: '22px' }}
-                placeholder="今天花了什么？说说看..."
-                value={inputText}
-                onInput={(e) => setInputText(e.detail.value)}
-                maxlength={500}
-              />
-            </View>
-            <View className="mt-3">
-              <Button
-                className="w-full bg-[#3D7C5F] text-white rounded-xl"
-                onClick={handleParse}
-                disabled={isParsing || !inputText.trim()}
-              >
-                {isParsing ? (
-                  <View className="flex flex-row items-center justify-center gap-2">
-                    <Loader size={16} color="#fff" className="animate-spin" />
-                    <Text className="text-white">解析中</Text>
-                  </View>
-                ) : (
-                  <View className="flex flex-row items-center justify-center gap-2">
-                    <Send size={16} color="#fff" />
-                    <Text className="text-white">智能记账</Text>
-                  </View>
-                )}
-              </Button>
-            </View>
-          </CardContent>
-        </Card>
-      </View>
-
-      {/* Parsed Results */}
-      {parsedResults.length > 0 && (
-        <View className="px-4 mt-4">
-          <View className="flex flex-row items-center justify-between mb-2">
-            <View className="flex flex-row items-center gap-2">
-              <PenLine size={16} color="#3D7C5F" />
-              <Text className="block text-base font-semibold text-[#1A1A1A]">AI 解析结果</Text>
-              <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{parsedResults.length} 笔</Badge>
-            </View>
-            <Text className="block text-lg font-bold text-[#E8913A]">合计 ¥{totalParsedAmount.toFixed(2)}</Text>
-          </View>
-
-          {parsedResults.map((result, idx) => (
-            <Card key={idx} className="border-[#E5E1D8] mb-2">
-              <CardContent className="p-3">
-                <View className="flex flex-row items-start justify-between">
-                  <View className="flex flex-col flex-1">
-                    {/* Name (note) - first line, large */}
-                    <Text className="block text-lg font-semibold text-[#1A1A1A] mb-1">
-                      {result.note || '未命名'}
+        {/* Date Selector */}
+        <View className="px-4 mb-2">
+          <Card className="border-[#E5E1D8]">
+            <CardContent className="p-3">
+              <View className="flex flex-row items-center gap-3">
+                <Calendar size={18} color="#3D7C5F" />
+                <View className="flex flex-row bg-[#F7F5F0] rounded-lg p-1">
+                  <View
+                    className={`px-3 py-1 rounded-md ${dateMode === 'today' ? 'bg-[#3D7C5F]' : ''}`}
+                    onClick={() => setDateMode('today')}
+                  >
+                    <Text className={`block text-xs ${dateMode === 'today' ? 'text-white' : 'text-gray-500'}`}>
+                      按日期
                     </Text>
-
-                    {/* Amount */}
-                    {editingIdx === idx ? (
-                      <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 mb-2">
-                        <Input
-                          className="border-0 bg-transparent text-[#E8913A] text-xl font-bold ring-0 focus-within:ring-0"
-                          type="digit"
-                          value={result.amount != null ? String(result.amount) : ''}
-                          onInput={(e) => handleUpdateResult(idx, 'amount', e.detail.value ? Number(e.detail.value) : null)}
-                        />
-                      </View>
-                    ) : (
-                      <Text className="block text-2xl font-bold text-[#E8913A] mb-1">
-                        {result.amount != null ? `¥${result.amount}` : '金额未识别'}
-                      </Text>
-                    )}
-
-                    {/* Category + Tag - second line */}
-                    <View className="flex flex-row items-center gap-2 mt-1 flex-wrap">
-                      {editingIdx === idx ? (
-                        <View className="flex flex-col gap-2 w-full">
-                          {/* Search input for categories */}
-                          <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-2">
-                            <Search size={14} color="#999" />
-                            <Input
-                              className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0 flex-1"
-                              placeholder="搜索分类..."
-                              value={catSearch}
-                              onInput={(e) => setCatSearch(e.detail.value)}
-                            />
-                          </View>
-                          {/* Scrollable category badges */}
-                          <ScrollView scrollY className="w-full" style={{ maxHeight: '120px' }}>
-                            <View className="flex flex-row flex-wrap gap-1">
-                              {filteredCategories.map(cat => (
-                                <View key={cat.id} onClick={() => { handleUpdateResult(idx, 'category', cat.name); setCatSearch('') }}>
-                                  <Badge className={`${result.category === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
-                                    {cat.name}
-                                  </Badge>
-                                </View>
-                              ))}
-                            </View>
-                          </ScrollView>
-                          {/* Add custom category */}
-                          {showCatInput ? (
-                            <View className="flex flex-row items-center gap-2">
-                              <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1">
-                                <Input
-                                  className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                                  placeholder="输入新分类名称"
-                                  value={newCatName}
-                                  onInput={(e) => setNewCatName(e.detail.value)}
-                                  onConfirm={() => handleCreateCategory()}
-                                />
-                              </View>
-                              <Button className="bg-[#3D7C5F] text-white text-xs px-3 py-1 rounded-lg" onClick={handleCreateCategory}>
-                                <Text className="text-white text-xs">添加</Text>
-                              </Button>
-                            </View>
-                          ) : (
-                            <View
-                              className="flex flex-row items-center gap-1 px-2 py-1 bg-[#FFF7ED] rounded-lg"
-                              onClick={() => setShowCatInput(true)}
-                            >
-                              <Plus size={12} color="#E8913A" />
-                              <Text className="text-xs text-[#E8913A]">自定义分类</Text>
-                            </View>
-                          )}
-                        </View>
-                      ) : (
-                        <>
-                          <Badge className="bg-[#E8F0EB] text-[#3D7C5F]">{result.category}</Badge>
-                          {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A]">{result.tag}</Badge>}
-                        </>
-                      )}
+                  </View>
+                  <View
+                    className={`px-3 py-1 rounded-md ${dateMode === 'month' ? 'bg-[#3D7C5F]' : ''}`}
+                    onClick={() => setDateMode('month')}
+                  >
+                    <Text className={`block text-xs ${dateMode === 'month' ? 'text-white' : 'text-gray-500'}`}>
+                      按月份
+                    </Text>
+                  </View>
+                </View>
+                {dateMode === 'today' ? (
+                  <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
+                    <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
+                      <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedDate}</Text>
                     </View>
+                  </Picker>
+                ) : (
+                  <Picker
+                    mode="date"
+                    fields="month"
+                    value={`${selectedMonth}-01`}
+                    onChange={(e) => {
+                      const val = e.detail.value as string
+                      setSelectedMonth(val.slice(0, 7))
+                    }}
+                  >
+                    <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
+                      <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedMonth}</Text>
+                    </View>
+                  </Picker>
+                )}
+              </View>
+              {dateMode === 'month' && (
+                <Text className="block text-xs text-gray-400 mt-2">
+                  按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
+                </Text>
+              )}
+            </CardContent>
+          </Card>
+        </View>
 
-                    {/* Date + Note edit */}
-                    {editingIdx === idx && (
-                      <View className="mt-2 flex flex-col gap-2">
-                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1">
+        {/* Input Area */}
+        <View className="px-4">
+          <Card className="border-[#E5E1D8]">
+            <CardContent className="p-4">
+              <View className="bg-[#F7F5F0] rounded-xl p-3">
+                <Textarea
+                  style={{ width: '100%', minHeight: '64px', backgroundColor: 'transparent', fontSize: '15px', lineHeight: '22px' }}
+                  placeholder="今天花了什么？说说看..."
+                  value={inputText}
+                  onInput={(e) => setInputText(e.detail.value)}
+                  maxlength={500}
+                />
+              </View>
+              <View className="mt-3">
+                <Button
+                  className="w-full bg-[#3D7C5F] text-white rounded-xl"
+                  onClick={handleParse}
+                  disabled={isParsing || !inputText.trim()}
+                >
+                  {isParsing ? (
+                    <View className="flex flex-row items-center justify-center gap-2">
+                      <Loader size={16} color="#fff" className="animate-spin" />
+                      <Text className="text-white">解析中</Text>
+                    </View>
+                  ) : (
+                    <View className="flex flex-row items-center justify-center gap-2">
+                      <Send size={16} color="#fff" />
+                      <Text className="text-white">智能记账</Text>
+                    </View>
+                  )}
+                </Button>
+              </View>
+            </CardContent>
+          </Card>
+        </View>
+
+        {/* Parsed Results */}
+        {parsedResults.length > 0 && (
+          <View className="px-4 mt-4 pb-4">
+            <View className="flex flex-row items-center justify-between mb-2">
+              <View className="flex flex-row items-center gap-2">
+                <PenLine size={16} color="#3D7C5F" />
+                <Text className="block text-base font-semibold text-[#1A1A1A]">AI 解析结果</Text>
+                <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{parsedResults.length} 笔</Badge>
+              </View>
+              <Text className="block text-lg font-bold text-[#E8913A]">合计 ¥{totalParsedAmount.toFixed(2)}</Text>
+            </View>
+
+            {parsedResults.map((result, idx) => (
+              <Card key={idx} className="border-[#E5E1D8] mb-2">
+                <CardContent className="p-3">
+                  {editingIdx === idx ? (
+                    /* ===== EDIT MODE: compact vertical layout ===== */
+                    <View className="flex flex-col gap-2">
+                      {/* Row 1: Name + Amount */}
+                      <View className="flex flex-row items-center gap-2">
+                        <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1">
                           <Input
-                            className="border-0 bg-transparent text-sm text-gray-600 ring-0 focus-within:ring-0"
+                            className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
                             value={result.note}
                             onInput={(e) => handleUpdateResult(idx, 'note', e.detail.value)}
-                            placeholder="备注名称"
+                            placeholder="名称"
                           />
                         </View>
-                        <Picker mode="date" value={result.expense_date} onChange={(e) => handleUpdateResult(idx, 'expense_date', e.detail.value)}>
-                          <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1">
-                            <Calendar size={12} color="#3D7C5F" />
-                            <Text className="text-sm text-[#3D7C5F]">{result.expense_date}</Text>
-                          </View>
-                        </Picker>
+                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1" style={{ width: '90px' }}>
+                          <Input
+                            className="border-0 bg-transparent text-[#E8913A] font-bold ring-0 focus-within:ring-0"
+                            type="digit"
+                            value={result.amount != null ? String(result.amount) : ''}
+                            onInput={(e) => handleUpdateResult(idx, 'amount', e.detail.value ? Number(e.detail.value) : null)}
+                            placeholder="金额"
+                          />
+                        </View>
                       </View>
-                    )}
 
-                    {/* Non-editing date display */}
-                    {editingIdx !== idx && (
-                      <Text className="block text-xs text-gray-400 mt-1">
-                        {result.expense_date}
-                      </Text>
-                    )}
-                  </View>
+                      {/* Row 2: Category horizontal scroll */}
+                      <ScrollView scrollX className="w-full">
+                        <View className="flex flex-row gap-1 flex-nowrap">
+                          {filteredCategories.map(cat => (
+                            <View key={cat.id} onClick={() => { handleUpdateResult(idx, 'category', cat.name); setCatSearch('') }} className="flex-shrink-0">
+                              <Badge className={`${result.category === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
+                                {cat.name}
+                              </Badge>
+                            </View>
+                          ))}
+                        </View>
+                      </ScrollView>
 
-                  {/* Action buttons */}
-                  <View className="flex flex-row items-center gap-1 ml-2">
-                    <Button className="bg-transparent p-1"
-                      onClick={() => {
-                        setEditingIdx(editingIdx === idx ? null : idx)
-                        setCatSearch('')
-                        setShowCatInput(false)
-                      }}
-                    >
-                      <Pencil size={14} color={editingIdx === idx ? '#3D7C5F' : '#999'} />
-                    </Button>
-                    <Button className="bg-transparent p-1" onClick={() => handleRemoveResult(idx)}>
-                      <X size={14} color="#EF4444" />
-                    </Button>
-                  </View>
-                </View>
-              </CardContent>
-            </Card>
-          ))}
+                      {/* Row 3: Search + Add custom (collapsed by default) */}
+                      <View className="flex flex-row items-center gap-2">
+                        <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1">
+                          <Search size={12} color="#999" />
+                          <Input
+                            className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
+                            placeholder="搜索分类..."
+                            value={catSearch}
+                            onInput={(e) => setCatSearch(e.detail.value)}
+                          />
+                        </View>
+                        {showCatInput ? (
+                          <View className="flex flex-row items-center gap-1">
+                            <View className="bg-[#F7F5F0] rounded-lg px-2 py-1" style={{ width: '80px' }}>
+                              <Input
+                                className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0"
+                                placeholder="新分类"
+                                value={newCatName}
+                                onInput={(e) => setNewCatName(e.detail.value)}
+                                onConfirm={() => handleCreateCategory()}
+                              />
+                            </View>
+                            <Button className="bg-[#3D7C5F] text-white px-2 py-0 rounded-lg" style={{ minHeight: '28px' }} onClick={handleCreateCategory}>
+                              <Text className="text-white text-xs">添加</Text>
+                            </Button>
+                          </View>
+                        ) : (
+                          <View
+                            className="flex flex-row items-center gap-1 px-2 py-1 bg-[#FFF7ED] rounded-lg flex-shrink-0"
+                            onClick={() => setShowCatInput(true)}
+                          >
+                            <Plus size={10} color="#E8913A" />
+                            <Text className="text-xs text-[#E8913A]">自定义</Text>
+                          </View>
+                        )}
+                      </View>
 
-          {/* Save / Clear buttons */}
-          <View className="flex flex-row gap-3 mt-3">
-            <View className="flex-1">
-              <Button
-                className="w-full rounded-xl bg-[#3D7C5F] text-white"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? '保存中...' : `确认记账（${parsedResults.length} 笔）`}
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button
-                className="w-full rounded-xl bg-white border border-[#E5E1D8] text-[#1A1A1A]"
-                onClick={() => { setParsedResults([]); setEditingIdx(null) }}
-              >
-                清空结果
-              </Button>
-            </View>
+                      {/* Row 4: Date */}
+                      <Picker mode="date" value={result.expense_date} onChange={(e) => handleUpdateResult(idx, 'expense_date', e.detail.value)}>
+                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1 self-start">
+                          <Calendar size={12} color="#3D7C5F" />
+                          <Text className="text-xs text-[#3D7C5F]">{result.expense_date}</Text>
+                        </View>
+                      </Picker>
+
+                      {/* Done editing */}
+                      <Button
+                        className="bg-[#E8F0EB] text-[#3D7C5F] text-xs rounded-lg self-start"
+                        onClick={() => { setEditingIdx(null); setCatSearch(''); setShowCatInput(false) }}
+                      >
+                        <Text className="text-xs text-[#3D7C5F]">完成编辑</Text>
+                      </Button>
+                    </View>
+                  ) : (
+                    /* ===== VIEW MODE: compact two-row layout ===== */
+                    <View className="flex flex-row items-center justify-between">
+                      <View className="flex flex-col flex-1">
+                        {/* Row 1: Name + Category Badge */}
+                        <View className="flex flex-row items-center gap-2">
+                          <Text className="block text-base font-semibold text-[#1A1A1A]">
+                            {result.note || '未命名'}
+                          </Text>
+                          <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
+                          {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
+                        </View>
+                        {/* Row 2: Date */}
+                        <Text className="block text-xs text-gray-400 mt-1">{result.expense_date}</Text>
+                      </View>
+                      <View className="flex flex-row items-center gap-2">
+                        <Text className="block text-xl font-bold text-[#E8913A]">
+                          {result.amount != null ? `¥${result.amount}` : '--'}
+                        </Text>
+                        <Button
+                          className="bg-transparent p-0"
+                          onClick={() => { setEditingIdx(idx); setCatSearch(''); setShowCatInput(false) }}
+                        >
+                          <Pencil size={14} color="#999" />
+                        </Button>
+                        <Button className="bg-transparent p-0" onClick={() => handleRemoveResult(idx)}>
+                          <X size={14} color="#EF4444" />
+                        </Button>
+                      </View>
+                    </View>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </View>
-        </View>
-      )}
+        )}
 
-      {/* Empty State */}
-      {parsedResults.length === 0 && (
-        <View className="flex flex-col items-center justify-center mt-16">
-          <PenLine size={48} color="#E5E1D8" />
-          <Text className="block text-gray-400 mt-4 text-sm">说点什么开始记账吧</Text>
+        {/* Empty State */}
+        {parsedResults.length === 0 && (
+          <View className="flex flex-col items-center justify-center mt-16">
+            <PenLine size={48} color="#E5E1D8" />
+            <Text className="block text-gray-400 mt-4 text-sm">说点什么开始记账吧</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Fixed bottom save bar - only shows when there are parsed results */}
+      {parsedResults.length > 0 && (
+        <View
+          style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0,
+            display: 'flex', flexDirection: 'row', gap: '12px',
+            padding: '12px 16px', backgroundColor: '#F7F5F0',
+            borderTop: '1px solid #E5E1D8', zIndex: 100,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Button
+              className="w-full rounded-xl bg-[#3D7C5F] text-white"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? '保存中...' : `确认记账（${parsedResults.length} 笔）`}
+            </Button>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              className="w-full rounded-xl bg-white border border-[#E5E1D8] text-[#1A1A1A]"
+              onClick={() => { setParsedResults([]); setEditingIdx(null) }}
+            >
+              清空结果
+            </Button>
+          </View>
         </View>
       )}
     </View>
