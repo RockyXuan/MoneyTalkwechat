@@ -38,6 +38,20 @@ export class ExpensesController {
     return { code: 200, msg: 'success', data }
   }
 
+  @Get('stats-v2')
+  @HttpCode(200)
+  async statsV2(
+    @Query('user_id') userId: string,
+    @Query('period') period: 'year' | 'quarter' | 'month',
+    @Query('year') year: string,
+    @Query('quarter') quarter?: string,
+    @Query('month') month?: string,
+  ) {
+    console.log('GET /api/expenses/stats-v2', { userId, period, year, quarter, month })
+    const data = await this.expensesService.statsV2(userId, period, Number(year), quarter ? Number(quarter) : undefined, month)
+    return { code: 200, msg: 'success', data }
+  }
+
   @Post()
   @HttpCode(200)
   async create(@Body() body: {

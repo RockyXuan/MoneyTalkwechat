@@ -53,6 +53,11 @@ interface ExpenseStore {
     categories: { category: string; total: number; count: number }[]
     daily: { date: string; total: number }[]
   }>
+  getStatsV2: (period: 'year' | 'quarter' | 'month', year: number, quarter?: number, month?: string) => Promise<{
+    total_expense: number
+    categories: { category: string; total: number; count: number; percent: number }[]
+    trends: { label: string; total: number }[]
+  }>
   parseText: (text: string, defaultDate?: string) => Promise<ParsedExpense[]>
   fetchCategories: () => Promise<CategoryItem[]>
   createCategory: (name: string) => Promise<CategoryItem>
@@ -180,6 +185,21 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     } catch (err) {
       console.error('getStats error:', err)
       return { month_total: 0, categories: [], daily: [] }
+    }
+  },
+
+  getStatsV2: async (period: 'year' | 'quarter' | 'month', year: number, quarter?: number, month?: string) => {
+    try {
+      let url = `/api/expenses/stats-v2?user_id=${DEFAULT_USER_ID}&period=${period}&year=${year}`
+      if (quarter) url += `&quarter=${quarter}`
+      if (month) url += `&month=${month}`
+      const res = await Network.request({ url })
+      console.log('store getStatsV2:', res.data)
+      const data = res.data as { code: number; msg: string; data: any }
+      return data?.data || { total_expense: 0, categories: [], trends: [] }
+    } catch (err) {
+      console.error('getStatsV2 error:', err)
+      return { total_expense: 0, categories: [], trends: [] }
     }
   },
 

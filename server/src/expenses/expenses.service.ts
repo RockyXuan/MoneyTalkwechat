@@ -187,4 +187,118 @@ export class ExpensesService {
       daily,
     }
   }
+
+  async statsV2(userId: string, period: 'year' | 'quarter' | 'month', year: number, quarter?: number, month?: string) {
+    // Determine date range based on period
+    let startDate: string
+    let endDate: string
+
+    if (period === 'year') {
+      startDate = `${year}-01-01`
+      endDate = `${year + 1}-01-01`
+    } else if (period === 'quarter') {
+      const q = quarter || 1
+      const startMonth = (q - 1) * 3 + 1
+      const endMonth = startMonth + 3
+      const endYear = endMonth > 12 ? year + 1 : year
+      const adjustedEndMonth = endMonth > 12 ? endMonth - 12 : endMonth
+      startDate = `${year}-${String(startMonth).padStart(2, '0')}-01`
+      endDate = `${endYear}-${String(adjustedEndMonth).padStart(2, '0')}-01`
+    } else {
+      // month
+      const m = month || `${year}-01`
+      startDate = `${m}-01`
+      const [my, mm] = m.split('-')
+      const nextMonth = mm === '12' ? `${Number(my) + 1}-01` : `${my}-${String(Number(mm) + 1).padStart(2, '0')}`
+      endDate = `${nextMonth}-01`
+    }
+
+    // Fetch all expenses in the date range
+    const { data, error } = await this.supabase
+      .from('expenses')
+      .select('amount, category, expense_date')
+      .eq('user_id', userId)
+      .gte('expense_date', startDate)
+      .lt('expense_date', endDate)
+
+    if (error) {
+      console.error('获取统计v2失败:', error)
+      throw new Error('获取统计失败')
+    }
+
+    let totalExpense = 0
+    const categoryMap: Record<string, { total: number; count: number }> = {}
+
+    // For year view: quarterly data; for quarter view: monthly data; for month view: daily data
+    const periodMap: Record<string, number> = {}
+
+    data.forEach((item) => {
+      const amount = Number(item.amount)
+      totalExpense += amount
+
+      // Category aggregation
+      if (!categoryMap[item.category]) {
+        categoryMap[item.category] = { total: 0, count: 0 }
+      }
+      categoryMap[item.category].total += amount
+      categoryMap[item.category].count += 1
+
+      // Period aggregation
+      let periodKey: string
+      if (period === 'year') {
+        const m = Number(item.expense_date.slice(5, 7))
+        periodKey = `Q${Math.ceil(m / 3)}`
+      } else if (period === 'quarter') {
+        periodKey = item.expense_date.slice(0, 7) // YYYY-MM
+      } else {
+        periodKey = item.expense_date // full date
+      }
+      if (!periodMap[periodKey]) {
+        periodMap[periodKey] = 0
+      }
+      periodMap[periodKey] += amount
+    })
+
+    const categories = Object.entries(categoryMap)
+      .map(([category, val]) => ({
+        category,
+        total: Math.round(val.total * 100) / 100,
+        count: val.count,
+        percent: totalExpense > 0 ? Math.round(val.total / totalExpense * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.total - a.total)
+
+    let trends: { label: string; total: number }[] = []
+
+    if (period === 'year') {
+      // Always show all 4 quarters
+      trends = ['Q1', 'Q2', 'Q3', 'Q4'].map(q => ({
+        label: q,
+        total: Math.round((periodMap[q] || 0) * 100) / 100,
+      }))
+    } else if (period === 'quarter') {
+      // Show 3 months of the quarter
+      const q = quarter || 1
+      const startMonth = (q - 1) * 3 + 1
+      trends = [0, 1, 2].map(i => {
+        const m = startMonth + i
+        const key = `${year}-${String(m).padStart(2, '0')}`
+        return {
+          label: `${m}月`,
+          total: Math.round((periodMap[key] || 0) * 100) / 100,
+        }
+      })
+    } else {
+      // Daily for month
+      trends = Object.entries(periodMap)
+        .map(([date, total]) => ({ label: date.slice(8), total: Math.round(total * 100) / 100 }))
+        .sort((a, b) => Number(a.label) - Number(b.label))
+    }
+
+    return {
+      total_expense: Math.round(totalExpense * 100) / 100,
+      categories,
+      trends,
+    }
+  }
 }
