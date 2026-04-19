@@ -278,117 +278,115 @@ const BillsPage = () => {
       {/* Edit Modal */}
       {editingRecord && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh' }}>
-            <ScrollView scrollY className="w-full">
-              <View className="p-5 pb-4">
-            {/* Header */}
-            <View className="flex flex-row items-center justify-between mb-4">
-              <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
-              <Button className="bg-transparent p-0" onClick={closeEditModal}>
-                <X size={20} color="#999" />
-              </Button>
-            </View>
-
-            {/* Name + Amount on same line */}
-            <View className="flex flex-row items-center gap-3 mb-3">
-              <View className="flex-1">
-                <Text className="block text-sm text-gray-500 mb-1">名称</Text>
-                <View className="bg-white rounded-lg px-3 py-2">
-                  <Input
-                    className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                    value={editNote}
-                    onInput={(e) => setEditNote(e.detail.value)}
-                    placeholder="消费名称"
-                  />
-                </View>
-              </View>
-              <View style={{ width: '100px' }}>
-                <Text className="block text-sm text-gray-500 mb-1">金额</Text>
-                <View className="bg-white rounded-lg px-3 py-2">
-                  <Input
-                    className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                    type="digit"
-                    value={editAmount}
-                    onInput={(e) => setEditAmount(e.detail.value)}
-                    placeholder="金额"
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Category selector */}
-            <View className="mb-3">
-              <Text className="block text-sm text-gray-500 mb-1">分类</Text>
-              {/* Search */}
-              <View className="bg-white rounded-lg px-3 py-2 mb-2 flex flex-row items-center gap-2">
-                <Search size={14} color="#999" />
-                <Input
-                  className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0 flex-1"
-                  placeholder="搜索分类..."
-                  value={catSearch}
-                  onInput={(e) => setCatSearch(e.detail.value)}
-                />
-              </View>
-              {/* Category list */}
-              <ScrollView scrollY className="w-full bg-white rounded-lg" style={{ maxHeight: '100px' }}>
-                <View className="flex flex-row flex-wrap gap-1 p-2">
-                  {filteredCategories.map(cat => (
-                    <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
-                      <Badge className={`${editCategory === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
-                        {cat.name}
-                      </Badge>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-              {/* Custom category */}
-              {showCatInput ? (
-                <View className="flex flex-row items-center gap-2 mt-2">
-                  <View className="flex-1 bg-white rounded-lg px-3 py-2">
-                    <Input
-                      className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                      placeholder="输入新分类名称"
-                      value={newCatName}
-                      onInput={(e) => setNewCatName(e.detail.value)}
-                      onConfirm={() => handleCreateCategory()}
-                    />
-                  </View>
-                  <Button className="bg-[#3D7C5F] text-white text-xs px-3 py-2 rounded-lg" onClick={handleCreateCategory}>
-                    <Text className="text-white text-xs">添加</Text>
+          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <ScrollView scrollY className="flex-1 w-full">
+              <View className="p-5 pb-2">
+                {/* Header */}
+                <View className="flex flex-row items-center justify-between mb-4">
+                  <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
+                  <Button className="bg-transparent p-0" onClick={closeEditModal}>
+                    <X size={20} color="#999" />
                   </Button>
                 </View>
-              ) : (
-                <View
-                  className="flex flex-row items-center gap-1 mt-2 px-2 py-1 bg-[#FFF7ED] rounded-lg self-start"
-                  onClick={() => setShowCatInput(true)}
-                >
-                  <Plus size={12} color="#E8913A" />
-                  <Text className="text-xs text-[#E8913A]">自定义分类</Text>
-                </View>
-              )}
-            </View>
 
-            {/* Date */}
-            <View className="mb-2">
-              <Text className="block text-sm text-gray-500 mb-1">日期</Text>
-              <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                  <Calendar size={14} color="#3D7C5F" />
-                  <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                {/* Name + Amount on same line */}
+                <View className="flex flex-row items-center gap-3 mb-3">
+                  <View className="flex-1">
+                    <Text className="block text-sm text-gray-500 mb-1">名称</Text>
+                    <View className="bg-white rounded-lg px-3 py-2">
+                      <Input
+                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        value={editNote}
+                        onInput={(e) => setEditNote(e.detail.value)}
+                        placeholder="消费名称"
+                      />
+                    </View>
+                  </View>
+                  <View style={{ width: '100px' }}>
+                    <Text className="block text-sm text-gray-500 mb-1">金额</Text>
+                    <View className="bg-white rounded-lg px-3 py-2">
+                      <Input
+                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        type="digit"
+                        value={editAmount}
+                        onInput={(e) => setEditAmount(e.detail.value)}
+                        placeholder="金额"
+                      />
+                    </View>
+                  </View>
                 </View>
-              </Picker>
-            </View>
 
-            {/* Save button */}
-            <Button
-              className="w-full bg-[#3D7C5F] text-white rounded-xl"
-              onClick={handleSaveEdit}
-              disabled={isUpdating}
-            >
-              {isUpdating ? '保存中...' : '保存修改'}
-            </Button>
-            </View>
+                {/* Category selector */}
+                <View className="mb-3">
+                  <Text className="block text-sm text-gray-500 mb-1">分类</Text>
+                  <View className="bg-white rounded-lg px-3 py-2 mb-2 flex flex-row items-center gap-2">
+                    <Search size={14} color="#999" />
+                    <Input
+                      className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0 flex-1"
+                      placeholder="搜索分类..."
+                      value={catSearch}
+                      onInput={(e) => setCatSearch(e.detail.value)}
+                    />
+                  </View>
+                  <ScrollView scrollY className="w-full bg-white rounded-lg" style={{ maxHeight: '80px' }}>
+                    <View className="flex flex-row flex-wrap gap-1 p-2">
+                      {filteredCategories.map(cat => (
+                        <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
+                          <Badge className={`${editCategory === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
+                            {cat.name}
+                          </Badge>
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                  {showCatInput ? (
+                    <View className="flex flex-row items-center gap-2 mt-2">
+                      <View className="flex-1 bg-white rounded-lg px-3 py-2">
+                        <Input
+                          className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                          placeholder="输入新分类名称"
+                          value={newCatName}
+                          onInput={(e) => setNewCatName(e.detail.value)}
+                          onConfirm={() => handleCreateCategory()}
+                        />
+                      </View>
+                      <Button className="bg-[#3D7C5F] text-white text-xs px-3 py-2 rounded-lg" onClick={handleCreateCategory}>
+                        <Text className="text-white text-xs">添加</Text>
+                      </Button>
+                    </View>
+                  ) : (
+                    <View
+                      className="flex flex-row items-center gap-1 mt-2 px-2 py-1 bg-[#FFF7ED] rounded-lg self-start"
+                      onClick={() => setShowCatInput(true)}
+                    >
+                      <Plus size={12} color="#E8913A" />
+                      <Text className="text-xs text-[#E8913A]">自定义分类</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Date */}
+                <View className="mb-2">
+                  <Text className="block text-sm text-gray-500 mb-1">日期</Text>
+                  <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
+                    <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                      <Calendar size={14} color="#3D7C5F" />
+                      <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                    </View>
+                  </Picker>
+                </View>
+              </View>
             </ScrollView>
+            {/* Save button - OUTSIDE ScrollView, always visible */}
+            <View className="p-4 pt-2" style={{ borderTop: '1px solid #E5E1D8' }}>
+              <Button
+                className="w-full bg-[#3D7C5F] text-white rounded-xl"
+                onClick={handleSaveEdit}
+                disabled={isUpdating}
+              >
+                {isUpdating ? '保存中...' : '保存修改'}
+              </Button>
+            </View>
           </View>
         </View>
       )}
