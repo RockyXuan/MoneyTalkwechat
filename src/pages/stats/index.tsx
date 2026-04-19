@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -336,6 +336,33 @@ const StatsPage = () => {
     setShowPicker(true)
   }
 
+  // Compute date range for current period selection
+  const getDateRange = () => {
+    if (period === 'year') {
+      return { startDate: `${currentYear}-01-01`, endDate: `${currentYear + 1}-01-01` }
+    } else if (period === 'quarter') {
+      const startMonth = (currentQuarter - 1) * 3 + 1
+      const endMonth = startMonth + 3
+      const endYear = endMonth > 12 ? currentYear + 1 : currentYear
+      const adjEndMonth = endMonth > 12 ? endMonth - 12 : endMonth
+      return {
+        startDate: `${currentYear}-${String(startMonth).padStart(2, '0')}-01`,
+        endDate: `${endYear}-${String(adjEndMonth).padStart(2, '0')}-01`,
+      }
+    } else {
+      const [y, m] = currentMonth.split('-')
+      const nextMonth = m === '12' ? `${Number(y) + 1}-01` : `${y}-${String(Number(m) + 1).padStart(2, '0')}`
+      return { startDate: `${currentMonth}-01`, endDate: `${nextMonth}-01` }
+    }
+  }
+
+  const navigateToCategory = (catName: string) => {
+    const range = getDateRange()
+    Taro.navigateTo({
+      url: `/pages/category-detail/index?category=${encodeURIComponent(catName)}&startDate=${range.startDate}&endDate=${range.endDate}&periodLabel=${encodeURIComponent(periodLabel)}`,
+    })
+  }
+
   return (
     <View className="min-h-full bg-[#F7F5F0]">
       {/* Full-screen backdrop when picker is open */}
@@ -416,7 +443,7 @@ const StatsPage = () => {
             </View>
           )}
 
-          {/* Category Detail List */}
+          {/* Category Detail List — clickable to view records */}
           {categoryStats.length > 0 && (
             <View className="px-4 mb-4">
               <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">分类明细</Text>
@@ -424,7 +451,7 @@ const StatsPage = () => {
                 const color = getColor(cat.category, i)
                 return (
                   <Card key={cat.category} className="border-[#E5E1D8] mb-2">
-                    <CardContent className="p-3">
+                    <CardContent className="p-3" onClick={() => navigateToCategory(cat.category)}>
                       <View className="flex flex-row items-center justify-between mb-2">
                         <View className="flex flex-row items-center gap-2">
                           <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
@@ -434,6 +461,7 @@ const StatsPage = () => {
                         <View className="flex flex-row items-center gap-2">
                           <Text className="block text-base font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
                           <Badge className="bg-[#F7F5F0] text-gray-500 text-xs">{cat.percent}%</Badge>
+                          <ChevronRight size={14} color="#999" />
                         </View>
                       </View>
                       <View className="w-full h-2 bg-[#F7F5F0] rounded-full">
