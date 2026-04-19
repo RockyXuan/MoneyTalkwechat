@@ -4,7 +4,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, ChartNoAxesColumn } from 'lucide-react-taro'
+import { ChevronLeft, ChevronRight, ChevronDown, ChartNoAxesColumn } from 'lucide-react-taro'
 import { useExpenseStore } from '@/store/expense-store'
 
 type PeriodType = 'year' | 'quarter' | 'month'
@@ -34,15 +34,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   '其他': '#6B7280',
 }
 
-// Generate color palette for unknown categories
 const PALETTE = ['#3D7C5F', '#4A90D9', '#E8913A', '#9B7CB8', '#E06C75', '#56B6C2', '#D19A66', '#C678DD', '#61AFEF', '#6B7280', '#F59E0B', '#10B981']
 const getColor = (category: string, index: number) => CATEGORY_COLORS[category] || PALETTE[index % PALETTE.length]
 
-/** Conic-gradient pie chart component */
+const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4']
+const QUARTER_SUBS = ['1-3月', '4-6月', '7-9月', '10-12月']
+
+/** Conic-gradient pie chart */
 const PieChart = ({ data, total }: { data: CategoryStat[]; total: number }) => {
   if (total === 0 || data.length === 0) return null
-
-  // Build conic-gradient stops
   let cumulativePercent = 0
   const stops = data.map((item, i) => {
     const startPercent = cumulativePercent
@@ -50,21 +51,14 @@ const PieChart = ({ data, total }: { data: CategoryStat[]; total: number }) => {
     const color = getColor(item.category, i)
     return `${color} ${startPercent}% ${cumulativePercent}%`
   })
-
   const gradient = `conic-gradient(${stops.join(', ')})`
 
   return (
     <View className="flex flex-row items-center gap-4">
-      {/* Pie circle */}
       <View
         className="rounded-full flex-shrink-0"
-        style={{
-          width: '120px',
-          height: '120px',
-          background: gradient,
-        }}
+        style={{ width: '120px', height: '120px', background: gradient }}
       />
-      {/* Legend */}
       <View className="flex-1">
         {data.slice(0, 6).map((item, i) => (
           <View key={item.category} className="flex flex-row items-center gap-2 mb-1">
@@ -105,6 +99,170 @@ const TrendChart = ({ trends }: { trends: TrendItem[] }) => {
   )
 }
 
+/** Period Picker Panel — slides down below the header */
+const PeriodPicker = ({
+  period,
+  pickerYear,
+  currentYear,
+  currentQuarter,
+  currentMonth,
+  onSelect,
+  onChangePickerYear,
+  onClose,
+}: {
+  period: PeriodType
+  pickerYear: number
+  currentYear: number
+  currentQuarter: number
+  currentMonth: string
+  onSelect: (value: number | string) => void
+  onChangePickerYear: (year: number) => void
+  onClose: () => void
+}) => {
+  const now = new Date()
+
+  if (period === 'month') {
+    // 12 months in 4x3 grid
+    const currentM = currentMonth.split('-')[1] ? Number(currentMonth.split('-')[1]) : now.getMonth() + 1
+    return (
+      <View className="bg-white rounded-2xl p-4 mx-4 shadow-lg">
+        {/* Year nav */}
+        <View className="flex flex-row items-center justify-between mb-4">
+          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
+            <ChevronLeft size={20} color="#3D7C5F" />
+          </Button>
+          <Text className="block text-base font-semibold text-[#1A1A1A]">{pickerYear}年</Text>
+          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
+            <ChevronRight size={20} color="#3D7C5F" />
+          </Button>
+        </View>
+        {/* Month grid */}
+        <View className="flex flex-row flex-wrap">
+          {MONTH_LABELS.map((label, i) => {
+            const m = i + 1
+            const isActive = pickerYear === currentYear && m === currentM
+            const isCurrent = pickerYear === now.getFullYear() && m === now.getMonth() + 1
+            return (
+              <View
+                key={m}
+                className="w-1/4 mb-3"
+                onClick={() => {
+                  const val = `${pickerYear}-${String(m).padStart(2, '0')}`
+                  onSelect(val)
+                  onClose()
+                }}
+              >
+                <View
+                  className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+                >
+                  <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                    {label}
+                  </Text>
+                </View>
+              </View>
+            )
+          })}
+        </View>
+      </View>
+    )
+  }
+
+  if (period === 'quarter') {
+    return (
+      <View className="bg-white rounded-2xl p-4 mx-4 shadow-lg">
+        {/* Year nav */}
+        <View className="flex flex-row items-center justify-between mb-4">
+          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
+            <ChevronLeft size={20} color="#3D7C5F" />
+          </Button>
+          <Text className="block text-base font-semibold text-[#1A1A1A]">{pickerYear}年</Text>
+          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
+            <ChevronRight size={20} color="#3D7C5F" />
+          </Button>
+        </View>
+        {/* Quarter grid 2x2 */}
+        <View className="flex flex-row flex-wrap">
+          {QUARTER_LABELS.map((label, i) => {
+            const q = i + 1
+            const isActive = pickerYear === currentYear && q === currentQuarter
+            const isCurrent = pickerYear === now.getFullYear() && q === Math.ceil((now.getMonth() + 1) / 3)
+            return (
+              <View
+                key={q}
+                className="w-1/2 mb-3"
+                onClick={() => {
+                  onSelect(q)
+                  onClose()
+                }}
+              >
+                <View
+                  className={`mx-1 py-4 rounded-xl flex flex-col items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+                >
+                  <Text className={`block text-lg font-bold ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                    {label}
+                  </Text>
+                  <Text className={`block text-xs mt-1 ${isActive ? 'text-white' : 'text-gray-400'}`} style={isActive ? { opacity: 0.7 } : {}}>
+                    {QUARTER_SUBS[i]}
+                  </Text>
+                </View>
+              </View>
+            )
+          })}
+        </View>
+      </View>
+    )
+  }
+
+  // Year picker — show a range of years in 4x3 grid
+  const baseYear = Math.floor(pickerYear / 12) * 12
+  const startYear = baseYear - 4 // show a wider range
+  const years: number[] = []
+  for (let i = 0; i < 12; i++) {
+    years.push(startYear + i)
+  }
+
+  return (
+    <View className="bg-white rounded-2xl p-4 mx-4 shadow-lg">
+      {/* Decade nav */}
+      <View className="flex flex-row items-center justify-between mb-4">
+        <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 12)}>
+          <ChevronLeft size={20} color="#3D7C5F" />
+        </Button>
+        <Text className="block text-base font-semibold text-[#1A1A1A]">{startYear} - {startYear + 11}</Text>
+        <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 12)}>
+          <ChevronRight size={20} color="#3D7C5F" />
+        </Button>
+      </View>
+      {/* Year grid */}
+      <View className="flex flex-row flex-wrap">
+        {years.map(y => {
+          const isActive = y === currentYear
+          const isCurrent = y === now.getFullYear()
+          return (
+            <View
+              key={y}
+              className="w-1/4 mb-3"
+              onClick={() => {
+                onSelect(y)
+                onClose()
+              }}
+            >
+              <View
+                className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+              >
+                <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                  {y}
+                </Text>
+              </View>
+            </View>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────
 const StatsPage = () => {
   const now = new Date()
   const [currentYear, setCurrentYear] = useState(now.getFullYear())
@@ -116,59 +274,31 @@ const StatsPage = () => {
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([])
   const [trends, setTrends] = useState<TrendItem[]>([])
 
+  // Picker state
+  const [showPicker, setShowPicker] = useState(false)
+  const [pickerYear, setPickerYear] = useState(now.getFullYear())
+
   const { dataVersion } = useExpenseStore()
   const lastFetchedVersion = useRef(0)
 
   const loadData = async () => {
-    const data = await useExpenseStore.getState().getStatsV2(period, currentYear, period === 'quarter' ? currentQuarter : undefined, period === 'month' ? currentMonth : undefined)
+    const data = await useExpenseStore.getState().getStatsV2(
+      period,
+      currentYear,
+      period === 'quarter' ? currentQuarter : undefined,
+      period === 'month' ? currentMonth : undefined,
+    )
     setTotalExpense(data.total_expense)
     setCategoryStats(data.categories)
     setTrends(data.trends)
     lastFetchedVersion.current = dataVersion
   }
 
-  useDidShow(() => {
-    loadData()
-  })
+  useDidShow(() => { loadData() })
 
   if (dataVersion !== lastFetchedVersion.current && dataVersion > 0) {
     lastFetchedVersion.current = dataVersion
     loadData()
-  }
-
-  // Navigation handlers
-  const prevPeriod = () => {
-    if (period === 'year') {
-      setCurrentYear(y => y - 1)
-    } else if (period === 'quarter') {
-      if (currentQuarter === 1) {
-        setCurrentQuarter(4)
-        setCurrentYear(y => y - 1)
-      } else {
-        setCurrentQuarter(q => (q - 1) as 1 | 2 | 3 | 4)
-      }
-    } else {
-      const [y, m] = currentMonth.split('-').map(Number)
-      const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`
-      setCurrentMonth(prev)
-    }
-  }
-
-  const nextPeriod = () => {
-    if (period === 'year') {
-      setCurrentYear(y => y + 1)
-    } else if (period === 'quarter') {
-      if (currentQuarter === 4) {
-        setCurrentQuarter(1)
-        setCurrentYear(y => y + 1)
-      } else {
-        setCurrentQuarter(q => (q + 1) as 1 | 2 | 3 | 4)
-      }
-    } else {
-      const [y, m] = currentMonth.split('-').map(Number)
-      const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`
-      setCurrentMonth(next)
-    }
   }
 
   // Display label
@@ -176,155 +306,202 @@ const StatsPage = () => {
     ? `${currentYear}年`
     : period === 'quarter'
       ? `${currentYear}年 Q${currentQuarter}`
-      : currentMonth
+      : `${currentMonth.split('-')[0]}年${Number(currentMonth.split('-')[1])}月`
 
-  // Period toggle buttons
   const periodOptions: { key: PeriodType; label: string }[] = [
     { key: 'year', label: '按年' },
     { key: 'quarter', label: '按季' },
     { key: 'month', label: '按月' },
   ]
 
+  const handlePickerSelect = (value: number | string) => {
+    if (period === 'month') {
+      setCurrentMonth(value as string)
+      setCurrentYear(Number((value as string).split('-')[0]))
+    } else if (period === 'quarter') {
+      setCurrentQuarter(value as 1 | 2 | 3 | 4)
+      setCurrentYear(pickerYear)
+    } else {
+      setCurrentYear(value as number)
+    }
+  }
+
+  const handlePeriodChange = (key: PeriodType) => {
+    setPeriod(key)
+    setShowPicker(false)
+  }
+
+  const openPicker = () => {
+    setPickerYear(currentYear)
+    setShowPicker(true)
+  }
+
   return (
-    <ScrollView scrollY className="min-h-full bg-[#F7F5F0]">
-      <View className="pb-24">
-        {/* Year Selector + Period Toggle */}
-        <View className="px-4 pt-4 pb-2">
-          {/* Year navigation */}
-          <View className="flex flex-row items-center justify-between mb-3">
-            <Button className="bg-transparent p-0" onClick={prevPeriod}>
-              <ChevronLeft size={24} color="#3D7C5F" />
-            </Button>
-            <Text className="block text-lg font-semibold text-[#1A1A1A]">{periodLabel}</Text>
-            <Button className="bg-transparent p-0" onClick={nextPeriod}>
-              <ChevronRight size={24} color="#3D7C5F" />
-            </Button>
+    <View className="min-h-full bg-[#F7F5F0]">
+      {/* Full-screen backdrop when picker is open */}
+      {showPicker && (
+        <View
+          className="fixed inset-0 z-40"
+          style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}
+          onClick={() => setShowPicker(false)}
+        />
+      )}
+
+      <ScrollView scrollY className="min-h-full">
+        <View className="pb-24">
+          {/* Period Toggle + Clickable Label */}
+          <View className="px-4 pt-4 pb-2">
+            {/* Period toggle */}
+            <View className="flex flex-row bg-white rounded-xl p-1 mb-3">
+              {periodOptions.map(opt => (
+                <View
+                  key={opt.key}
+                  className={`flex-1 py-2 rounded-lg ${period === opt.key ? 'bg-[#3D7C5F]' : ''}`}
+                  onClick={() => handlePeriodChange(opt.key)}
+                >
+                  <Text className={`block text-center text-sm font-medium ${period === opt.key ? 'text-white' : 'text-gray-500'}`}>
+                    {opt.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Clickable period label */}
+            <View
+              className="flex flex-row items-center justify-center py-2"
+              onClick={openPicker}
+            >
+              <Text className="block text-lg font-semibold text-[#1A1A1A]">{periodLabel}</Text>
+              <ChevronDown size={18} color="#3D7C5F" className="ml-1" />
+            </View>
           </View>
-          {/* Period toggle */}
-          <View className="flex flex-row bg-white rounded-xl p-1">
-            {periodOptions.map(opt => (
-              <View
-                key={opt.key}
-                className={`flex-1 py-2 rounded-lg ${period === opt.key ? 'bg-[#3D7C5F]' : ''}`}
-                onClick={() => setPeriod(opt.key)}
-              >
-                <Text className={`block text-center text-sm font-medium ${period === opt.key ? 'text-white' : 'text-gray-500'}`}>
-                  {opt.label}
+
+          {/* Picker Panel (expand below header) */}
+          {showPicker && (
+            <View className="mb-4 z-50 relative">
+              <PeriodPicker
+                period={period}
+                pickerYear={pickerYear}
+                currentYear={currentYear}
+                currentQuarter={currentQuarter}
+                currentMonth={currentMonth}
+                onSelect={handlePickerSelect}
+                onChangePickerYear={setPickerYear}
+                onClose={() => setShowPicker(false)}
+              />
+            </View>
+          )}
+
+          {/* Total Expense Card */}
+          <View className="px-4 mb-4">
+            <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
+              <CardContent className="p-4 flex flex-col items-center">
+                <Text className="block text-white text-sm mb-1">
+                  {period === 'year' ? '年度总支出' : period === 'quarter' ? '季度总支出' : '本月总支出'}
                 </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Total Expense Card */}
-        <View className="px-4 mb-4">
-          <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
-            <CardContent className="p-4 flex flex-col items-center">
-              <Text className="block text-white text-sm mb-1">
-                {period === 'year' ? '年度总支出' : period === 'quarter' ? '季度总支出' : '本月总支出'}
-              </Text>
-              <Text className="block text-white text-3xl font-bold">¥{totalExpense.toFixed(2)}</Text>
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* Expense Distribution Pie Chart */}
-        {categoryStats.length > 0 && (
-          <View className="px-4 mb-4">
-            <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">消费分布</Text>
-            <Card className="border-[#E5E1D8]">
-              <CardContent className="p-4">
-                <PieChart data={categoryStats} total={totalExpense} />
+                <Text className="block text-white text-3xl font-bold">¥{totalExpense.toFixed(2)}</Text>
               </CardContent>
             </Card>
           </View>
-        )}
 
-        {/* Category Detail List */}
-        {categoryStats.length > 0 && (
-          <View className="px-4 mb-4">
-            <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">分类明细</Text>
-            {categoryStats.map((cat, i) => {
-              const color = getColor(cat.category, i)
-              return (
-                <Card key={cat.category} className="border-[#E5E1D8] mb-2">
-                  <CardContent className="p-3">
-                    <View className="flex flex-row items-center justify-between mb-2">
-                      <View className="flex flex-row items-center gap-2">
-                        <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                        <Text className="block text-sm font-medium text-[#1A1A1A]">{cat.category}</Text>
-                        <Text className="block text-xs text-gray-500">{cat.count}笔</Text>
-                      </View>
-                      <View className="flex flex-row items-center gap-2">
-                        <Text className="block text-base font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
-                        <Badge className="bg-[#F7F5F0] text-gray-500 text-xs">{cat.percent}%</Badge>
-                      </View>
-                    </View>
-                    <View className="w-full h-2 bg-[#F7F5F0] rounded-full">
-                      <View
-                        className="h-2 rounded-full"
-                        style={{ width: `${cat.percent}%`, backgroundColor: color }}
-                      />
-                    </View>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </View>
-        )}
+          {/* Expense Distribution Pie Chart */}
+          {categoryStats.length > 0 && (
+            <View className="px-4 mb-4">
+              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">消费分布</Text>
+              <Card className="border-[#E5E1D8]">
+                <CardContent className="p-4">
+                  <PieChart data={categoryStats} total={totalExpense} />
+                </CardContent>
+              </Card>
+            </View>
+          )}
 
-        {/* Trend Chart */}
-        {trends.length > 0 && (
-          <View className="px-4 mb-4">
-            <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">
-              {period === 'year' ? '季度趋势' : period === 'quarter' ? '月度趋势' : '每日消费趋势'}
-            </Text>
-            <Card className="border-[#E5E1D8]">
-              <CardContent className="p-4">
-                <TrendChart trends={trends} />
-              </CardContent>
-            </Card>
-          </View>
-        )}
-
-        {/* Category Pie Chart - Top 3 Focus */}
-        {categoryStats.length >= 3 && (
-          <View className="px-4 mb-4">
-            <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">TOP3 消费分类</Text>
-            <Card className="border-[#E5E1D8]">
-              <CardContent className="p-4">
-                <PieChart data={categoryStats.slice(0, 3)} total={totalExpense} />
-                <View className="mt-3 pt-3" style={{ borderTop: '1px solid #E5E1D8' }}>
-                  {categoryStats.slice(0, 3).map((cat, i) => {
-                    const color = getColor(cat.category, i)
-                    return (
-                      <View key={cat.category} className="flex flex-row items-center justify-between mb-2">
+          {/* Category Detail List */}
+          {categoryStats.length > 0 && (
+            <View className="px-4 mb-4">
+              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">分类明细</Text>
+              {categoryStats.map((cat, i) => {
+                const color = getColor(cat.category, i)
+                return (
+                  <Card key={cat.category} className="border-[#E5E1D8] mb-2">
+                    <CardContent className="p-3">
+                      <View className="flex flex-row items-center justify-between mb-2">
                         <View className="flex flex-row items-center gap-2">
                           <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                          <Text className="block text-sm text-[#1A1A1A]">{cat.category}</Text>
+                          <Text className="block text-sm font-medium text-[#1A1A1A]">{cat.category}</Text>
+                          <Text className="block text-xs text-gray-500">{cat.count}笔</Text>
                         </View>
-                        <View className="flex flex-row items-center gap-3">
-                          <Text className="block text-sm font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
-                          <Text className="block text-xs text-gray-500">{cat.percent}%</Text>
+                        <View className="flex flex-row items-center gap-2">
+                          <Text className="block text-base font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
+                          <Badge className="bg-[#F7F5F0] text-gray-500 text-xs">{cat.percent}%</Badge>
                         </View>
                       </View>
-                    )
-                  })}
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-        )}
+                      <View className="w-full h-2 bg-[#F7F5F0] rounded-full">
+                        <View
+                          className="h-2 rounded-full"
+                          style={{ width: `${cat.percent}%`, backgroundColor: color }}
+                        />
+                      </View>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </View>
+          )}
 
-        {/* Empty State */}
-        {categoryStats.length === 0 && (
-          <View className="flex flex-col items-center justify-center mt-24">
-            <ChartNoAxesColumn size={48} color="#E5E1D8" />
-            <Text className="block text-gray-400 mt-4 text-sm">该时段暂无数据</Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          {/* Trend Chart */}
+          {trends.length > 0 && (
+            <View className="px-4 mb-4">
+              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">
+                {period === 'year' ? '季度趋势' : period === 'quarter' ? '月度趋势' : '每日消费趋势'}
+              </Text>
+              <Card className="border-[#E5E1D8]">
+                <CardContent className="p-4">
+                  <TrendChart trends={trends} />
+                </CardContent>
+              </Card>
+            </View>
+          )}
+
+          {/* TOP3 Pie */}
+          {categoryStats.length >= 3 && (
+            <View className="px-4 mb-4">
+              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">TOP3 消费分类</Text>
+              <Card className="border-[#E5E1D8]">
+                <CardContent className="p-4">
+                  <PieChart data={categoryStats.slice(0, 3)} total={totalExpense} />
+                  <View className="mt-3 pt-3" style={{ borderTop: '1px solid #E5E1D8' }}>
+                    {categoryStats.slice(0, 3).map((cat, i) => {
+                      const color = getColor(cat.category, i)
+                      return (
+                        <View key={cat.category} className="flex flex-row items-center justify-between mb-2">
+                          <View className="flex flex-row items-center gap-2">
+                            <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                            <Text className="block text-sm text-[#1A1A1A]">{cat.category}</Text>
+                          </View>
+                          <View className="flex flex-row items-center gap-3">
+                            <Text className="block text-sm font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
+                            <Text className="block text-xs text-gray-500">{cat.percent}%</Text>
+                          </View>
+                        </View>
+                      )
+                    })}
+                  </View>
+                </CardContent>
+              </Card>
+            </View>
+          )}
+
+          {/* Empty State */}
+          {categoryStats.length === 0 && (
+            <View className="flex flex-col items-center justify-center mt-24">
+              <ChartNoAxesColumn size={48} color="#E5E1D8" />
+              <Text className="block text-gray-400 mt-4 text-sm">该时段暂无数据</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   )
 }
 
