@@ -24,6 +24,7 @@ export interface ParsedSubscription {
   cycle: 'monthly' | 'quarterly' | 'yearly'
   category: string
   description: string
+  start_date?: string
   _edited?: boolean
 }
 

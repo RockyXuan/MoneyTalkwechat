@@ -55,10 +55,26 @@ export class SubscriptionsService {
     if (body.amount !== undefined) updates.amount = body.amount
     if (body.cycle !== undefined) updates.cycle = body.cycle
     if (body.category !== undefined) updates.category = body.category
-    if (body.start_date !== undefined) updates.start_date = body.start_date
-    if (body.next_billing_date !== undefined) updates.next_billing_date = body.next_billing_date
     if (body.description !== undefined) updates.description = body.description
     if (body.is_active !== undefined) updates.is_active = body.is_active
+
+    // If start_date or cycle changes, recalculate next_billing_date automatically
+    if (body.start_date !== undefined) {
+      updates.start_date = body.start_date
+      // Only auto-recalculate if next_billing_date is not explicitly provided
+      if (body.next_billing_date === undefined) {
+        // Need to get current cycle if not provided
+        const cycle = body.cycle || (await this.getCycle(id))
+        updates.next_billing_date = this.calcNextBilling(body.start_date, cycle)
+      }
+    }
+    if (body.next_billing_date !== undefined) updates.next_billing_date = body.next_billing_date
+
+    // If only cycle changes (not start_date), also recalculate next_billing_date
+    if (body.cycle !== undefined && body.start_date === undefined && body.next_billing_date === undefined) {
+      const startDate = body.start_date || (await this.getStartDate(id))
+      updates.next_billing_date = this.calcNextBilling(startDate, body.cycle)
+    }
 
     const { data, error } = await this.supabase
       .from('subscriptions')
@@ -72,6 +88,26 @@ export class SubscriptionsService {
       throw new Error('更新订阅失败')
     }
     return data
+  }
+
+  private async getCycle(id: string): Promise<string> {
+    const { data, error } = await this.supabase
+      .from('subscriptions')
+      .select('cycle')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data.cycle
+  }
+
+  private async getStartDate(id: string): Promise<string> {
+    const { data, error } = await this.supabase
+      .from('subscriptions')
+      .select('start_date')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data.start_date
   }
 
   async remove(id: string, userId: string) {

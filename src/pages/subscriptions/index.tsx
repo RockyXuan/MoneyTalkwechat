@@ -56,6 +56,7 @@ const SubscriptionsPage = () => {
   const [editAmount, setEditAmount] = useState('')
   const [editCycle, setEditCycle] = useState('monthly')
   const [editDate, setEditDate] = useState('')
+  const [editStartDate, setEditStartDate] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
 
   const { fetchSubscriptions, createSubscription, updateSubscription, deleteSubscription, parseSubscription } = useExpenseStore()
@@ -108,6 +109,7 @@ const SubscriptionsPage = () => {
           cycle: item.cycle,
           category: item.category || '订阅',
           description: item.description || '',
+          start_date: item.start_date || new Date().toISOString().slice(0, 10),
         })
       }
       Taro.showToast({ title: '已添加订阅', icon: 'success' })
@@ -142,6 +144,7 @@ const SubscriptionsPage = () => {
     setEditAmount(String(sub.amount))
     setEditCycle(sub.cycle)
     setEditDate(sub.next_billing_date)
+    setEditStartDate(sub.start_date)
   }
 
   const closeEditModal = () => {
@@ -157,6 +160,7 @@ const SubscriptionsPage = () => {
         amount: Number(editAmount),
         cycle: editCycle,
         next_billing_date: editDate,
+        start_date: editStartDate,
       })
       Taro.showToast({ title: '已更新', icon: 'success' })
       closeEditModal()
@@ -289,6 +293,25 @@ const SubscriptionsPage = () => {
                           ))}
                         </View>
                       </View>
+                      {/* Start date */}
+                      <View className="mb-3">
+                        <Text className="block text-xs text-gray-500 mb-1">起始日期</Text>
+                        <Picker
+                          mode="date"
+                          value={currentParsed.start_date || new Date().toISOString().slice(0, 10)}
+                          onChange={(e) => {
+                            const idx = editingIdx!
+                            const updated = [...parsedResults]
+                            updated[idx] = { ...updated[idx], start_date: e.detail.value, _edited: true }
+                            setParsedResults(updated)
+                          }}
+                        >
+                          <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                            <Calendar size={14} color="#3D7C5F" />
+                            <Text className="text-sm text-[#3D7C5F]">{currentParsed.start_date || new Date().toISOString().slice(0, 10)}</Text>
+                          </View>
+                        </Picker>
+                      </View>
                       {/* Cost preview */}
                       {currentParsed.amount != null && (
                         <View className="bg-[#E8F5EE] rounded-lg p-3 mb-3">
@@ -372,6 +395,8 @@ const SubscriptionsPage = () => {
                           </View>
                           {/* Next billing */}
                           <View className="flex flex-row items-center gap-2 mt-1">
+                            <Text className="block text-xs text-gray-500">起始: {sub.start_date}</Text>
+                            <Text className="block text-xs text-gray-400">|</Text>
                             <Text className="block text-xs text-gray-500">下次扣费: {sub.next_billing_date}</Text>
                             <Text className="block text-xs font-medium" style={{ color: urgencyColor }}>
                               {days <= 0 ? '今天' : `${days}天后`}
@@ -448,6 +473,17 @@ const SubscriptionsPage = () => {
                       </View>
                     </Picker>
                   </View>
+                </View>
+
+                {/* Start date */}
+                <View className="mb-3">
+                  <Text className="block text-sm text-gray-500 mb-1">起始日期</Text>
+                  <Picker mode="date" value={editStartDate} onChange={(e) => setEditStartDate(e.detail.value)}>
+                    <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                      <Calendar size={14} color="#3D7C5F" />
+                      <Text className="text-sm text-[#3D7C5F]">{editStartDate}</Text>
+                    </View>
+                  </Picker>
                 </View>
 
                 {/* Next billing date */}
