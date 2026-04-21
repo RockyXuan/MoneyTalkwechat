@@ -25,6 +25,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  app.use(express.text({ type: ['text/xml', 'application/xml'], limit: '1mb' }));
 
   // 全局拦截器：统一将 POST 请求的 201 状态码改为 200
   app.useGlobalInterceptors(new HttpStatusInterceptor());

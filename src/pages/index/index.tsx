@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, PenLine, X, Pencil, Calendar, Plus, Search } from 'lucide-react-taro'
-import { useExpenseStore, ParsedExpense } from '@/store/expense-store'
+import { Send, Loader, PenLine, X, Pencil, Calendar, Plus, Search, MessageCircle, Check } from 'lucide-react-taro'
+import { useExpenseStore, ParsedExpense, PendingRecord } from '@/store/expense-store'
 
 const IndexPage = () => {
   const [inputText, setInputText] = useState('')
@@ -30,12 +30,71 @@ const IndexPage = () => {
   const [showCatInput, setShowCatInput] = useState(false)
   const [newCatName, setNewCatName] = useState('')
 
-  const { addExpenses, categories, fetchCategories, createCategory, savePreference } = useExpenseStore()
+  // Pending records from WeChat
+  const [pendingRecords, setPendingRecords] = useState<PendingRecord[]>([])
+  const [showPending, setShowPending] = useState(false)
+
+  const { addExpenses, categories, fetchCategories, createCategory, savePreference,
+    fetchPendingRecords, confirmPendingRecord, rejectPendingRecord, createSubscription } = useExpenseStore()
 
   // Load categories on mount
   useEffect(() => {
     fetchCategories()
+    loadPendingRecords()
   }, [])
+
+  const loadPendingRecords = async () => {
+    try {
+      const records = await fetchPendingRecords()
+      setPendingRecords(records)
+      if (records.length > 0) setShowPending(true)
+    } catch (err) {
+      console.error('loadPendingRecords error:', err)
+    }
+  }
+
+  const handleConfirmPending = async (record: PendingRecord) => {
+    try {
+      const confirmed = await confirmPendingRecord(record.id)
+      if (record.record_type === 'subscription') {
+        const pd = confirmed.parsed_data || {}
+        await createSubscription({
+          name: pd.name || record.raw_text,
+          amount: pd.amount || 0,
+          cycle: pd.cycle || 'monthly',
+          category: pd.category || '订阅',
+          start_date: pd.start_date || new Date().toISOString().slice(0, 10),
+          description: pd.description || '',
+          billing_type: pd.billing_type || 'auto',
+        })
+      } else {
+        const pd = confirmed.parsed_data || {}
+        await addExpenses([{
+          note: pd.note || record.raw_text,
+          amount: pd.amount || 0,
+          category: pd.category || '其他',
+          tag: pd.tag || null,
+          expense_date: pd.expense_date || new Date().toISOString().slice(0, 10),
+          confidence: pd.confidence || 0.5,
+        }], record.raw_text)
+      }
+      Taro.showToast({ title: '已确认', icon: 'success' })
+      loadPendingRecords()
+    } catch (err) {
+      console.error('confirmPending error:', err)
+      Taro.showToast({ title: '确认失败', icon: 'none' })
+    }
+  }
+
+  const handleRejectPending = async (id: string) => {
+    try {
+      await rejectPendingRecord(id)
+      Taro.showToast({ title: '已拒绝', icon: 'success' })
+      loadPendingRecords()
+    } catch (err) {
+      console.error('rejectPending error:', err)
+    }
+  }
 
   const getDefaultDate = () => {
     if (dateMode === 'month') {
@@ -134,9 +193,69 @@ const IndexPage = () => {
       {/* Scrollable content area */}
       <ScrollView scrollY className="flex-1">
         {/* Header */}
-        <View className="px-4 pt-4 pb-2">
+        <View className="px-4 pt-4 pb-2 flex flex-row items-center justify-between">
           <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
+          {pendingRecords.length > 0 && (
+            <View className="flex flex-row items-center gap-1" onClick={() => setShowPending(!showPending)}>
+              <MessageCircle size={16} color="#E8913A" />
+              <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{pendingRecords.length} 条待确认</Badge>
+            </View>
+          )}
         </View>
+
+        {/* Pending Records from WeChat */}
+        {showPending && pendingRecords.length > 0 && (
+          <View className="px-4 mb-2">
+            <View className="flex flex-row items-center gap-2 mb-2">
+              <MessageCircle size={16} color="#E8913A" />
+              <Text className="block text-sm font-semibold text-[#1A1A1A]">微信待确认</Text>
+              <Text className="block text-xs text-gray-400">来自公众号的消息</Text>
+            </View>
+            {pendingRecords.map(record => {
+              const pd = record.parsed_data || {}
+              const isSub = record.record_type === 'subscription'
+              return (
+                <Card key={record.id} className="border-[#FFF0E0] mb-2">
+                  <CardContent className="p-3">
+                    <View className="flex flex-row items-center gap-2 mb-1">
+                      <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
+                        {isSub ? '订阅' : '支出'}
+                      </Badge>
+                      <Text className="block text-xs text-gray-400">来自微信</Text>
+                    </View>
+                    <View className="flex flex-row items-center justify-between mb-2">
+                      <Text className="block text-sm font-medium text-[#1A1A1A]">
+                        {pd.note || pd.name || record.raw_text}
+                      </Text>
+                      <Text className="block text-base font-bold text-[#E8913A]">
+                        {pd.amount != null ? `¥${pd.amount}` : '金额待定'}
+                      </Text>
+                    </View>
+                    <View className="flex flex-row items-center gap-2 mb-2">
+                      <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.category || '未分类'}</Badge>
+                      {isSub && <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.cycle === 'monthly' ? '每月' : pd.cycle === 'quarterly' ? '每季度' : pd.cycle === 'yearly' ? '每年' : pd.cycle}</Badge>}
+                    </View>
+                    <View className="flex flex-row gap-2">
+                      <View style={{ flex: 1 }}>
+                        <Button className="w-full bg-[#3D7C5F] text-white rounded-lg" onClick={() => handleConfirmPending(record)}>
+                          <View className="flex flex-row items-center justify-center gap-1">
+                            <Check size={12} color="#fff" />
+                            <Text className="text-white text-xs">确认</Text>
+                          </View>
+                        </Button>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button className="w-full bg-white border border-[#E5E1D8] text-gray-500 rounded-lg" onClick={() => handleRejectPending(record.id)}>
+                          <Text className="text-xs text-gray-500">忽略</Text>
+                        </Button>
+                      </View>
+                    </View>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </View>
+        )}
 
         {/* Date Selector */}
         <View className="px-4 mb-2">

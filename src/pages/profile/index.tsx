@@ -4,8 +4,9 @@ import { View, Text } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { User, BookOpen, Brain, Trash2 } from 'lucide-react-taro'
+import { User, BookOpen, Brain, Trash2, MessageCircle, Check, Copy } from 'lucide-react-taro'
 import { Network } from '@/network'
+import { useExpenseStore } from '@/store/expense-store'
 
 const DEFAULT_USER_ID = 'default_user'
 
@@ -20,9 +21,14 @@ interface Preference {
 
 const ProfilePage = () => {
   const [preferences, setPreferences] = useState<Preference[]>([])
+  const [bindingCode, setBindingCode] = useState<string | null>(null)
+  const [isBound, setIsBound] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const { generateBindingCode, getWechatBindingStatus } = useExpenseStore()
 
   useEffect(() => {
     fetchPreferences()
+    checkBindingStatus()
   }, [])
 
   // Refresh on every tab switch
@@ -57,6 +63,39 @@ const ProfilePage = () => {
     } catch (err) {
       console.error('删除偏好失败', err)
       Taro.showToast({ title: '删除失败', icon: 'none' })
+    }
+  }
+
+  const checkBindingStatus = async () => {
+    try {
+      const result = await getWechatBindingStatus()
+      setIsBound(result.bound)
+    } catch (err) {
+      console.error('检查绑定状态失败', err)
+    }
+  }
+
+  const handleGenerateCode = async () => {
+    setIsGenerating(true)
+    try {
+      const result = await generateBindingCode()
+      if (result.bound) {
+        setIsBound(true)
+        Taro.showToast({ title: '已绑定', icon: 'success' })
+      } else if (result.binding_code) {
+        setBindingCode(result.binding_code)
+      }
+    } catch (err) {
+      console.error('生成绑定码失败', err)
+      Taro.showToast({ title: '获取失败', icon: 'none' })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleCopyCode = () => {
+    if (bindingCode) {
+      Taro.setClipboardData({ data: bindingCode })
     }
   }
 
@@ -117,6 +156,62 @@ const ProfilePage = () => {
         )}
       </View>
 
+      {/* WeChat Binding Section */}
+      <View className="px-4 mt-4">
+        <View className="flex flex-row items-center gap-2 mb-2">
+          <MessageCircle size={18} color="#3D7C5F" />
+          <Text className="block text-base font-semibold text-[#1A1A1A]">微信绑定</Text>
+          {isBound && <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">已绑定</Badge>}
+        </View>
+
+        {isBound ? (
+          <Card className="border-[#E5E1D8]">
+            <CardContent className="p-4 flex flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-full bg-[#E8F5EE] flex items-center justify-center">
+                <Check size={20} color="#3D7C5F" />
+              </View>
+              <View className="flex flex-col flex-1">
+                <Text className="block text-sm font-medium text-[#1A1A1A]">已绑定微信公众号</Text>
+                <Text className="block text-xs text-gray-400">直接对公众号发消息即可记账</Text>
+              </View>
+            </CardContent>
+          </Card>
+        ) : bindingCode ? (
+          <Card className="border-[#E5E1D8]">
+            <CardContent className="p-4">
+              <View className="flex flex-col items-center mb-3">
+                <Text className="block text-xs text-gray-500 mb-2">您的绑定码</Text>
+                <Text className="block text-3xl font-bold text-[#3D7C5F] tracking-widest">{bindingCode}</Text>
+              </View>
+              <View className="bg-[#F7F5F0] rounded-lg p-3 mb-3">
+                <Text className="block text-xs text-gray-600 mb-1">使用步骤：</Text>
+                <Text className="block text-xs text-gray-500">1. 在微信搜索关注记账服务公众号</Text>
+                <Text className="block text-xs text-gray-500">2. 对公众号发送「绑定 {bindingCode}」</Text>
+                <Text className="block text-xs text-gray-500">3. 绑定成功后直接发消息即可记账</Text>
+              </View>
+              <Button className="w-full bg-[#3D7C5F] text-white" onClick={handleCopyCode}>
+                <View className="flex flex-row items-center justify-center gap-2">
+                  <Copy size={14} color="#fff" />
+                  <Text className="text-white text-sm">复制绑定码</Text>
+                </View>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-[#E5E1D8]">
+            <CardContent className="p-4">
+              <Text className="block text-sm text-gray-600 mb-3">绑定微信公众号后，可直接在微信聊天中记账，无需打开小程序。</Text>
+              <Button className="w-full bg-[#3D7C5F] text-white" onClick={handleGenerateCode} disabled={isGenerating}>
+                <View className="flex flex-row items-center justify-center gap-2">
+                  <MessageCircle size={14} color="#fff" />
+                  <Text className="text-white text-sm">{isGenerating ? '生成中...' : '获取绑定码'}</Text>
+                </View>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </View>
+
       {/* Tips */}
       <View className="px-4 mt-4">
         <View className="flex flex-row items-center gap-2 mb-2">
@@ -130,6 +225,7 @@ const ProfilePage = () => {
               <Text className="block text-sm text-gray-600">2. 小程序端可按住语音按钮说话记账</Text>
               <Text className="block text-sm text-gray-600">3. 修改 AI 分类后，系统会记住你的偏好</Text>
               <Text className="block text-sm text-gray-600">4. 用得越多，AI 越懂你的消费习惯</Text>
+              <Text className="block text-sm text-gray-600">5. 绑定微信公众号后，直接发消息即可记账</Text>
             </View>
           </CardContent>
         </Card>

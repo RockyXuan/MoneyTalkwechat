@@ -46,6 +46,23 @@ export interface SubscriptionRecord {
   updated_at: string
 }
 
+export interface PendingRecord {
+  id: string
+  user_id: string
+  source: string
+  raw_text: string
+  record_type: 'expense' | 'subscription'
+  parsed_data: Record<string, any>
+  status: 'pending' | 'confirmed' | 'rejected'
+  created_at: string
+  confirmed_at: string | null
+}
+
+interface WechatBindingStatus {
+  bound: boolean
+  openid?: string
+}
+
 export interface ParsedExpense {
   amount: number | null
   category: string
@@ -107,6 +124,13 @@ interface ExpenseStore {
     by_category: Record<string, { total_yearly: number; total_monthly: number; count: number; items: { name: string; amount: number; cycle: string; yearly: number; monthly: number }[] }>
   }>
   fetchSubscriptionBillings: (startDate: string, endDate: string) => Promise<any[]>
+  // WeChat binding & pending records
+  generateBindingCode: () => Promise<{ binding_code?: string; bound?: boolean }>
+  getWechatBindingStatus: () => Promise<WechatBindingStatus>
+  fetchPendingRecords: () => Promise<PendingRecord[]>
+  confirmPendingRecord: (id: string) => Promise<PendingRecord>
+  rejectPendingRecord: (id: string) => Promise<void>
+  getPendingCount: () => Promise<number>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
@@ -421,6 +445,95 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     } catch (err) {
       console.error('fetchSubscriptionBillings error:', err)
       return []
+    }
+  },
+
+  generateBindingCode: async () => {
+    try {
+      const res = await Network.request({
+        url: '/api/wechat/binding-code',
+        method: 'POST',
+        data: { user_id: DEFAULT_USER_ID },
+      })
+      console.log('store generateBindingCode:', res.data)
+      const data = res.data as { code: number; msg: string; data: { binding_code?: string; bound?: boolean } }
+      return data?.data || {}
+    } catch (err) {
+      console.error('generateBindingCode error:', err)
+      throw err
+    }
+  },
+
+  getWechatBindingStatus: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/wechat/binding-status?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store getWechatBindingStatus:', res.data)
+      const data = res.data as { code: number; msg: string; data: WechatBindingStatus }
+      return data?.data || { bound: false }
+    } catch (err) {
+      console.error('getWechatBindingStatus error:', err)
+      return { bound: false }
+    }
+  },
+
+  fetchPendingRecords: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/wechat/pending-records?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store fetchPendingRecords:', res.data)
+      const data = res.data as { code: number; msg: string; data: PendingRecord[] }
+      return data?.data || []
+    } catch (err) {
+      console.error('fetchPendingRecords error:', err)
+      return []
+    }
+  },
+
+  confirmPendingRecord: async (id: string) => {
+    try {
+      const res = await Network.request({
+        url: `/api/wechat/pending-records/${id}/confirm`,
+        method: 'POST',
+        data: { user_id: DEFAULT_USER_ID },
+      })
+      console.log('store confirmPendingRecord:', res.data)
+      const data = res.data as { code: number; msg: string; data: PendingRecord }
+      set(s => ({ dataVersion: s.dataVersion + 1 }))
+      return data?.data
+    } catch (err) {
+      console.error('confirmPendingRecord error:', err)
+      throw err
+    }
+  },
+
+  rejectPendingRecord: async (id: string) => {
+    try {
+      await Network.request({
+        url: `/api/wechat/pending-records/${id}/reject`,
+        method: 'POST',
+        data: { user_id: DEFAULT_USER_ID },
+      })
+      console.log('store rejectPendingRecord:', id)
+    } catch (err) {
+      console.error('rejectPendingRecord error:', err)
+      throw err
+    }
+  },
+
+  getPendingCount: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/wechat/pending-count?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store getPendingCount:', res.data)
+      const data = res.data as { code: number; msg: string; data: { count: number } }
+      return data?.data?.count || 0
+    } catch (err) {
+      console.error('getPendingCount error:', err)
+      return 0
     }
   },
 }))
