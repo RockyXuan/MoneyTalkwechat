@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Receipt, Trash2, ChevronLeft, ChevronRight, Calendar, Search, Plus, X, Repeat } from 'lucide-react-taro'
+import { Receipt, Trash2, ChevronLeft, ChevronRight, Calendar, Search, Plus, X, Zap, Hand } from 'lucide-react-taro'
 import { useExpenseStore, ExpenseRecord } from '@/store/expense-store'
 
 interface GroupedExpenses {
@@ -80,6 +80,7 @@ const BillsPage = () => {
         is_subscription: true,
         cycle: item.cycle,
         subscription_id: item.subscription_id,
+        billing_type: item.billing_type || 'auto',
       })
       total += Number(item.amount)
     })
@@ -284,7 +285,7 @@ const BillsPage = () => {
                   <View className="flex flex-col flex-1" onClick={() => !item.is_subscription && openEditModal(item)}>
                     {/* Line 1: Name + Amount */}
                     <View className="flex flex-row items-center gap-2">
-                      {item.is_subscription && <Repeat size={12} color="#E8913A" />}
+                      {item.is_subscription && (item.billing_type === 'manual' ? <Hand size={12} color="#E8913A" /> : <Zap size={12} color="#3D7C5F" />)}
                       <Text className="block text-base font-semibold text-[#1A1A1A]">
                         {item.note || item.raw_text || '未命名'}
                       </Text>
@@ -294,9 +295,14 @@ const BillsPage = () => {
                     <View className="flex flex-row items-center gap-2 mt-1">
                       <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
                       {item.is_subscription && (
-                        <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
-                          {item.cycle === 'monthly' ? '月订阅' : item.cycle === 'quarterly' ? '季订阅' : item.cycle === 'yearly' ? '年订阅' : '订阅'}
-                        </Badge>
+                        <View className="flex flex-row items-center gap-1">
+                          <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
+                            {item.cycle === 'monthly' ? '月订阅' : item.cycle === 'quarterly' ? '季订阅' : item.cycle === 'yearly' ? '年订阅' : '订阅'}
+                          </Badge>
+                          <Badge className={`${item.billing_type === 'manual' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'} text-xs`}>
+                            {item.billing_type === 'manual' ? '手动' : '自动'}
+                          </Badge>
+                        </View>
                       )}
                       {!item.is_subscription && item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
                     </View>

@@ -36,7 +36,7 @@ export class SubscriptionsController {
   @Post()
   @HttpCode(200)
   async create(
-    @Body() body: { user_id: string; name: string; amount: number; cycle: string; category?: string; start_date?: string; next_billing_date?: string; description?: string },
+    @Body() body: { user_id: string; name: string; amount: number; cycle: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; billing_type?: string },
   ) {
     console.log('POST /api/subscriptions', body)
     const data = await this.subsService.create(body)
@@ -47,7 +47,7 @@ export class SubscriptionsController {
   @HttpCode(200)
   async update(
     @Param('id') id: string,
-    @Body() body: { name?: string; amount?: number; cycle?: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; is_active?: boolean },
+    @Body() body: { name?: string; amount?: number; cycle?: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; is_active?: boolean; billing_type?: string },
   ) {
     console.log('PATCH /api/subscriptions/:id', { id, body })
     const data = await this.subsService.update(id, body)

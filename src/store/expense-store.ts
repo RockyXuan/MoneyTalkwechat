@@ -16,6 +16,7 @@ export interface ExpenseRecord {
   is_subscription?: boolean
   cycle?: string
   subscription_id?: string
+  billing_type?: string
 }
 
 export interface ParsedSubscription {
@@ -25,6 +26,7 @@ export interface ParsedSubscription {
   category: string
   description: string
   start_date?: string
+  billing_type?: 'auto' | 'manual'
   _edited?: boolean
 }
 
@@ -38,6 +40,7 @@ export interface SubscriptionRecord {
   start_date: string
   next_billing_date: string
   description: string
+  billing_type: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -92,7 +95,7 @@ interface ExpenseStore {
   savePreference: (keyWord: string, mappedValue: string) => Promise<void>
   // Subscriptions
   fetchSubscriptions: () => Promise<SubscriptionRecord[]>
-  createSubscription: (body: { name: string; amount: number; cycle: string; category?: string; start_date?: string; description?: string }) => Promise<SubscriptionRecord>
+  createSubscription: (body: { name: string; amount: number; cycle: string; category?: string; start_date?: string; description?: string; billing_type?: string }) => Promise<SubscriptionRecord>
   updateSubscription: (id: string, body: Partial<SubscriptionRecord>) => Promise<SubscriptionRecord>
   deleteSubscription: (id: string) => Promise<void>
   parseSubscription: (text: string) => Promise<ParsedSubscription[]>

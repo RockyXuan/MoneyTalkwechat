@@ -22,7 +22,7 @@ export class SubscriptionsService {
     return data
   }
 
-  async create(body: { user_id: string; name: string; amount: number; cycle: string; category?: string; start_date?: string; next_billing_date?: string; description?: string }) {
+  async create(body: { user_id: string; name: string; amount: number; cycle: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; billing_type?: string }) {
     const startDate = body.start_date || new Date().toISOString().slice(0, 10)
     const nextBilling = body.next_billing_date || this.calcNextBilling(startDate, body.cycle)
 
@@ -37,6 +37,7 @@ export class SubscriptionsService {
         start_date: startDate,
         next_billing_date: nextBilling,
         description: body.description || '',
+        billing_type: body.billing_type || 'auto',
         is_active: true,
       })
       .select()
@@ -49,7 +50,7 @@ export class SubscriptionsService {
     return data
   }
 
-  async update(id: string, body: { name?: string; amount?: number; cycle?: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; is_active?: boolean }) {
+  async update(id: string, body: { name?: string; amount?: number; cycle?: string; category?: string; start_date?: string; next_billing_date?: string; description?: string; is_active?: boolean; billing_type?: string }) {
     const updates: any = { updated_at: new Date().toISOString() }
     if (body.name !== undefined) updates.name = body.name
     if (body.amount !== undefined) updates.amount = body.amount
@@ -57,6 +58,7 @@ export class SubscriptionsService {
     if (body.category !== undefined) updates.category = body.category
     if (body.description !== undefined) updates.description = body.description
     if (body.is_active !== undefined) updates.is_active = body.is_active
+    if (body.billing_type !== undefined) updates.billing_type = body.billing_type
 
     // If start_date or cycle changes, recalculate next_billing_date automatically
     if (body.start_date !== undefined) {
@@ -266,6 +268,7 @@ export class SubscriptionsService {
       is_subscription: true
       subscription_id: string
       note: string
+      billing_type: string
     }[] = []
 
     const start = new Date(startDate)
@@ -295,6 +298,7 @@ export class SubscriptionsService {
               is_subscription: true,
               subscription_id: sub.id,
               note: sub.name,
+              billing_type: sub.billing_type || 'auto',
             })
           }
           current.setDate(current.getDate() + 7)
@@ -313,6 +317,7 @@ export class SubscriptionsService {
               is_subscription: true,
               subscription_id: sub.id,
               note: sub.name,
+              billing_type: sub.billing_type || 'auto',
             })
           }
           current.setMonth(current.getMonth() + months)

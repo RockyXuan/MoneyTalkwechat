@@ -146,6 +146,7 @@ export class AiService {
     "amount": 数字（每次扣费金额，单位：元）,
     "cycle": "monthly" | "quarterly" | "yearly",
     "category": "订阅",
+    "billing_type": "auto" | "manual",
     "description": "简要描述，可选"
   }
 ]
@@ -154,6 +155,12 @@ export class AiService {
 - 每月、月付、月扣 → "monthly"
 - 每季度、季付 → "quarterly"
 - 每年、年付、年扣、年度 → "yearly"
+
+## billing_type 判断规则（必须严格遵守）
+- 自动扣费、自动续费、会员、订阅、到期自动扣 → "auto"
+- 手动续费、手动购买、找人买、闲鱼买、代充、朋友帮买、需要自己去找 → "manual"
+- 如果用户提到需要自己主动操作续费（如找渠道、找人代购），则标记为 "manual"
+- 默认为 "auto"，除非明确表示需要手动操作
 
 ## name 命名规则
 - name 必须是极短的名称，2-8个字
@@ -164,6 +171,7 @@ export class AiService {
   - "月付iCloud 6元" → name: "iCloud"
   - "每季度付网易云音乐45元" → name: "网易云音乐"
   - "每月扣Netflix会员费89元" → name: "Netflix"
+  - "CAD快速看图 闲鱼买的 每年80" → name: "CAD快速看图", billing_type: "manual"
 
 ## 注意事项
 1. 如果用户说了多个订阅，必须拆分为数组中的多个条目
@@ -197,6 +205,7 @@ export class AiService {
             cycle: item.cycle || 'monthly',
             category: item.category || '订阅',
             description: item.description || '',
+            billing_type: item.billing_type || 'auto',
           }))
         }
       }
@@ -211,6 +220,7 @@ export class AiService {
           cycle: parsed.cycle || 'monthly',
           category: parsed.category || '订阅',
           description: parsed.description || '',
+          billing_type: parsed.billing_type || 'auto',
         }]
       }
 
@@ -221,6 +231,7 @@ export class AiService {
         cycle: 'monthly',
         category: '订阅',
         description: '',
+        billing_type: 'auto',
       }]
     } catch (err) {
       console.error('AI parseSubscription error:', err)
@@ -230,6 +241,7 @@ export class AiService {
         cycle: 'monthly',
         category: '订阅',
         description: '',
+        billing_type: 'auto',
       }]
     }
   }

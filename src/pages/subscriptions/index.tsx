@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, X, CreditCard, Trash2, Calendar, Repeat } from 'lucide-react-taro'
+import { Send, Loader, X, CreditCard, Trash2, Calendar, Zap, Hand } from 'lucide-react-taro'
 import { useExpenseStore, ParsedSubscription, SubscriptionRecord } from '@/store/expense-store'
 
 const CYCLE_LABELS: Record<string, string> = {
@@ -39,6 +39,52 @@ const daysUntil = (dateStr: string) => {
   return diff
 }
 
+/** Calculate how many billing cycles have occurred from start_date to now, and total charged */
+const calcTotalCharged = (amount: number, cycle: string, startDate: string) => {
+  const start = new Date(startDate)
+  const now = new Date()
+  if (start > now) return { cycles: 0, total: 0 }
+
+  let cycles = 0
+  switch (cycle) {
+    case 'yearly': {
+      let d = new Date(start)
+      while (d <= now) {
+        cycles++
+        d.setFullYear(d.getFullYear() + 1)
+      }
+      break
+    }
+    case 'quarterly': {
+      let d = new Date(start)
+      while (d <= now) {
+        cycles++
+        d.setMonth(d.getMonth() + 3)
+      }
+      break
+    }
+    case 'weekly': {
+      let d = new Date(start)
+      while (d <= now) {
+        cycles++
+        d.setDate(d.getDate() + 7)
+      }
+      break
+    }
+    default: { // monthly
+      let d = new Date(start)
+      while (d <= now) {
+        cycles++
+        d.setMonth(d.getMonth() + 1)
+      }
+      break
+    }
+  }
+
+  const total = Math.round(cycles * amount * 100) / 100
+  return { cycles, total }
+}
+
 const SubscriptionsPage = () => {
   const [inputText, setInputText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
@@ -57,6 +103,7 @@ const SubscriptionsPage = () => {
   const [editCycle, setEditCycle] = useState('monthly')
   const [editDate, setEditDate] = useState('')
   const [editStartDate, setEditStartDate] = useState('')
+  const [editBillingType, setEditBillingType] = useState<'auto' | 'manual'>('auto')
   const [isUpdating, setIsUpdating] = useState(false)
 
   const { fetchSubscriptions, createSubscription, updateSubscription, deleteSubscription, parseSubscription } = useExpenseStore()
@@ -110,6 +157,7 @@ const SubscriptionsPage = () => {
           category: item.category || '订阅',
           description: item.description || '',
           start_date: item.start_date || new Date().toISOString().slice(0, 10),
+          billing_type: item.billing_type || 'auto',
         })
       }
       Taro.showToast({ title: '已添加订阅', icon: 'success' })
@@ -145,6 +193,7 @@ const SubscriptionsPage = () => {
     setEditCycle(sub.cycle)
     setEditDate(sub.next_billing_date)
     setEditStartDate(sub.start_date)
+    setEditBillingType(sub.billing_type === 'manual' ? 'manual' : 'auto')
   }
 
   const closeEditModal = () => {
@@ -161,6 +210,7 @@ const SubscriptionsPage = () => {
         cycle: editCycle,
         next_billing_date: editDate,
         start_date: editStartDate,
+        billing_type: editBillingType,
       })
       Taro.showToast({ title: '已更新', icon: 'success' })
       closeEditModal()
@@ -293,6 +343,30 @@ const SubscriptionsPage = () => {
                           ))}
                         </View>
                       </View>
+                      {/* Billing type */}
+                      <View className="mb-3">
+                        <Text className="block text-xs text-gray-500 mb-1">续费方式</Text>
+                        <View className="flex flex-row gap-2">
+                          {([
+                            { key: 'auto' as const, label: '自动续费', icon: 'zap' },
+                            { key: 'manual' as const, label: '手动续费', icon: 'hand' },
+                          ]).map(opt => (
+                            <View
+                              key={opt.key}
+                              className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${currentParsed.billing_type === opt.key ? 'bg-[#3D7C5F]' : 'bg-white'}`}
+                              onClick={() => {
+                                const idx = editingIdx!
+                                const updated = [...parsedResults]
+                                updated[idx] = { ...updated[idx], billing_type: opt.key, _edited: true }
+                                setParsedResults(updated)
+                              }}
+                            >
+                              {opt.icon === 'zap' ? <Zap size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#999'} /> : <Hand size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#999'} />}
+                              <Text className={`block text-xs ${currentParsed.billing_type === opt.key ? 'text-white' : 'text-gray-500'}`}>{opt.label}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
                       {/* Start date */}
                       <View className="mb-3">
                         <Text className="block text-xs text-gray-500 mb-1">起始日期</Text>
@@ -381,29 +455,41 @@ const SubscriptionsPage = () => {
                 const costs = calcCosts(Number(sub.amount), sub.cycle)
                 const days = daysUntil(sub.next_billing_date)
                 const urgencyColor = days <= 3 ? '#EF4444' : days <= 7 ? '#E8913A' : '#3D7C5F'
+                const charged = calcTotalCharged(Number(sub.amount), sub.cycle, sub.start_date)
+                const isAuto = sub.billing_type !== 'manual'
                 return (
-                  <Card key={sub.id} className="border-[#E5E1D8] mb-2">
-                    <CardContent className="p-3">
-                      <View className="flex flex-row items-center justify-between">
+                  <Card key={sub.id} className="border-[#E5E1D8] mb-3">
+                    <CardContent className="p-4">
+                      <View className="flex flex-row items-start justify-between">
                         <View className="flex flex-col flex-1" onClick={() => openEditModal(sub)}>
-                          {/* Name + Amount */}
-                          <View className="flex flex-row items-center gap-2">
-                            <Repeat size={14} color="#3D7C5F" />
+                          {/* Row 1: Name + Amount + Cycle badge + Auto/Manual badge */}
+                          <View className="flex flex-row items-center gap-2 mb-2">
+                            {isAuto ? <Zap size={14} color="#3D7C5F" /> : <Hand size={14} color="#E8913A" />}
                             <Text className="block text-base font-semibold text-[#1A1A1A]">{sub.name}</Text>
                             <Text className="block text-lg font-bold text-[#E8913A]">¥{sub.amount}</Text>
                             <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Badge>
+                            <Badge className={`${isAuto ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'} text-xs`}>
+                              {isAuto ? '自动' : '手动'}
+                            </Badge>
                           </View>
-                          {/* Next billing */}
-                          <View className="flex flex-row items-center gap-2 mt-1">
+                          {/* Row 2: Start date + Next billing + countdown */}
+                          <View className="flex flex-row items-center gap-2 mb-2">
                             <Text className="block text-xs text-gray-500">起始: {sub.start_date}</Text>
-                            <Text className="block text-xs text-gray-400">|</Text>
+                            <Text className="block text-xs text-gray-300">|</Text>
                             <Text className="block text-xs text-gray-500">下次扣费: {sub.next_billing_date}</Text>
                             <Text className="block text-xs font-medium" style={{ color: urgencyColor }}>
                               {days <= 0 ? '今天' : `${days}天后`}
                             </Text>
                           </View>
-                          {/* Yearly cost */}
-                          <Text className="block text-xs text-gray-400 mt-1">≈ ¥{costs.yearly.toFixed(2)}/年 · ¥{costs.monthly.toFixed(2)}/月 · ¥{costs.daily.toFixed(2)}/天</Text>
+                          {/* Row 3: Total charged from start to now */}
+                          {charged.cycles > 0 && (
+                            <View className="bg-[#FFF8F0] rounded-lg px-3 py-2 mb-2 flex flex-row items-center justify-between">
+                              <Text className="block text-xs text-[#B8782A]">累计已扣 {charged.cycles} 次</Text>
+                              <Text className="block text-sm font-bold text-[#E8913A]">¥{charged.total.toFixed(2)}</Text>
+                            </View>
+                          )}
+                          {/* Row 4: Cost breakdown */}
+                          <Text className="block text-xs text-gray-400">≈ ¥{costs.yearly.toFixed(2)}/年 · ¥{costs.monthly.toFixed(2)}/月 · ¥{costs.daily.toFixed(2)}/天</Text>
                         </View>
                         <Button className="bg-transparent p-0" onClick={() => handleDelete(sub.id)}>
                           <Trash2 size={16} color="#EF4444" />
@@ -472,6 +558,26 @@ const SubscriptionsPage = () => {
                         <Text className="text-sm text-[#3D7C5F]">{CYCLE_LABELS[editCycle]}</Text>
                       </View>
                     </Picker>
+                  </View>
+                </View>
+
+                {/* Billing type */}
+                <View className="mb-3">
+                  <Text className="block text-sm text-gray-500 mb-1">续费方式</Text>
+                  <View className="flex flex-row gap-2">
+                    {([
+                      { key: 'auto' as const, label: '自动续费', icon: 'zap' },
+                      { key: 'manual' as const, label: '手动续费', icon: 'hand' },
+                    ]).map(opt => (
+                      <View
+                        key={opt.key}
+                        className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${editBillingType === opt.key ? 'bg-[#3D7C5F]' : 'bg-white'}`}
+                        onClick={() => setEditBillingType(opt.key)}
+                      >
+                        {opt.icon === 'zap' ? <Zap size={12} color={editBillingType === opt.key ? '#fff' : '#999'} /> : <Hand size={12} color={editBillingType === opt.key ? '#fff' : '#999'} />}
+                        <Text className={`block text-xs ${editBillingType === opt.key ? 'text-white' : 'text-gray-500'}`}>{opt.label}</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
 
