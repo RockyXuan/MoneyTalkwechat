@@ -1,6 +1,7 @@
 export default defineAppConfig({
   pages: [
     'pages/index/index',
+    'pages/subscriptions/index',
     'pages/bills/index',
     'pages/stats/index',
     'pages/profile/index',
@@ -23,6 +24,12 @@ export default defineAppConfig({
         text: '记一笔',
         iconPath: './assets/tabbar/pen-line.png',
         selectedIconPath: './assets/tabbar/pen-line-active.png',
+      },
+      {
+        pagePath: 'pages/subscriptions/index',
+        text: '订阅',
+        iconPath: './assets/tabbar/credit-card.png',
+        selectedIconPath: './assets/tabbar/credit-card-active.png',
       },
       {
         pagePath: 'pages/bills/index',

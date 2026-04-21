@@ -15,6 +15,30 @@ export interface ExpenseRecord {
   created_at: string
 }
 
+export interface ParsedSubscription {
+  name: string
+  amount: number | null
+  cycle: 'monthly' | 'quarterly' | 'yearly'
+  category: string
+  description: string
+  _edited?: boolean
+}
+
+export interface SubscriptionRecord {
+  id: string
+  user_id: string
+  name: string
+  amount: number
+  cycle: string
+  category: string
+  start_date: string
+  next_billing_date: string
+  description: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface ParsedExpense {
   amount: number | null
   category: string
@@ -62,6 +86,19 @@ interface ExpenseStore {
   fetchCategories: () => Promise<CategoryItem[]>
   createCategory: (name: string) => Promise<CategoryItem>
   savePreference: (keyWord: string, mappedValue: string) => Promise<void>
+  // Subscriptions
+  fetchSubscriptions: () => Promise<SubscriptionRecord[]>
+  createSubscription: (body: { name: string; amount: number; cycle: string; category?: string; start_date?: string; description?: string }) => Promise<SubscriptionRecord>
+  updateSubscription: (id: string, body: Partial<SubscriptionRecord>) => Promise<SubscriptionRecord>
+  deleteSubscription: (id: string) => Promise<void>
+  parseSubscription: (text: string) => Promise<ParsedSubscription[]>
+  getSubscriptionStats: () => Promise<{
+    total_yearly: number
+    total_monthly: number
+    total_daily: number
+    subscription_count: number
+    by_category: Record<string, { total_yearly: number; total_monthly: number; count: number; items: { name: string; amount: number; cycle: string; yearly: number; monthly: number }[] }>
+  }>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
@@ -269,6 +306,99 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
       console.log('store savePreference:', keyWord, '→', mappedValue)
     } catch (err) {
       console.error('savePreference error:', err)
+    }
+  },
+
+  // ─── Subscriptions ────────────────────────────────────
+  fetchSubscriptions: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/subscriptions?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store fetchSubscriptions:', res.data)
+      const data = res.data as { code: number; msg: string; data: SubscriptionRecord[] }
+      return data?.data || []
+    } catch (err) {
+      console.error('fetchSubscriptions error:', err)
+      return []
+    }
+  },
+
+  createSubscription: async (body) => {
+    try {
+      const res = await Network.request({
+        url: '/api/subscriptions',
+        method: 'POST',
+        data: { user_id: DEFAULT_USER_ID, ...body },
+      })
+      console.log('store createSubscription:', res.data)
+      const data = res.data as { code: number; msg: string; data: SubscriptionRecord }
+      set(s => ({ dataVersion: s.dataVersion + 1 }))
+      return data?.data
+    } catch (err) {
+      console.error('createSubscription error:', err)
+      throw err
+    }
+  },
+
+  updateSubscription: async (id, body) => {
+    try {
+      const res = await Network.request({
+        url: `/api/subscriptions/${id}`,
+        method: 'PATCH',
+        data: body,
+      })
+      console.log('store updateSubscription:', res.data)
+      const data = res.data as { code: number; msg: string; data: SubscriptionRecord }
+      set(s => ({ dataVersion: s.dataVersion + 1 }))
+      return data?.data
+    } catch (err) {
+      console.error('updateSubscription error:', err)
+      throw err
+    }
+  },
+
+  deleteSubscription: async (id) => {
+    try {
+      await Network.request({
+        url: `/api/subscriptions/${id}?user_id=${DEFAULT_USER_ID}`,
+        method: 'DELETE',
+      })
+      console.log('store deleteSubscription:', id)
+      set(s => ({ dataVersion: s.dataVersion + 1 }))
+    } catch (err) {
+      console.error('deleteSubscription error:', err)
+      throw err
+    }
+  },
+
+  parseSubscription: async (text: string) => {
+    try {
+      const res = await Network.request({
+        url: '/api/ai/parse-subscription',
+        method: 'POST',
+        data: { text, user_id: DEFAULT_USER_ID },
+      })
+      console.log('store parseSubscription:', res.data)
+      const data = res.data as { code: number; msg: string; data: ParsedSubscription[] }
+      return Array.isArray(data?.data) ? data.data : []
+    } catch (err) {
+      console.error('parseSubscription error:', err)
+      return []
+    }
+  },
+
+  getSubscriptionStats: async () => {
+    try {
+      const res = await Network.request({
+        url: `/api/subscriptions/stats?user_id=${DEFAULT_USER_ID}`,
+      })
+      console.log('store getSubscriptionStats:', res.data)
+      const data = res.data as { code: number; msg: string; data: any }
+      return data?.data || { total_yearly: 0, total_monthly: 0, total_daily: 0, subscription_count: 0, by_category: {} }
+    } catch (err) {
+      console.error('getSubscriptionStats error:', err)
+      return { total_yearly: 0, total_monthly: 0, total_daily: 0, subscription_count: 0, by_category: {} }
     }
   },
 }))

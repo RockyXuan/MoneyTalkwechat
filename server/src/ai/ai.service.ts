@@ -132,4 +132,105 @@ export class AiService {
       }]
     }
   }
+
+  /** Parse subscription text into structured data */
+  async parseSubscription(text: string, userId: string) {
+    const today = new Date().toISOString().slice(0, 10)
+
+    const systemPrompt = `你是一个智能订阅管理助手。用户会说出自己的订阅内容，你需要将其解析为结构化的订阅数据。
+
+## 输出格式（严格 JSON 数组，不要输出其他内容）
+[
+  {
+    "name": "订阅名称，2-8个字",
+    "amount": 数字（每次扣费金额，单位：元）,
+    "cycle": "monthly" | "quarterly" | "yearly",
+    "category": "订阅",
+    "description": "简要描述，可选"
+  }
+]
+
+## cycle 判断规则（必须严格遵守）
+- 每月、月付、月扣 → "monthly"
+- 每季度、季付 → "quarterly"
+- 每年、年付、年扣、年度 → "yearly"
+
+## name 命名规则
+- name 必须是极短的名称，2-8个字
+- 提取核心订阅服务名即可
+- 示例：
+  - "每月订阅了腾讯视频25元" → name: "腾讯视频"
+  - "每年付ChatGPT Plus 200美元" → name: "ChatGPT Plus"
+  - "月付iCloud 6元" → name: "iCloud"
+  - "每季度付网易云音乐45元" → name: "网易云音乐"
+  - "每月扣Netflix会员费89元" → name: "Netflix"
+
+## 注意事项
+1. 如果用户说了多个订阅，必须拆分为数组中的多个条目
+2. amount 是每个周期的金额，不是年总额
+3. category 统一为 "订阅"
+4. 只输出 JSON 数组，不要有任何其他文字
+5. 今天是 ${today}`
+
+    console.log('AI parseSubscription - user text:', text)
+
+    try {
+      const messages = [
+        { role: 'system' as const, content: systemPrompt },
+        { role: 'user' as const, content: text },
+      ]
+
+      const response = await this.llmClient.invoke(messages, {
+        model: 'doubao-seed-1-6-lite-251015',
+        temperature: 0.3,
+      })
+
+      console.log('AI parseSubscription - response:', response.content)
+
+      const arrMatch = response.content.match(/\[[\s\S]*\]/)
+      if (arrMatch) {
+        const parsed = JSON.parse(arrMatch[0])
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any) => ({
+            name: item.name || text,
+            amount: item.amount ?? null,
+            cycle: item.cycle || 'monthly',
+            category: item.category || '订阅',
+            description: item.description || '',
+          }))
+        }
+      }
+
+      // Single object fallback
+      const objMatch = response.content.match(/\{[\s\S]*\}/)
+      if (objMatch) {
+        const parsed = JSON.parse(objMatch[0])
+        return [{
+          name: parsed.name || text,
+          amount: parsed.amount ?? null,
+          cycle: parsed.cycle || 'monthly',
+          category: parsed.category || '订阅',
+          description: parsed.description || '',
+        }]
+      }
+
+      console.warn('AI parseSubscription returned non-JSON, fallback')
+      return [{
+        name: text,
+        amount: null,
+        cycle: 'monthly',
+        category: '订阅',
+        description: '',
+      }]
+    } catch (err) {
+      console.error('AI parseSubscription error:', err)
+      return [{
+        name: text,
+        amount: null,
+        cycle: 'monthly',
+        category: '订阅',
+        description: '',
+      }]
+    }
+  }
 }

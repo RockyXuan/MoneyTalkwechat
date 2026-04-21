@@ -4,7 +4,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, ChevronDown, ChartNoAxesColumn } from 'lucide-react-taro'
+import { ChevronLeft, ChevronRight, ChevronDown, ChartNoAxesColumn, CreditCard } from 'lucide-react-taro'
 import { useExpenseStore } from '@/store/expense-store'
 
 type PeriodType = 'year' | 'quarter' | 'month'
@@ -274,6 +274,15 @@ const StatsPage = () => {
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([])
   const [trends, setTrends] = useState<TrendItem[]>([])
 
+  // Subscription stats
+  const [subStats, setSubStats] = useState<{
+    total_yearly: number
+    total_monthly: number
+    total_daily: number
+    subscription_count: number
+    by_category: Record<string, { total_yearly: number; total_monthly: number; count: number; items: { name: string; amount: number; cycle: string; yearly: number; monthly: number }[] }>
+  } | null>(null)
+
   // Picker state
   const [showPicker, setShowPicker] = useState(false)
   const [pickerYear, setPickerYear] = useState(now.getFullYear())
@@ -294,7 +303,11 @@ const StatsPage = () => {
     lastFetchedVersion.current = dataVersion
   }
 
-  useDidShow(() => { loadData() })
+  useDidShow(() => {
+    loadData()
+    // Load subscription stats
+    useExpenseStore.getState().getSubscriptionStats().then(setSubStats).catch(console.error)
+  })
 
   if (dataVersion !== lastFetchedVersion.current && dataVersion > 0) {
     lastFetchedVersion.current = dataVersion
@@ -515,6 +528,62 @@ const StatsPage = () => {
                       )
                     })}
                   </View>
+                </CardContent>
+              </Card>
+            </View>
+          )}
+
+          {/* Subscription Stats */}
+          {subStats && subStats.subscription_count > 0 && (
+            <View className="px-4 mb-4">
+              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">
+                <View className="inline-flex flex-row items-center gap-1">
+                  <CreditCard size={16} color="#3D7C5F" />
+                </View>
+                订阅支出
+              </Text>
+              <Card className="border-[#E5E1D8]">
+                <CardContent className="p-4">
+                  {/* Total overview */}
+                  <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid #E5E1D8' }}>
+                    <View className="flex flex-col">
+                      <Text className="block text-xs text-gray-500">活跃订阅</Text>
+                      <Text className="block text-lg font-bold text-[#3D7C5F]">{subStats.subscription_count} 项</Text>
+                    </View>
+                    <View className="flex flex-col items-end">
+                      <View className="flex flex-row items-center gap-3">
+                        <View className="flex flex-col items-end">
+                          <Text className="block text-xs text-gray-400">日均</Text>
+                          <Text className="block text-sm font-semibold text-[#E8913A]">¥{subStats.total_daily.toFixed(2)}</Text>
+                        </View>
+                        <View className="flex flex-col items-end">
+                          <Text className="block text-xs text-gray-400">月均</Text>
+                          <Text className="block text-sm font-semibold text-[#E8913A]">¥{subStats.total_monthly.toFixed(2)}</Text>
+                        </View>
+                        <View className="flex flex-col items-end">
+                          <Text className="block text-xs text-gray-400">年总计</Text>
+                          <Text className="block text-lg font-bold text-[#EF4444]">¥{subStats.total_yearly.toFixed(2)}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  {/* Subscription items */}
+                  {Object.entries(subStats.by_category).map(([cat, info]) => (
+                    <View key={cat} className="mb-2">
+                      {info.items.map((item, i) => (
+                        <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F7F5F0' } : {}}>
+                          <View className="flex flex-row items-center gap-2">
+                            <Text className="block text-sm text-[#1A1A1A]">{item.name}</Text>
+                            <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Badge>
+                          </View>
+                          <View className="flex flex-row items-center gap-3">
+                            <Text className="block text-sm font-semibold text-[#E8913A]">¥{item.amount}</Text>
+                            <Text className="block text-xs text-gray-400">¥{item.yearly.toFixed(0)}/年</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
                 </CardContent>
               </Card>
             </View>
