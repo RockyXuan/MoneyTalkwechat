@@ -13,6 +13,9 @@ export interface ExpenseRecord {
   raw_text: string | null
   expense_date: string
   created_at: string
+  is_subscription?: boolean
+  cycle?: string
+  subscription_id?: string
 }
 
 export interface ParsedSubscription {
@@ -99,6 +102,7 @@ interface ExpenseStore {
     subscription_count: number
     by_category: Record<string, { total_yearly: number; total_monthly: number; count: number; items: { name: string; amount: number; cycle: string; yearly: number; monthly: number }[] }>
   }>
+  fetchSubscriptionBillings: (startDate: string, endDate: string) => Promise<any[]>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
@@ -399,6 +403,20 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     } catch (err) {
       console.error('getSubscriptionStats error:', err)
       return { total_yearly: 0, total_monthly: 0, total_daily: 0, subscription_count: 0, by_category: {} }
+    }
+  },
+
+  fetchSubscriptionBillings: async (startDate: string, endDate: string) => {
+    try {
+      const res = await Network.request({
+        url: `/api/subscriptions/billing-events?user_id=${DEFAULT_USER_ID}&start_date=${startDate}&end_date=${endDate}`,
+      })
+      console.log('store fetchSubscriptionBillings:', res.data)
+      const data = res.data as { code: number; msg: string; data: any[] }
+      return data?.data || []
+    } catch (err) {
+      console.error('fetchSubscriptionBillings error:', err)
+      return []
     }
   },
 }))

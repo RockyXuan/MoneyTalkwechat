@@ -206,4 +206,84 @@ export class SubscriptionsService {
 
     return next.toISOString().slice(0, 10)
   }
+
+  /** Get billing events that fall within a date range */
+  async getBillingEvents(userId: string, startDate: string, endDate: string) {
+    const { data, error } = await this.supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (error) {
+      console.error('获取订阅计费事件失败:', error)
+      throw new Error('获取订阅计费事件失败')
+    }
+
+    const events: {
+      id: string
+      name: string
+      amount: number
+      category: string
+      cycle: string
+      expense_date: string
+      is_subscription: true
+      subscription_id: string
+      note: string
+    }[] = []
+
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+    data.forEach((sub) => {
+      const cycleMonths: Record<string, number> = {
+        monthly: 1,
+        quarterly: 3,
+        yearly: 12,
+        weekly: 0,
+      }
+      const months = cycleMonths[sub.cycle] || 1
+
+      // Calculate all billing dates within range
+      if (sub.cycle === 'weekly') {
+        let current = new Date(sub.start_date)
+        while (current < end) {
+          if (current >= start) {
+            events.push({
+              id: `sub_${sub.id}_${current.toISOString().slice(0, 10)}`,
+              name: sub.name,
+              amount: Number(sub.amount),
+              category: sub.category || '订阅',
+              cycle: sub.cycle,
+              expense_date: current.toISOString().slice(0, 10),
+              is_subscription: true,
+              subscription_id: sub.id,
+              note: sub.name,
+            })
+          }
+          current.setDate(current.getDate() + 7)
+        }
+      } else {
+        let current = new Date(sub.start_date)
+        while (current < end) {
+          if (current >= start) {
+            events.push({
+              id: `sub_${sub.id}_${current.toISOString().slice(0, 10)}`,
+              name: sub.name,
+              amount: Number(sub.amount),
+              category: sub.category || '订阅',
+              cycle: sub.cycle,
+              expense_date: current.toISOString().slice(0, 10),
+              is_subscription: true,
+              subscription_id: sub.id,
+              note: sub.name,
+            })
+          }
+          current.setMonth(current.getMonth() + months)
+        }
+      }
+    })
+
+    return events
+  }
 }

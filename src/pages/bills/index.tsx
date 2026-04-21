@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Receipt, Trash2, ChevronLeft, ChevronRight, Calendar, Search, Plus, X } from 'lucide-react-taro'
+import { Receipt, Trash2, ChevronLeft, ChevronRight, Calendar, Search, Plus, X, Repeat } from 'lucide-react-taro'
 import { useExpenseStore, ExpenseRecord } from '@/store/expense-store'
 
 interface GroupedExpenses {
@@ -43,9 +43,16 @@ const BillsPage = () => {
     const nextMonth = month === '12' ? `${Number(year) + 1}-01` : `${year}-${String(Number(month) + 1).padStart(2, '0')}`
     const endDate = `${nextMonth}-01`
 
-    const data = await useExpenseStore.getState().fetchExpensesByMonth(startDate, endDate)
+    // Fetch expenses and subscription billings in parallel
+    const [data, subBillings] = await Promise.all([
+      useExpenseStore.getState().fetchExpensesByMonth(startDate, endDate),
+      useExpenseStore.getState().fetchSubscriptionBillings(startDate, endDate),
+    ])
+
     const grouped: GroupedExpenses = {}
     let total = 0
+
+    // Add regular expenses
     data.forEach((item) => {
       if (!grouped[item.expense_date]) {
         grouped[item.expense_date] = []
@@ -53,6 +60,39 @@ const BillsPage = () => {
       grouped[item.expense_date].push(item)
       total += Number(item.amount)
     })
+
+    // Add subscription billing events
+    subBillings.forEach((item: any) => {
+      const date = item.expense_date
+      if (!grouped[date]) {
+        grouped[date] = []
+      }
+      grouped[date].push({
+        id: item.id,
+        amount: item.amount,
+        category: item.category,
+        tag: '',
+        note: item.name,
+        raw_text: '',
+        source_type: 'subscription',
+        expense_date: date,
+        created_at: '',
+        is_subscription: true,
+        cycle: item.cycle,
+        subscription_id: item.subscription_id,
+      })
+      total += Number(item.amount)
+    })
+
+    // Sort each date group: subscriptions first, then by id
+    Object.keys(grouped).forEach(date => {
+      grouped[date].sort((a, b) => {
+        if (a.is_subscription && !b.is_subscription) return -1
+        if (!a.is_subscription && b.is_subscription) return 1
+        return 0
+      })
+    })
+
     setGroupedExpenses(grouped)
     setMonthTotal(total)
     lastFetchedVersion.current = dataVersion
@@ -239,11 +279,12 @@ const BillsPage = () => {
               <Text className="block text-sm text-[#E8913A]">¥{dayTotal.toFixed(2)}</Text>
             </View>
             {groupedExpenses[date].map((item) => (
-              <Card key={item.id} className="border-[#E5E1D8] mb-2">
+              <Card key={item.id} className={`border-[#E5E1D8] mb-2 ${item.is_subscription ? 'bg-[#FFFDF5]' : ''}`}>
                 <CardContent className="p-3 flex flex-row items-center justify-between">
-                  <View className="flex flex-col flex-1" onClick={() => openEditModal(item)}>
+                  <View className="flex flex-col flex-1" onClick={() => !item.is_subscription && openEditModal(item)}>
                     {/* Line 1: Name + Amount */}
                     <View className="flex flex-row items-center gap-2">
+                      {item.is_subscription && <Repeat size={12} color="#E8913A" />}
                       <Text className="block text-base font-semibold text-[#1A1A1A]">
                         {item.note || item.raw_text || '未命名'}
                       </Text>
@@ -252,13 +293,20 @@ const BillsPage = () => {
                     {/* Line 2: Category */}
                     <View className="flex flex-row items-center gap-2 mt-1">
                       <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
-                      {item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
+                      {item.is_subscription && (
+                        <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
+                          {item.cycle === 'monthly' ? '月订阅' : item.cycle === 'quarterly' ? '季订阅' : item.cycle === 'yearly' ? '年订阅' : '订阅'}
+                        </Badge>
+                      )}
+                      {!item.is_subscription && item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
                     </View>
                   </View>
                   <View className="flex flex-row items-center">
-                    <Button className="bg-transparent p-0" onClick={() => handleDelete(item.id)}>
-                      <Trash2 size={16} color="#EF4444" />
-                    </Button>
+                    {!item.is_subscription && (
+                      <Button className="bg-transparent p-0" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={16} color="#EF4444" />
+                      </Button>
+                    )}
                   </View>
                 </CardContent>
               </Card>

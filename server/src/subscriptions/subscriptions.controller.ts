@@ -21,6 +21,18 @@ export class SubscriptionsController {
     return { code: 200, msg: 'success', data }
   }
 
+  @Get('billing-events')
+  @HttpCode(200)
+  async billingEvents(
+    @Query('user_id') userId: string,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
+  ) {
+    console.log('GET /api/subscriptions/billing-events', { userId, startDate, endDate })
+    const data = await this.subsService.getBillingEvents(userId, startDate, endDate)
+    return { code: 200, msg: 'success', data }
+  }
+
   @Post()
   @HttpCode(200)
   async create(
