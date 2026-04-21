@@ -1,763 +1,271 @@
-# Coze Mini Program
+# 记一笔 — 极简智能记账小程序
 
-这是一个基于 [Taro 4](https://docs.taro.zone/docs/) + [Nest.js](https://nestjs.com/) 的前后端分离项目，由扣子编程 CLI 创建。
+> 用最自然的方式记录每一笔消费：说句话、打几个字、甚至直接在微信里跟公众号聊一句，AI 自动识别金额、分类、日期，一键确认入账。
+
+## 产品概览
+
+| 特性 | 说明 |
+|------|------|
+| 智能记账 | 输入自然语言（如"午饭28 出租车15"），AI 自动解析为结构化记录 |
+| 订阅管理 | 追踪周期性扣费（月/季/年），自动计算下次扣费日、累计已扣、年月日成本 |
+| 自动/手动续费 | 区分自动续费和手动购买（如闲鱼代充），图标一目了然 |
+| 微信公众号通道 | 绑定公众号后，在微信聊天中直接发消息记账，小程序内确认即可 |
+| 多维度统计 | 按年/季度/月查看支出趋势、分类占比，点击分类可钻取明细 |
+| 周期筛选 | 订阅支持按月/季/年筛选，快速查看不同周期的订阅支出 |
 
 ## 技术栈
 
-- **整体框架**: Taro 4.1.9
-- **语言**: TypeScript 5.4.5
-- **渲染**: React 18.0.0
-- **样式**: TailwindCSS 4.1.18
-- **Tailwind 适配层**: weapp-tailwindcss 4.9.2
-- **状态管理**: Zustand 5.0.9
-- **图标库**: lucide-react-taro latest
-- **工程化**: Vite 4.2.0
-- **包管理**: pnpm
-- **运行时**: Node.js >= 18
-- **服务端**: NestJS 10.4.15
-- **数据库 ORM**: Drizzle ORM 0.45.1
-- **类型校验**: Zod 4.3.5
+| 层 | 技术 |
+|----|------|
+| 前端框架 | Taro 4 + React 18 |
+| 样式方案 | Tailwind CSS 4 + weapp-tailwindcss（rpx 适配） |
+| 组件库 | shadcn/ui Taro 版（`@/components/ui/*`） |
+| 图标 | lucide-react-taro |
+| 状态管理 | Zustand |
+| 后端框架 | NestJS 10 |
+| 数据库 | Supabase (PostgreSQL) |
+| AI 解析 | Coze AI 大模型 |
+| 部署 | Coze 平台托管（前端 + 后端 + 数据库） |
 
-## 项目结构
+## 页面结构
 
 ```
-├── .cozeproj/                # Coze 平台配置
-│   └── scripts/              # 构建和运行脚本
-├── config/                   # Taro 构建配置
-│   ├── index.ts              # 主配置文件
-│   ├── dev.ts                # 开发环境配置
-│   └── prod.ts               # 生产环境配置
-├── server/                   # NestJS 后端服务
-│   └── src/
-│       ├── main.ts           # 服务入口
-│       ├── app.module.ts     # 根模块
-│       ├── app.controller.ts # 应用控制器
-│       └── app.service.ts    # 应用服务
-├── src/                      # 前端源码
-│   ├── pages/                # 页面组件
-│   ├── presets/              # 框架预置逻辑（无需读取，如无必要不改动）
-│   ├── utils/                # 工具函数
-│   ├── network.ts            # 封装好的网络请求工具
-│   ├── app.ts                # 应用入口
-│   ├── app.config.ts         # 应用配置
-│   └── app.css               # 全局样式
-├── types/                    # TypeScript 类型定义
-├── key/                      # 小程序密钥（CI 上传用）
-├── .env.local                # 环境变量
-└── project.config.json       # 微信小程序项目配置
+src/pages/
+├── index/              # 记一笔（首页）
+│   └── index.tsx       # 文字输入 + AI 解析 + 编辑弹窗 + 微信待确认
+├── subscriptions/      # 订阅
+│   └── index.tsx       # 订阅列表 + 创建/编辑 + 累计扣费 + 周期筛选
+├── bills/              # 账单
+│   └── index.tsx       # 月度账单列表 + 订阅事件 + 编辑弹窗
+├── stats/              # 统计
+│   └── index.tsx       # 年/季度/月趋势图 + 分类占比 + 钻取入口
+├── profile/            # 我的
+│   └── index.tsx       # 偏好设置 + 微信公众号绑定
+└── category-detail/    # 分类详情（非 TabBar）
+    └── index.tsx       # 某分类下的明细列表 + 编辑弹窗
 ```
 
-## 快速开始
+## 后端模块
 
-### 安装依赖
+```
+server/src/
+├── app.module.ts           # 根模块（注册所有子模块）
+├── main.ts                 # 入口（全局前缀 /api + XML 中间件）
+├── expenses/               # 支出模块
+│   ├── expenses.controller.ts   # CRUD + 统计接口
+│   ├── expenses.service.ts      # 支出业务逻辑
+│   ├── categories.controller.ts # 分类 CRUD
+│   ├── categories.service.ts    # 分类逻辑
+│   ├── preferences.controller.ts # 分类偏好映射
+│   └── preferences.service.ts   # 偏好逻辑
+├── subscriptions/          # 订阅模块
+│   ├── subscriptions.controller.ts  # CRUD + 统计 + 计费事件
+│   ├── subscriptions.service.ts     # 订阅逻辑 + 回溯计费
+│   └── subscriptions.module.ts
+├── ai/                     # AI 解析模块
+│   ├── ai.controller.ts         # 解析入口
+│   ├── ai.service.ts            # 支出解析 + 订阅解析 + billing_type 识别
+│   └── ai.module.ts
+└── wechat/                 # 微信公众号模块
+    ├── wechat.controller.ts     # Webhook + 绑定 + 待确认记录
+    ├── wechat.service.ts        # 消息处理 + AI 解析 + 绑定码
+    └── wechat.module.ts
+```
+
+## API 接口一览
+
+### 支出 /expenses
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/expenses` | 查询支出列表（支持日期范围、分类、分页） |
+| POST | `/api/expenses` | 批量创建支出 |
+| PATCH | `/api/expenses/:id` | 更新单条支出 |
+| DELETE | `/api/expenses/:id` | 删除单条支出 |
+| GET | `/api/expenses/stats` | 月度统计（总额、分类汇总、日趋势） |
+| GET | `/api/expenses/stats-v2` | 多维度统计（年/季度/月） |
+
+### 分类 /categories
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/categories` | 获取分类列表 |
+| POST | `/api/categories` | 创建自定义分类 |
+
+### 偏好 /preferences
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/preferences` | 保存分类映射偏好（用户纠正） |
+
+### 订阅 /subscriptions
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/subscriptions` | 获取订阅列表 |
+| POST | `/api/subscriptions` | 创建订阅（含 billing_type） |
+| PATCH | `/api/subscriptions/:id` | 更新订阅（start_date/cycle 变更自动重算下次扣费日） |
+| DELETE | `/api/subscriptions/:id` | 软删除订阅 |
+| GET | `/api/subscriptions/stats` | 订阅成本统计（年/月/日 + 按分类） |
+| GET | `/api/subscriptions/billing-events` | 获取指定时间范围的计费事件（用于账单页展示） |
+
+### AI 解析 /ai
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/ai/parse` | 解析支出文本（支持多条、默认日期） |
+| POST | `/api/ai/parse-subscription` | 解析订阅文本（含 billing_type 自动识别） |
+
+### 微信公众号 /wechat
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/wechat/webhook` | 微信服务器验证（SHA1 签名） |
+| POST | `/api/wechat/webhook` | 接收微信消息（XML 解析 + 自动回复） |
+| POST | `/api/wechat/binding-code` | 生成 6 位绑定码 |
+| GET | `/api/wechat/binding-status` | 查询绑定状态 |
+| GET | `/api/wechat/pending-records` | 获取待确认记录列表 |
+| POST | `/api/wechat/pending-records/:id/confirm` | 确认待确认记录 |
+| POST | `/api/wechat/pending-records/:id/reject` | 拒绝待确认记录 |
+| GET | `/api/wechat/pending-count` | 获取待确认记录数量 |
+
+## 数据库表结构
+
+### expenses（支出记录）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 用户 ID |
+| amount | NUMERIC | 金额 |
+| category | TEXT | 分类 |
+| tag | TEXT | 标签 |
+| note | TEXT | 备注 |
+| source_type | TEXT | 来源（text/wechat） |
+| raw_text | TEXT | 原始输入文本 |
+| expense_date | DATE | 消费日期 |
+| created_at | TIMESTAMPTZ | 创建时间 |
+
+### subscriptions（订阅）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 用户 ID |
+| name | TEXT | 订阅名称 |
+| amount | NUMERIC | 金额 |
+| cycle | TEXT | 周期（monthly/quarterly/yearly/weekly） |
+| category | TEXT | 分类 |
+| start_date | DATE | 起始日期 |
+| next_billing_date | DATE | 下次扣费日（自动计算） |
+| description | TEXT | 描述 |
+| billing_type | VARCHAR(20) | 续费方式（auto/manual，默认 auto） |
+| is_active | BOOLEAN | 是否活跃 |
+| created_at / updated_at | TIMESTAMPTZ | 时间戳 |
+
+### categories（分类）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 用户 ID（NULL 为默认分类） |
+| name | TEXT | 分类名 |
+| icon | TEXT | 图标 |
+| is_default | BOOLEAN | 是否默认 |
+| sort_order | INT | 排序 |
+
+### preferences（分类偏好映射）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 用户 ID |
+| preference_type | TEXT | 偏好类型（category_mapping） |
+| key_word | TEXT | 关键词 |
+| mapped_value | TEXT | 映射值 |
+| source | TEXT | 来源（user_correction） |
+| created_at | TIMESTAMPTZ | 创建时间 |
+
+### wechat_bindings（微信绑定）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 小程序用户 ID |
+| wechat_openid | TEXT UNIQUE | 微信 openid |
+| binding_code | TEXT UNIQUE | 6 位绑定码 |
+| is_active | BOOLEAN | 是否活跃 |
+| created_at / updated_at | TIMESTAMPTZ | 时间戳 |
+
+### pending_records（待确认记录）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | TEXT | 用户 ID |
+| source | TEXT | 来源（wechat_oa） |
+| raw_text | TEXT | 原始消息文本 |
+| record_type | TEXT | 类型（expense/subscription） |
+| parsed_data | JSONB | AI 解析结果 |
+| status | TEXT | 状态（pending/confirmed/rejected） |
+| created_at | TIMESTAMPTZ | 创建时间 |
+| confirmed_at | TIMESTAMPTZ | 确认时间 |
+
+## 核心业务逻辑
+
+### AI 解析流程
+
+1. 用户输入自然语言文本
+2. 调用 `/api/ai/parse` 或 `/api/ai/parse-subscription`
+3. AI 识别：金额、分类、标签、日期、周期（订阅）、billing_type（订阅）
+4. billing_type 识别规则：包含"闲鱼买""代充""找人买"等关键词 → manual，其余 → auto
+5. 返回结构化结果，用户可在编辑弹窗中修正
+
+### 订阅回溯计费
+
+1. 创建/编辑订阅时指定 start_date 和 cycle
+2. 账单页加载时调用 `/api/subscriptions/billing-events`，后端根据 start_date 推算所有历史扣费日期
+3. 前端将计费事件与支出记录合并展示
+4. 修改 start_date 或 cycle 时，后端自动重算 next_billing_date
+
+### 累计扣费计算（前端）
+
+```
+calcTotalCharged(amount, cycle, startDate)
+→ 根据 cycle 推算从 startDate 到今天共扣了几次
+→ 返回 { count: 已扣次数, total: 累计金额 }
+```
+
+### 微信公众号记账流程
+
+1. 用户在"我的"页面获取 6 位绑定码
+2. 在微信公众号发送"绑定 123456"完成绑定
+3. 之后在公众号发消息（如"午饭28"）
+4. 后端 AI 解析 → 创建 pending_record → 自动回复解析结果
+5. 用户在小程序"记一笔"页面查看待确认记录 → 确认/忽略
+
+## 开发与构建
 
 ```bash
+# 安装依赖
 pnpm install
+
+# 开发模式（前端 :5000 + 后端 :3000，热更新）
+coze dev
+
+# 类型检查 + ESLint
+pnpm validate
+
+# 构建
+pnpm build          # 全平台
+pnpm build:weapp    # 微信小程序
+pnpm build:tt       # 抖音小程序
+pnpm build:web      # H5
 ```
 
-### 本地开发
-
-同时启动 H5 前端和 NestJS 后端：
-
-```bash
-pnpm dev
-```
-
-- 前端地址：http://localhost:5000
-- 后端地址：http://localhost:3000
-
-单独启动：
-
-```bash
-pnpm dev:web      # 仅 H5 前端
-pnpm dev:weapp    # 仅微信小程序
-pnpm dev:server   # 仅后端服务
-```
-
-### 构建
-
-```bash
-pnpm build        # 构建所有（H5 + 小程序 + 后端）
-pnpm build:web    # 仅构建 H5，输出到 dist-web
-pnpm build:weapp  # 仅构建微信小程序，输出到 dist
-pnpm build:server # 仅构建后端
-```
-
-### 预览小程序
-
-```bash
-pnpm preview:weapp # 构建并生成预览小程序二维码
-```
-
-## 前端核心开发规范
-
-### 新建页面流程
-
-1. 在 \`src/pages/\` 下创建页面目录
-2. 创建 \`index.tsx\`（页面组件）
-3. 创建 \`index.config.ts\`（页面配置）
-4. 创建 \`index.css\`（页面样式，可选）
-5. 在 \`src/app.config.ts\` 的 \`pages\` 数组中注册页面路径
-
-或使用 Taro 脚手架命令：
-
-```bash
-pnpm new      # 交互式创建页面/组件
-```
-
-### 组件库
-
-#### UI 组件
-
-UI 组件位于 `@/components/ui`，推荐按需引入：
-
-```typescript
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-```
-
-UI 组件列表:
-
-Accordion,Alert,AlertDialog,AspectRatio,Avatar,Badge,Breadcrumb,Button,ButtonGroup,Calendar,Card,Carousel,Checkbox,CodeBlock,Collapsible,Command,ContextMenu,Dialog,Drawer,DropdownMenu,Field,HoverCard,Input,InputGroup,InputOTP,Label,Menubar,NavigationMenu,Pagination,Popover,Portal,Progress,RadioGroup,Resizable,ScrollArea,Select,Separator,Sheet,Skeleton,Slider,Sonner,Switch,Table,Tabs,Textarea,Toast,Toggle,ToggleGroup,Tooltip
-
-#### Taro 原生组件
-
-可以使用的 Taro 组件（UI 未覆盖）
-
-```typescript
-import { View, Text, Icon, Image } from '@tarojs/components'
-```
-
-Taro 原生组件列表：
-
-Text,Icon,RichText,CheckboxGroup,Editor,Form,Picker,PickerView,PickerViewColumn,Radio,FunctionalPageNavigator,NavigationBar,Navigator,TabItem,Camera,Image,Video,ScrollView,Swiper,SwiperItem,View
-
-### 路径别名
-
-项目配置了 `@/*` 路径别名指向 `src/*`：
-
-```typescript
-import { SomeComponent } from '@/components/some-component'
-import { useUserStore } from '@/stores/user'
-```
-
-### 代码模板
-
-#### 页面组件 (TypeScript + React)
-
-```tsx
-// src/pages/example/index.tsx
-import { View } from '@tarojs/components'
-import { useLoad, useDidShow } from '@tarojs/taro'
-import type { FC } from 'react'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import './index.css'
-
-const ExamplePage: FC = () => {
-  useLoad(() => {
-    console.log('Page loaded.')
-  })
-
-  useDidShow(() => {
-    console.log('Page showed.')
-  })
-
-  return (
-    <View className="p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Hello Taro!</CardTitle>
-          <CardDescription>
-            页面布局用 Taro 基础组件，交互与视觉优先用项目内置 UI 组件。
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <View className="text-sm text-muted-foreground">
-            组件位于 src/components/ui，推荐按需从 @/components/ui/* 引入。
-          </View>
-        </CardContent>
-        <CardFooter className="justify-end">
-          <Button size="sm" onClick={() => console.log('clicked')}>
-            点击
-          </Button>
-        </CardFooter>
-      </Card>
-    </View>
-  )
-}
-
-export default ExamplePage
-```
-
-#### 页面配置
-
-```typescript
-// src/pages/example/index.config.ts
-import { definePageConfig } from '@tarojs/taro'
-
-export default definePageConfig({
-  navigationBarTitleText: '示例页面',
-  enablePullDownRefresh: true,
-  backgroundTextStyle: 'dark',
-})
-```
-
-#### 应用配置
-
-```typescript
-// src/app.config.ts
-import { defineAppConfig } from '@tarojs/taro'
-
-export default defineAppConfig({
-  pages: [
-    'pages/index/index',
-    'pages/example/index',
-  ],
-  window: {
-    backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: 'App',
-    navigationBarTextStyle: 'black',
-  },
-  // TabBar 配置 (可选)
-  // tabBar: {
-  //   list: [
-  //     { pagePath: 'pages/index/index', text: '首页' },
-  //   ],
-  // },
-})
-```
-
-### 发送请求
-
-**IMPORTANT: 禁止直接使用 Taro.request、Taro.uploadFile、Taro.downloadFile，使用 Network.request、Network.uploadFile、Network.downloadFile 替代。**
-
-Network 是对 Taro.request、Taro.uploadFile、Taro.downloadFile 的封装，自动添加项目域名前缀，参数与 Taro 一致。
-
-✅ 正确使用方式
-
-```typescript
-import { Network } from '@/network'
-
-// GET 请求
-const data = await Network.request({
-  url: '/api/hello'
-})
-
-// POST 请求
-const result = await Network.request({
-  url: '/api/user/login',
-  method: 'POST',
-  data: { username, password }
-})
-
-// 文件上传
-await Network.uploadFile({
-  url: '/api/upload',
-  filePath: tempFilePath,
-  name: 'file'
-})
-
-// 文件下载
-await Network.downloadFile({
-  url: '/api/download/file.pdf'
-})
-```
-
-❌ 错误用法
-
-```typescript
-import Taro from '@tarojs/taro'
-
-// ❌ 会导致自动域名拼接无法生效，除非是特殊指定域名
-const data = await Network.request({
-  url: 'http://localhost/api/hello'
-})
-
-// ❌ 不要直接使用 Taro.request
-await Taro.request({ url: '/api/hello' })
-
-// ❌ 不要直接使用 Taro.uploadFile
-await Taro.uploadFile({ url: '/api/upload', filePath, name: 'file' })
-```
-
-### Zustand 状态管理
-
-```typescript
-// src/stores/user.ts
-import { create } from 'zustand'
-
-interface UserState {
-  userInfo: UserInfo | null
-  token: string
-  setUserInfo: (info: UserInfo) => void
-  setToken: (token: string) => void
-  logout: () => void
-}
-
-interface UserInfo {
-  id: string
-  name: string
-  avatar: string
-}
-
-export const useUserStore = create<UserState>((set) => ({
-  userInfo: null,
-  token: '',
-  setUserInfo: (info) => set({ userInfo: info }),
-  setToken: (token) => set({ token }),
-  logout: () => set({ userInfo: null, token: '' }),
-}))
-```
-
-### Taro 生命周期 Hooks
-
-```typescript
-import {
-  useLoad,             // 页面加载 (onLoad)
-  useReady,            // 页面初次渲染完成 (onReady)
-  useDidShow,          // 页面显示 (onShow)
-  useDidHide,          // 页面隐藏 (onHide)
-  usePullDownRefresh,  // 下拉刷新 (onPullDownRefresh)
-  useReachBottom,      // 触底加载 (onReachBottom)
-  useShareAppMessage,  // 分享 (onShareAppMessage)
-  useRouter,           // 获取路由参数
-} from '@tarojs/taro'
-```
-
-### 路由导航
-
-```typescript
-import Taro from '@tarojs/taro'
-
-// 保留当前页面，跳转到新页面
-Taro.navigateTo({ url: '/pages/detail/index?id=1' })
-
-// 关闭当前页面，跳转到新页面
-Taro.redirectTo({ url: '/pages/detail/index' })
-
-// 跳转到 tabBar 页面
-Taro.switchTab({ url: '/pages/index/index' })
-
-// 返回上一页
-Taro.navigateBack({ delta: 1 })
-
-// 获取路由参数
-const router = useRouter()
-const { id } = router.params
-```
-
-### 图标使用 (lucide-react-taro)
-
-**IMPORTANT: 禁止使用 lucide-react，必须使用 lucide-react-taro 替代。**
-
-lucide-react-taro 是 Lucide 图标库的 Taro 适配版本，专为小程序环境优化，API 与 lucide-react 一致：
-
-```tsx
-import { View } from '@tarojs/components'
-import { House, Settings, User, Search, Camera, Zap } from 'lucide-react-taro'
-
-const IconDemo = () => {
-  return (
-    <View className="flex gap-4">
-      {/* 基本用法 */}
-      <House />
-      {/* 自定义尺寸和颜色 */}
-      <Settings size={32} color="#1890ff" />
-      {/* 自定义描边宽度 */}
-      <User size={24} strokeWidth={1.5} />
-      {/* 绝对描边宽度（描边不随 size 缩放） */}
-      <Camera size={48} strokeWidth={2} absoluteStrokeWidth />
-      {/* 组合使用 */}
-      <Zap size={32} color="#ff6b00" strokeWidth={1.5} className="my-icon" />
-    </View>
-  )
-}
-```
-
-常用属性：
-- `size` - 图标大小（默认 24）
-- `color` - 图标颜色（默认 currentColor，小程序中建议显式设置）
-- `strokeWidth` - 线条粗细（默认 2）
-- `absoluteStrokeWidth` - 绝对描边宽度，启用后描边不随 size 缩放
-- `className` / `style` - 自定义样式
-
-更多图标请访问：https://lucide.dev/icons
-
-### TabBar 图标生成 (CLI 工具)
-
-**IMPORTANT: 微信小程序的 TabBar 不支持 base64 或 SVG 图片，必须使用本地 PNG 文件。**
-
-lucide-react-taro 提供了 CLI 工具来生成 TabBar 所需的 PNG 图标：
-
-```bash
-# 生成带选中状态的图标
-npx taro-lucide-tabbar House Settings User -c "#999999" -a "#1890ff"
-
-# 指定输出目录和尺寸
-npx taro-lucide-tabbar House Settings User -c "#999999" -a "#1890ff" -o ./src/assets/tabbar -s 81
-```
-
-CLI 参数：
-- `--color, -c` (默认 #000000): 图标颜色
-- `--active-color, -a`: 选中状态颜色
-- `--size, -s` (默认 81): 图标尺寸
-- `--output, -o` (默认 ./tabbar-icons): 输出目录
-- `--stroke-width` (默认 2): 描边宽度
-
-在 `app.config.ts` 中使用生成的图标：
-
-> IMPORTANT：iconPath 和 selectedIconPath 必须以 `./` 开头，否则图标无法渲染
-
-```typescript
-export default defineAppConfig({
-  tabBar: {
-    color: '#999999',
-    selectedColor: '#1890ff',
-    backgroundColor: '#ffffff',
-    borderStyle: 'black',
-    list: [
-      {
-        pagePath: 'pages/index/index',
-        text: '首页',
-        iconPath: './assets/tabbar/house.png',
-        selectedIconPath: './assets/tabbar/house-active.png',
-      },
-      {
-        pagePath: 'pages/settings/index',
-        text: '设置',
-        iconPath: './assets/tabbar/settings.png',
-        selectedIconPath: './assets/tabbar/settings-active.png',
-      },
-      {
-        pagePath: 'pages/user/index',
-        text: '用户',
-        iconPath: './assets/tabbar/user.png',
-        selectedIconPath: './assets/tabbar/user-active.png',
-      },
-    ],
-  },
-})
-
-### Tailwind CSS 样式开发
-
-IMPORTANT：必须使用 tailwindcss 实现样式，只有在必要情况下才能 fallback 到 css / less
-
-> 项目已集成 Tailwind CSS 4.x + weapp-tailwindcss，支持跨端原子化样式：
-
-```tsx
-import { View, Text } from '@tarojs/components'
-import { Button } from '@/components/ui/button'
-
-<View className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-  <Text className="text-2xl font-bold text-blue-600 mb-4">标题</Text>
-  <View className="w-full px-4">
-    <Button className="w-full" size="lg">
-      按钮
-    </Button>
-  </View>
-</View>
-```
-
-### 性能优化
-
-#### 图片懒加载
-
-```tsx
-import { Image } from '@tarojs/components'
-
-<Image src={imageUrl} lazyLoad mode="aspectFill" />
-```
-
-#### 虚拟列表
-
-```tsx
-import { VirtualList } from '@tarojs/components'
-
-<VirtualList
-  height={500}
-  itemData={list}
-  itemCount={list.length}
-  itemSize={100}
-  renderItem={({ index, style, data }) => (
-    <View style={style}>{data[index].name}</View>
-  )}
-/>
-```
-
-#### 分包加载
-
-```typescript
-// src/app.config.ts
-export default defineAppConfig({
-  pages: ['pages/index/index'],
-  subPackages: [
-    {
-      root: 'packageA',
-      pages: ['pages/detail/index'],
-    },
-  ],
-})
-```
-
-### 小程序限制
-
-| 限制项   | 说明                                     |
-| -------- | ---------------------------------------- |
-| 主包体积 | ≤ 2MB                                    |
-| 总包体积 | ≤ 20MB                                   |
-| 域名配置 | 生产环境需在小程序后台配置合法域名       |
-| 本地开发 | 需在微信开发者工具开启「不校验合法域名」 |
-
-### 权限配置
-
-```typescript
-// src/app.config.ts
-export default defineAppConfig({
-  // ...其他配置
-  permission: {
-    'scope.userLocation': {
-      desc: '你的位置信息将用于小程序位置接口的效果展示'
-    }
-  },
-  requiredPrivateInfos: ['getLocation', 'chooseAddress']
-})
-```
-
-### 位置服务
-
-```typescript
-// 需先在 app.config.ts 中配置 permission
-async function getLocation(): Promise<Taro.getLocation.SuccessCallbackResult> {
-  return await Taro.getLocation({ type: 'gcj02' })
-}
-```
-
-## 后端核心开发规范
-
-本项目后端基于 NestJS + TypeScript 构建，提供高效、可扩展的服务端能力。
-
-### 项目结构
-
-```sh
-.
-├── server/                   # NestJS 后端服务
-│   └── src/
-│       ├── main.ts           # 服务入口
-│       ├── app.module.ts     # 根模块
-│       ├── app.controller.ts # 根控制器
-│       └── app.service.ts    # 根服务
-```
-
-### 开发命令
-
-```sh
-pnpm dev:server // 启动开发服务 (热重载, 默认端口 3000)
-pnpm build:server // 构建生产版本
-```
-
-### 新建模块流程 (CLI)
-
-快速生成样板代码：
-
-```bash
-cd server
-
-# 生成完整的 CRUD 资源 (包含 Module, Controller, Service, DTO, Entity)
-npx nest g resource modules/product
-
-# 仅生成特定部分
-npx nest g module modules/order
-npx nest g controller modules/order
-npx nest g service modules/order
-```
-
-### 环境变量配置
-
-在 server/ 根目录创建 .env 文件：
-
-```sh
-## 服务端口
-PORT=3000
-
-## 微信小程序配置
-WX_APP_ID=你的AppID
-WX_APP_SECRET=你的AppSecret
-
-## JWT 密钥
-JWT_SECRET=your-super-secret-key
-```
-
-在代码中使用 @nestjs/config 读取环境变量：
-
-```typescript
-import { ConfigService } from '@nestjs/config';
-
-// 在 Service 中注入
-constructor(private configService: ConfigService) {}
-
-getWxConfig() {
-  return {
-    appId: this.configService.get<string>('WX_APP_ID'),
-    secret: this.configService.get<string>('WX_APP_SECRET'),
-  };
-}
-```
-
-### 标准响应封装
-
-建议使用拦截器 (Interceptor) 统一 API 响应格式：
-
-```typeScript
-// src/common/interceptors/transform.interceptor.ts
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-
-export interface Response<T> {
-  code: number;
-  data: T;
-  message: string;
-}
-
-@Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
-    return next.handle().pipe(
-      map((data) => ({
-        code: 200,
-        data,
-        message: 'success',
-      })),
-    );
-  }
-}
-```
-
-在 main.ts 中全局注册：
-
-```typescript
-app.useGlobalInterceptors(new TransformInterceptor());
-```
-
-### 微信登录后端实现
-
-```typescript
-// src/modules/auth/auth.service.ts
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { lastValueFrom } from 'rxjs';
-
-@Injectable()
-export class AuthService {
-  constructor(
-    private httpService: HttpService,
-    private configService: ConfigService,
-  ) {}
-
-  async code2Session(code: string) {
-    const appId = this.configService.get('WX_APP_ID');
-    const secret = this.configService.get('WX_APP_SECRET');
-    const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${secret}&js_code=${code}&grant_type=authorization_code`;
-
-    const { data } = await lastValueFrom(this.httpService.get(url));
-
-    if (data.errcode) {
-      throw new UnauthorizedException(`微信登录失败: ${data.errmsg}`);
-    }
-
-    return data; // 包含 openid, session_key
-  }
-}
-```
-
-### 异常处理
-
-使用全局异常过滤器 (Filter) 统一错误响应：
-
-```typescript
-// src/common/filters/http-exception.filter.ts
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-import { Response } from 'express';
-
-@Catch(HttpException)
-export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const status = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
-
-    response.status(status).json({
-      code: status,
-      message: typeof exceptionResponse === 'string' ? exceptionResponse : (exceptionResponse as any).message,
-      data: null,
-    });
-  }
-}
-```
-
-在 main.ts 中注册：
-
-```
-app.useGlobalFilters(new HttpExceptionFilter());
-```
-
-### 数据库 (Drizzle ORM)
-
-推荐使用 [Drizzle ORM](https://orm.drizzle.team/)，已预安装。
-
-### 类型校验 (Zod)
-
-项目集成了 [Zod](https://zod.dev/) 用于运行时类型校验。
-
-#### 定义 Schema
-
-```typescript
-import { z } from 'zod';
-
-// 基础类型
-const userSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1).max(50),
-  email: z.string().email(),
-  age: z.number().int().positive().optional(),
-});
-
-// 从 schema 推导 TypeScript 类型
-type User = z.infer<typeof userSchema>;
-```
-
-#### 请求校验
-
-```typescript
-// src/modules/user/dto/create-user.dto.ts
-import { z } from 'zod';
-
-export const createUserSchema = z.object({
-  nickname: z.string().min(1, '昵称不能为空').max(20, '昵称最多20个字符'),
-  avatar: z.string().url('头像必须是有效的URL').optional(),
-  phone: z.string().regex(/^1[3-9]\d{9}$/, '手机号格式不正确').optional(),
-});
-
-export type CreateUserDto = z.infer<typeof createUserSchema>;
-
-// 在 Controller 中使用
-@Post()
-create(@Body() body: unknown) {
-  const result = createUserSchema.safeParse(body);
-  if (!result.success) {
-    throw new BadRequestException(result.error.errors);
-  }
-  return this.userService.create(result.data);
-}
-```
+## 发布说明
+
+- **AppID**: `wxa8ec50265729065c`（已配置于 `project.config.json`）
+- **后端域名**: Coze 平台自动托管，通过 `PROJECT_DOMAIN` 环境变量注入
+- **数据库**: Supabase 实例由 Coze 平台托管
+- 微信小程序发布前需完成：备案 → 配置服务器域名 → 构建上传 → 体验版/正式版
