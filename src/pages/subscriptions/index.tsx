@@ -459,39 +459,42 @@ const SubscriptionsPage = () => {
                 const isAuto = sub.billing_type !== 'manual'
                 return (
                   <Card key={sub.id} className="border-[#E5E1D8] mb-3">
-                    <CardContent className="p-4">
-                      <View className="flex flex-row items-start justify-between">
-                        <View className="flex flex-col flex-1" onClick={() => openEditModal(sub)}>
-                          {/* Row 1: Name + Amount + Cycle badge + Auto/Manual badge */}
-                          <View className="flex flex-row items-center gap-2 mb-2">
-                            {isAuto ? <Zap size={14} color="#3D7C5F" /> : <Hand size={14} color="#E8913A" />}
-                            <Text className="block text-base font-semibold text-[#1A1A1A]">{sub.name}</Text>
-                            <Text className="block text-lg font-bold text-[#E8913A]">¥{sub.amount}</Text>
-                            <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Badge>
-                            <Badge className={`${isAuto ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'} text-xs`}>
-                              {isAuto ? '自动' : '手动'}
-                            </Badge>
-                          </View>
-                          {/* Row 2: Start date + Next billing + countdown */}
-                          <View className="flex flex-row items-center gap-2 mb-2">
-                            <Text className="block text-xs text-gray-500">起始: {sub.start_date}</Text>
-                            <Text className="block text-xs text-gray-300">|</Text>
-                            <Text className="block text-xs text-gray-500">下次扣费: {sub.next_billing_date}</Text>
-                            <Text className="block text-xs font-medium" style={{ color: urgencyColor }}>
-                              {days <= 0 ? '今天' : `${days}天后`}
-                            </Text>
-                          </View>
-                          {/* Row 3: Total charged from start to now */}
-                          {charged.cycles > 0 && (
-                            <View className="bg-[#FFF8F0] rounded-lg px-3 py-2 mb-2 flex flex-row items-center justify-between">
-                              <Text className="block text-xs text-[#B8782A]">累计已扣 {charged.cycles} 次</Text>
-                              <Text className="block text-sm font-bold text-[#E8913A]">¥{charged.total.toFixed(2)}</Text>
-                            </View>
-                          )}
-                          {/* Row 4: Cost breakdown */}
-                          <Text className="block text-xs text-gray-400">≈ ¥{costs.yearly.toFixed(2)}/年 · ¥{costs.monthly.toFixed(2)}/月 · ¥{costs.daily.toFixed(2)}/天</Text>
+                    <CardContent className="p-4" onClick={() => openEditModal(sub)}>
+                      {/* Row 1: Icon + Name (truncate) + Amount (no wrap) */}
+                      <View className="flex flex-row items-center gap-2 mb-2">
+                        {isAuto ? <Zap size={14} color="#3D7C5F" /> : <Hand size={14} color="#E8913A" />}
+                        <View className="flex flex-row items-center flex-1 min-w-0">
+                          <Text className="block text-base font-semibold text-[#1A1A1A] truncate">{sub.name}</Text>
+                          <Text className="block text-lg font-bold text-[#E8913A] flex-shrink-0 ml-2">¥{sub.amount}</Text>
                         </View>
-                        <Button className="bg-transparent p-0" onClick={() => handleDelete(sub.id)}>
+                      </View>
+                      {/* Row 2: Cycle badge + Auto/Manual badge */}
+                      <View className="flex flex-row items-center gap-2 mb-2">
+                        <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Badge>
+                        <Badge className={`${isAuto ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'} text-xs`}>
+                          {isAuto ? '自动' : '手动'}
+                        </Badge>
+                      </View>
+                      {/* Row 3: Start date + Next billing + countdown */}
+                      <View className="flex flex-row items-center gap-2 mb-2">
+                        <Text className="block text-xs text-gray-500">起始: {sub.start_date}</Text>
+                        <Text className="block text-xs text-gray-300">|</Text>
+                        <Text className="block text-xs text-gray-500">下次扣费: {sub.next_billing_date}</Text>
+                        <Text className="block text-xs font-medium" style={{ color: urgencyColor }}>
+                          {days <= 0 ? '今天' : `${days}天后`}
+                        </Text>
+                      </View>
+                      {/* Row 4: Total charged from start to now */}
+                      {charged.cycles > 0 && (
+                        <View className="bg-[#FFF8F0] rounded-lg px-3 py-2 mb-2 flex flex-row items-center justify-between">
+                          <Text className="block text-xs text-[#B8782A]">累计已扣 {charged.cycles} 次</Text>
+                          <Text className="block text-sm font-bold text-[#E8913A]">¥{charged.total.toFixed(2)}</Text>
+                        </View>
+                      )}
+                      {/* Row 5: Cost breakdown + Delete */}
+                      <View className="flex flex-row items-center justify-between">
+                        <Text className="block text-xs text-gray-400">≈ ¥{costs.yearly.toFixed(2)}/年 · ¥{costs.monthly.toFixed(2)}/月 · ¥{costs.daily.toFixed(2)}/天</Text>
+                        <Button className="bg-transparent p-0" onClick={(e) => { e.stopPropagation(); handleDelete(sub.id) }}>
                           <Trash2 size={16} color="#EF4444" />
                         </Button>
                       </View>
