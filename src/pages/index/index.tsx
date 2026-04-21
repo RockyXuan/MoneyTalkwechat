@@ -1,31 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Picker, ScrollView } from '@tarojs/components'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, PenLine, X, Pencil, Calendar, Plus, Search, MessageCircle, Check } from 'lucide-react-taro'
+import { Send, Loader, Calendar, Plus, Search, X, MessageCircle, Check } from 'lucide-react-taro'
 import { useExpenseStore, ParsedExpense, PendingRecord } from '@/store/expense-store'
 
-const IndexPage = () => {
-  const [inputText, setInputText] = useState('')
+export default function IndexPage() {
+  const {
+    addExpenses, categories, fetchCategories, createCategory, savePreference,
+    fetchPendingRecords, confirmPendingRecord, rejectPendingRecord, createSubscription,
+  } = useExpenseStore()
+
+  const [input, setInput] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [parsedResults, setParsedResults] = useState<ParsedExpense[]>([])
-  const [isSaving, setIsSaving] = useState(false)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
 
-  // Date mode: 'today' or 'month'
-  const [dateMode, setDateMode] = useState<'today' | 'month'>('today')
-  const today = new Date().toISOString().slice(0, 10)
-  const [selectedDate, setSelectedDate] = useState(today)
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  })
-
-  // Category selector state
+  // Edit modal state (bills-style)
+  const [editNote, setEditNote] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editTag, setEditTag] = useState('')
+  const [editDate, setEditDate] = useState('')
   const [catSearch, setCatSearch] = useState('')
   const [showCatInput, setShowCatInput] = useState(false)
   const [newCatName, setNewCatName] = useState('')
@@ -34,10 +33,11 @@ const IndexPage = () => {
   const [pendingRecords, setPendingRecords] = useState<PendingRecord[]>([])
   const [showPending, setShowPending] = useState(false)
 
-  const { addExpenses, categories, fetchCategories, createCategory, savePreference,
-    fetchPendingRecords, confirmPendingRecord, rejectPendingRecord, createSubscription } = useExpenseStore()
+  // Swipe state for parsed result cards
+  const [swipeX, setSwipeX] = useState<Record<number, number>>({})
+  const touchStartX = useRef<Record<number, number>>({})
+  const touchStartY = useRef<Record<number, number>>({})
 
-  // Load categories on mount
   useEffect(() => {
     fetchCategories()
     loadPendingRecords()
@@ -96,439 +96,453 @@ const IndexPage = () => {
     }
   }
 
-  const getDefaultDate = () => {
-    if (dateMode === 'month') {
-      return `${selectedMonth}-01`
-    }
-    return selectedDate
-  }
-
   const handleParse = async () => {
-    if (!inputText.trim()) {
-      Taro.showToast({ title: '请输入消费内容', icon: 'none' })
-      return
-    }
+    if (!input.trim()) return
     setIsParsing(true)
     try {
-      const defaultDate = getDefaultDate()
-      const results = await useExpenseStore.getState().parseText(inputText, defaultDate)
-      if (results.length > 0) {
-        const adjusted = results.map(r => {
-          if (dateMode === 'month') {
-            const dayMatch = r.expense_date?.match(/(\d{4})-(\d{2})-(\d{2})/)
-            if (dayMatch) {
-              return { ...r, expense_date: `${selectedMonth}-${dayMatch[3]}` }
-            }
-            return { ...r, expense_date: `${selectedMonth}-01` }
-          }
-          return r
-        })
-        setParsedResults(prev => [...prev, ...adjusted])
+      const result = await useExpenseStore.getState().parseText(input.trim())
+      if (result && result.length > 0) {
+        setParsedResults(result.map(r => ({ ...r, _edited: false })))
       } else {
-        Taro.showToast({ title: '未识别到消费信息', icon: 'none' })
+        Taro.showToast({ title: '未能识别', icon: 'none' })
       }
     } catch (err) {
-      console.error('解析失败', err)
-      Taro.showToast({ title: '解析失败，请重试', icon: 'none' })
+      console.error('parseText error:', err)
+      Taro.showToast({ title: '识别失败', icon: 'none' })
     } finally {
       setIsParsing(false)
     }
   }
 
-  const handleSave = async () => {
-    if (parsedResults.length === 0) return
-    setIsSaving(true)
-    try {
-      await addExpenses(parsedResults, inputText)
-      // Save preferences for any edited categories
-      for (const r of parsedResults) {
-        if (r._edited && r.category && r.note) {
-          savePreference(r.note, r.category)
-        }
-      }
-      Taro.showToast({ title: `成功保存 ${parsedResults.length} 笔`, icon: 'success' })
-      setParsedResults([])
-      setInputText('')
-      setEditingIdx(null)
-    } catch (err) {
-      console.error('保存失败', err)
-      Taro.showToast({ title: '保存失败', icon: 'none' })
-    } finally {
-      setIsSaving(false)
+  const openEditModal = (idx: number) => {
+    const item = parsedResults[idx]
+    setEditingIdx(idx)
+    setEditNote(item.note || '')
+    setEditAmount(item.amount != null ? String(item.amount) : '')
+    setEditCategory(item.category || '其他')
+    setEditTag(item.tag || '')
+    setEditDate(item.expense_date || new Date().toISOString().slice(0, 10))
+    setCatSearch('')
+    setShowCatInput(false)
+    setNewCatName('')
+  }
+
+  const closeEditModal = () => {
+    setEditingIdx(null)
+  }
+
+  const handleSaveEdit = () => {
+    if (editingIdx === null) return
+    const updated = [...parsedResults]
+    updated[editingIdx] = {
+      ...updated[editingIdx],
+      note: editNote,
+      amount: editAmount ? Number(editAmount) : null,
+      category: editCategory,
+      tag: editTag,
+      expense_date: editDate,
+      _edited: true,
     }
-  }
-
-  const handleRemoveResult = (idx: number) => {
-    setParsedResults(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const handleUpdateResult = (idx: number, field: string, value: any) => {
-    setParsedResults(prev => prev.map((item, i) =>
-      i === idx ? { ...item, [field]: value, _edited: true } : item
-    ))
+    setParsedResults(updated)
+    setEditingIdx(null)
+    Taro.showToast({ title: '已更新', icon: 'success' })
   }
 
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return
     try {
       await createCategory(newCatName.trim())
+      setEditCategory(newCatName.trim())
       setNewCatName('')
       setShowCatInput(false)
-      setCatSearch('')
-      Taro.showToast({ title: '分类已添加', icon: 'success' })
     } catch (err) {
-      console.error('创建分类失败', err)
+      console.error('createCategory error:', err)
     }
   }
 
-  const totalParsedAmount = parsedResults.reduce((sum, r) => sum + (r.amount || 0), 0)
+  const handleSaveSingle = async (idx: number) => {
+    const item = parsedResults[idx]
+    if (item.amount == null) {
+      Taro.showToast({ title: '请先填写金额', icon: 'none' })
+      return
+    }
+    try {
+      await addExpenses([item], input.trim())
+      savePreference(input.trim(), JSON.stringify(item))
+      // Remove saved item
+      const updated = parsedResults.filter((_, i) => i !== idx)
+      setParsedResults(updated)
+      // Reset swipe
+      const newSwipe = { ...swipeX }
+      delete newSwipe[idx]
+      setSwipeX(newSwipe)
+      if (updated.length === 0) {
+        setInput('')
+        Taro.showToast({ title: '已保存', icon: 'success' })
+      } else {
+        Taro.showToast({ title: '已保存', icon: 'success' })
+      }
+    } catch (err) {
+      console.error('saveSingle error:', err)
+    }
+  }
 
-  // Filtered categories for the selector
+  const handleDeleteParsed = (idx: number) => {
+    const updated = parsedResults.filter((_, i) => i !== idx)
+    setParsedResults(updated)
+    const newSwipe = { ...swipeX }
+    delete newSwipe[idx]
+    setSwipeX(newSwipe)
+    if (updated.length === 0) setInput('')
+  }
+
+  const handleSaveAll = async () => {
+    const items = parsedResults.filter(r => r.amount != null)
+    if (items.length === 0) {
+      Taro.showToast({ title: '没有可保存的记录', icon: 'none' })
+      return
+    }
+    try {
+      await addExpenses(items, input.trim())
+      for (const item of items) {
+        savePreference(input.trim(), JSON.stringify(item))
+      }
+      setParsedResults([])
+      setInput('')
+      Taro.showToast({ title: '全部保存成功', icon: 'success' })
+    } catch (err) {
+      console.error('saveAll error:', err)
+    }
+  }
+
+  // Swipe handlers
+  const handleTouchStart = (idx: number, e: any) => {
+    const touch = e.touches[0]
+    touchStartX.current[idx] = touch.clientX
+    touchStartY.current[idx] = touch.clientY
+  }
+
+  const handleTouchMove = (idx: number, e: any) => {
+    const touch = e.touches[0]
+    const startX = touchStartX.current[idx] || 0
+    const startY = touchStartY.current[idx] || 0
+    const diffX = touch.clientX - startX
+    const diffY = touch.clientY - startY
+
+    // Only handle horizontal swipes
+    if (Math.abs(diffY) > Math.abs(diffX)) return
+
+    const offset = Math.max(-80, Math.min(80, diffX * 0.6))
+    setSwipeX(prev => ({ ...prev, [idx]: offset }))
+  }
+
+  const handleTouchEnd = (idx: number) => {
+    const offset = swipeX[idx] || 0
+    // Snap to full position or back
+    if (offset > 30) {
+      setSwipeX(prev => ({ ...prev, [idx]: 80 })) // right swipe → delete (red, left side)
+    } else if (offset < -30) {
+      setSwipeX(prev => ({ ...prev, [idx]: -80 })) // left swipe → save (green, right side)
+    } else {
+      setSwipeX(prev => ({ ...prev, [idx]: 0 }))
+    }
+  }
+
+  const resetSwipe = (idx: number) => {
+    setSwipeX(prev => ({ ...prev, [idx]: 0 }))
+  }
+
   const filteredCategories = categories.filter(c =>
     !catSearch || c.name.includes(catSearch)
   )
 
   return (
-    <View className="h-full bg-[#F7F5F0] flex flex-col">
-      {/* Scrollable content area */}
-      <ScrollView scrollY className="flex-1">
-        {/* Header */}
-        <View className="px-4 pt-4 pb-2 flex flex-row items-center justify-between">
-          <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
-          {pendingRecords.length > 0 && (
-            <View className="flex flex-row items-center gap-1" onClick={() => setShowPending(!showPending)}>
-              <MessageCircle size={16} color="#E8913A" />
-              <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{pendingRecords.length} 条待确认</Badge>
-            </View>
-          )}
-        </View>
-
-        {/* Pending Records from WeChat */}
-        {showPending && pendingRecords.length > 0 && (
-          <View className="px-4 mb-2">
-            <View className="flex flex-row items-center gap-2 mb-2">
-              <MessageCircle size={16} color="#E8913A" />
-              <Text className="block text-sm font-semibold text-[#1A1A1A]">微信待确认</Text>
-              <Text className="block text-xs text-gray-400">来自公众号的消息</Text>
-            </View>
-            {pendingRecords.map(record => {
-              const pd = record.parsed_data || {}
-              const isSub = record.record_type === 'subscription'
-              return (
-                <Card key={record.id} className="border-[#FFF0E0] mb-2">
-                  <CardContent className="p-3">
-                    <View className="flex flex-row items-center gap-2 mb-1">
-                      <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
-                        {isSub ? '订阅' : '支出'}
-                      </Badge>
-                      <Text className="block text-xs text-gray-400">来自微信</Text>
-                    </View>
-                    <View className="flex flex-row items-center justify-between mb-2">
-                      <Text className="block text-sm font-medium text-[#1A1A1A]">
-                        {pd.note || pd.name || record.raw_text}
-                      </Text>
-                      <Text className="block text-base font-bold text-[#E8913A]">
-                        {pd.amount != null ? `¥${pd.amount}` : '金额待定'}
-                      </Text>
-                    </View>
-                    <View className="flex flex-row items-center gap-2 mb-2">
-                      <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.category || '未分类'}</Badge>
-                      {isSub && <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.cycle === 'monthly' ? '每月' : pd.cycle === 'quarterly' ? '每季度' : pd.cycle === 'yearly' ? '每年' : pd.cycle}</Badge>}
-                    </View>
-                    <View className="flex flex-row gap-2">
-                      <View style={{ flex: 1 }}>
-                        <Button className="w-full bg-[#3D7C5F] text-white rounded-lg" onClick={() => handleConfirmPending(record)}>
-                          <View className="flex flex-row items-center justify-center gap-1">
-                            <Check size={12} color="#fff" />
-                            <Text className="text-white text-xs">确认</Text>
-                          </View>
-                        </Button>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Button className="w-full bg-white border border-[#E5E1D8] text-gray-500 rounded-lg" onClick={() => handleRejectPending(record.id)}>
-                          <Text className="text-xs text-gray-500">忽略</Text>
-                        </Button>
-                      </View>
-                    </View>
-                  </CardContent>
-                </Card>
-              )
-            })}
+    <View className="min-h-full bg-[#F7F5F0] pb-20">
+      {/* Header */}
+      <View className="px-4 pt-4 pb-2 flex flex-row items-center justify-between">
+        <Text className="block text-xl font-semibold text-[#1A1A1A]">记一笔</Text>
+        {pendingRecords.length > 0 && (
+          <View className="flex flex-row items-center gap-1" onClick={() => setShowPending(!showPending)}>
+            <MessageCircle size={16} color="#E8913A" />
+            <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{pendingRecords.length} 条待确认</Badge>
           </View>
         )}
+      </View>
 
-        {/* Date Selector */}
+      {/* Pending Records from WeChat */}
+      {showPending && pendingRecords.length > 0 && (
         <View className="px-4 mb-2">
-          <Card className="border-[#E5E1D8]">
-            <CardContent className="p-3">
-              <View className="flex flex-row items-center gap-3">
-                <Calendar size={18} color="#3D7C5F" />
-                <View className="flex flex-row bg-[#F7F5F0] rounded-lg p-1">
-                  <View
-                    className={`px-3 py-1 rounded-md ${dateMode === 'today' ? 'bg-[#3D7C5F]' : ''}`}
-                    onClick={() => setDateMode('today')}
-                  >
-                    <Text className={`block text-xs ${dateMode === 'today' ? 'text-white' : 'text-gray-500'}`}>
-                      按日期
-                    </Text>
-                  </View>
-                  <View
-                    className={`px-3 py-1 rounded-md ${dateMode === 'month' ? 'bg-[#3D7C5F]' : ''}`}
-                    onClick={() => setDateMode('month')}
-                  >
-                    <Text className={`block text-xs ${dateMode === 'month' ? 'text-white' : 'text-gray-500'}`}>
-                      按月份
-                    </Text>
-                  </View>
-                </View>
-                {dateMode === 'today' ? (
-                  <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
-                    <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
-                      <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedDate}</Text>
-                    </View>
-                  </Picker>
-                ) : (
-                  <Picker
-                    mode="date"
-                    fields="month"
-                    value={`${selectedMonth}-01`}
-                    onChange={(e) => {
-                      const val = e.detail.value as string
-                      setSelectedMonth(val.slice(0, 7))
-                    }}
-                  >
-                    <View className="px-3 py-1 bg-[#E8F0EB] rounded-lg">
-                      <Text className="block text-sm text-[#3D7C5F] font-medium">{selectedMonth}</Text>
-                    </View>
-                  </Picker>
-                )}
-              </View>
-              {dateMode === 'month' && (
-                <Text className="block text-xs text-gray-400 mt-2">
-                  按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
-                </Text>
-              )}
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* Input Area */}
-        <View className="px-4">
-          <Card className="border-[#E5E1D8]">
-            <CardContent className="p-4">
-              <View className="bg-[#F7F5F0] rounded-xl p-3">
-                <Textarea
-                  style={{ width: '100%', minHeight: '64px', backgroundColor: 'transparent', fontSize: '15px', lineHeight: '22px' }}
-                  placeholder="今天花了什么？说说看..."
-                  value={inputText}
-                  onInput={(e) => setInputText(e.detail.value)}
-                  maxlength={500}
-                />
-              </View>
-              <View className="mt-3">
-                <Button
-                  className="w-full bg-[#3D7C5F] text-white rounded-xl"
-                  onClick={handleParse}
-                  disabled={isParsing || !inputText.trim()}
-                >
-                  {isParsing ? (
-                    <View className="flex flex-row items-center justify-center gap-2">
-                      <Loader size={16} color="#fff" className="animate-spin" />
-                      <Text className="text-white">解析中</Text>
-                    </View>
-                  ) : (
-                    <View className="flex flex-row items-center justify-center gap-2">
-                      <Send size={16} color="#fff" />
-                      <Text className="text-white">智能记账</Text>
-                    </View>
-                  )}
-                </Button>
-              </View>
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* Parsed Results */}
-        {parsedResults.length > 0 && (
-          <View className="px-4 mt-4 pb-36">
-            <View className="flex flex-row items-center justify-between mb-2">
-              <View className="flex flex-row items-center gap-2">
-                <PenLine size={16} color="#3D7C5F" />
-                <Text className="block text-base font-semibold text-[#1A1A1A]">AI 解析结果</Text>
-                <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{parsedResults.length} 笔</Badge>
-              </View>
-              <Text className="block text-lg font-bold text-[#E8913A]">合计 ¥{totalParsedAmount.toFixed(2)}</Text>
-            </View>
-
-            {parsedResults.map((result, idx) => (
-              <Card key={idx} className="border-[#E5E1D8] mb-2">
+          <View className="flex flex-row items-center gap-2 mb-2">
+            <MessageCircle size={16} color="#E8913A" />
+            <Text className="block text-sm font-semibold text-[#1A1A1A]">微信待确认</Text>
+            <Text className="block text-xs text-gray-400">来自公众号的消息</Text>
+          </View>
+          {pendingRecords.map(record => {
+            const pd = record.parsed_data || {}
+            const isSub = record.record_type === 'subscription'
+            return (
+              <Card key={record.id} className="border-[#FFF0E0] mb-2">
                 <CardContent className="p-3">
-                  {editingIdx === idx ? (
-                    /* ===== EDIT MODE: compact vertical layout ===== */
-                    <View className="flex flex-col gap-2">
-                      {/* Row 1: Name + Amount */}
-                      <View className="flex flex-row items-center gap-2">
-                        <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1">
-                          <Input
-                            className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
-                            value={result.note}
-                            onInput={(e) => handleUpdateResult(idx, 'note', e.detail.value)}
-                            placeholder="名称"
-                          />
+                  <View className="flex flex-row items-center gap-2 mb-1">
+                    <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{isSub ? '订阅' : '支出'}</Badge>
+                    <Text className="block text-xs text-gray-400">来自微信</Text>
+                  </View>
+                  <View className="flex flex-row items-center justify-between mb-2">
+                    <Text className="block text-sm font-medium text-[#1A1A1A]">{pd.note || pd.name || record.raw_text}</Text>
+                    <Text className="block text-base font-bold text-[#E8913A]">{pd.amount != null ? `¥${pd.amount}` : '金额待定'}</Text>
+                  </View>
+                  <View className="flex flex-row items-center gap-2 mb-2">
+                    <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.category || '未分类'}</Badge>
+                    {isSub && <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{pd.cycle === 'monthly' ? '每月' : pd.cycle === 'quarterly' ? '每季度' : pd.cycle === 'yearly' ? '每年' : pd.cycle}</Badge>}
+                  </View>
+                  <View className="flex flex-row gap-2">
+                    <View style={{ flex: 1 }}>
+                      <Button className="w-full bg-[#3D7C5F] text-white rounded-lg" onClick={() => handleConfirmPending(record)}>
+                        <View className="flex flex-row items-center justify-center gap-1">
+                          <Check size={12} color="#fff" />
+                          <Text className="text-white text-xs">确认</Text>
                         </View>
-                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1" style={{ width: '90px' }}>
-                          <Input
-                            className="border-0 bg-transparent text-[#E8913A] font-bold ring-0 focus-within:ring-0"
-                            type="digit"
-                            value={result.amount != null ? String(result.amount) : ''}
-                            onInput={(e) => handleUpdateResult(idx, 'amount', e.detail.value ? Number(e.detail.value) : null)}
-                            placeholder="金额"
-                          />
-                        </View>
-                      </View>
-
-                      {/* Row 2: Category horizontal scroll */}
-                      <ScrollView scrollX className="w-full">
-                        <View className="flex flex-row gap-1 flex-nowrap">
-                          {filteredCategories.map(cat => (
-                            <View key={cat.id} onClick={() => { handleUpdateResult(idx, 'category', cat.name); setCatSearch('') }} className="flex-shrink-0">
-                              <Badge className={`${result.category === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs`}>
-                                {cat.name}
-                              </Badge>
-                            </View>
-                          ))}
-                        </View>
-                      </ScrollView>
-
-                      {/* Row 3: Search + Add custom (collapsed by default) */}
-                      <View className="flex flex-row items-center gap-2">
-                        <View className="flex-1 bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1">
-                          <Search size={12} color="#999" />
-                          <Input
-                            className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
-                            placeholder="搜索分类..."
-                            value={catSearch}
-                            onInput={(e) => setCatSearch(e.detail.value)}
-                          />
-                        </View>
-                        {showCatInput ? (
-                          <View className="flex flex-row items-center gap-1">
-                            <View className="bg-[#F7F5F0] rounded-lg px-2 py-1" style={{ width: '80px' }}>
-                              <Input
-                                className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0"
-                                placeholder="新分类"
-                                value={newCatName}
-                                onInput={(e) => setNewCatName(e.detail.value)}
-                                onConfirm={() => handleCreateCategory()}
-                              />
-                            </View>
-                            <Button className="bg-[#3D7C5F] text-white px-2 py-0 rounded-lg" style={{ minHeight: '28px' }} onClick={handleCreateCategory}>
-                              <Text className="text-white text-xs">添加</Text>
-                            </Button>
-                          </View>
-                        ) : (
-                          <View
-                            className="flex flex-row items-center gap-1 px-2 py-1 bg-[#FFF7ED] rounded-lg flex-shrink-0"
-                            onClick={() => setShowCatInput(true)}
-                          >
-                            <Plus size={10} color="#E8913A" />
-                            <Text className="text-xs text-[#E8913A]">自定义</Text>
-                          </View>
-                        )}
-                      </View>
-
-                      {/* Row 4: Date */}
-                      <Picker mode="date" value={result.expense_date} onChange={(e) => handleUpdateResult(idx, 'expense_date', e.detail.value)}>
-                        <View className="bg-[#F7F5F0] rounded-lg px-2 py-1 flex flex-row items-center gap-1 self-start">
-                          <Calendar size={12} color="#3D7C5F" />
-                          <Text className="text-xs text-[#3D7C5F]">{result.expense_date}</Text>
-                        </View>
-                      </Picker>
-
-                      {/* Done editing */}
-                      <Button
-                        className="bg-[#E8F0EB] text-[#3D7C5F] text-xs rounded-lg self-start"
-                        onClick={() => { setEditingIdx(null); setCatSearch(''); setShowCatInput(false) }}
-                      >
-                        <Text className="text-xs text-[#3D7C5F]">完成编辑</Text>
                       </Button>
                     </View>
-                  ) : (
-                    /* ===== VIEW MODE: name+amount line 1, category line 2 ===== */
-                    <View className="flex flex-row items-center justify-between">
-                      <View className="flex flex-col flex-1">
-                        <View className="flex flex-row items-center gap-2">
-                          <Text className="block text-base font-semibold text-[#1A1A1A]">
-                            {result.note || '未命名'}
-                          </Text>
-                          <Text className="block text-lg font-bold text-[#E8913A]">
-                            {result.amount != null ? `¥${result.amount}` : '--'}
-                          </Text>
-                        </View>
-                        <View className="flex flex-row items-center gap-2 mt-1">
-                          <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{result.category}</Badge>
-                          {result.tag && <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">{result.tag}</Badge>}
-                        </View>
-                      </View>
-                      <View className="flex flex-row items-center gap-1">
-                        <Button
-                          className="bg-transparent p-0"
-                          onClick={() => { setEditingIdx(idx); setCatSearch(''); setShowCatInput(false) }}
-                        >
-                          <Pencil size={14} color="#999" />
-                        </Button>
-                        <Button className="bg-transparent p-0" onClick={() => handleRemoveResult(idx)}>
-                          <X size={14} color="#EF4444" />
-                        </Button>
-                      </View>
+                    <View style={{ flex: 1 }}>
+                      <Button className="w-full bg-white border border-[#E5E1D8] text-gray-500 rounded-lg" onClick={() => handleRejectPending(record.id)}>
+                        <Text className="text-xs text-gray-500">忽略</Text>
+                      </Button>
                     </View>
-                  )}
+                  </View>
                 </CardContent>
               </Card>
-            ))}
-          </View>
-        )}
+            )
+          })}
+        </View>
+      )}
 
-        {/* Empty State */}
-        {parsedResults.length === 0 && (
-          <View className="flex flex-col items-center justify-center mt-16">
-            <PenLine size={48} color="#E5E1D8" />
-            <Text className="block text-gray-400 mt-4 text-sm">说点什么开始记账吧</Text>
+      {/* Input Area */}
+      <View className="px-4 mb-3">
+        <View className="bg-white rounded-2xl p-4" style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
+          <View style={{ flex: 1, backgroundColor: '#F7F5F0', borderRadius: '20px', padding: '8px 12px' }}>
+            <Input
+              style={{ width: '100%', fontSize: '14px' }}
+              placeholder="说一句话记一笔，如：午饭30 咖啡15"
+              value={input}
+              onInput={(e) => setInput(e.detail.value)}
+              onConfirm={() => handleParse()}
+              confirmType="send"
+            />
           </View>
-        )}
-      </ScrollView>
+          <View style={{ flexShrink: 0 }}>
+            <Button
+              className="bg-[#3D7C5F] text-white rounded-full px-4 py-2"
+              onClick={handleParse}
+              disabled={isParsing || !input.trim()}
+            >
+              {isParsing ? <Loader size={16} color="#fff" /> : <Send size={16} color="#fff" />}
+            </Button>
+          </View>
+        </View>
+      </View>
 
-      {/* Fixed bottom save bar - only shows when there are parsed results */}
+      {/* Parsed Results - Swipeable Cards */}
       {parsedResults.length > 0 && (
-        <View
-          style={{
-            position: 'fixed', bottom: 50, left: 0, right: 0,
-            display: 'flex', flexDirection: 'row', gap: '12px',
-            padding: '12px 16px', backgroundColor: '#F7F5F0',
-            borderTop: '1px solid #E5E1D8', zIndex: 100,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Button
-              className="w-full rounded-xl bg-[#3D7C5F] text-white"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? '保存中...' : `确认记账（${parsedResults.length} 笔）`}
-            </Button>
+        <View className="px-4 mb-3">
+          <View className="flex flex-row items-center justify-between mb-2">
+            <Text className="block text-sm font-semibold text-[#1A1A1A]">识别结果</Text>
+            <Text className="block text-xs text-gray-400">←左滑保存 | 右滑删除→</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Button
-              className="w-full rounded-xl bg-white border border-[#E5E1D8] text-[#1A1A1A]"
-              onClick={() => { setParsedResults([]); setEditingIdx(null) }}
-            >
-              清空结果
-            </Button>
+
+          {parsedResults.map((item, idx) => {
+            const offset = swipeX[idx] || 0
+            return (
+              <View key={idx} className="mb-2" style={{ overflow: 'hidden', borderRadius: '12px', position: 'relative' }}>
+                {/* Background actions (revealed by swipe) */}
+                <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'row' }}>
+                  {/* Left action: Delete (red) - revealed when swiping right */}
+                  <View
+                    className="flex items-center justify-center"
+                    style={{ width: '50%', backgroundColor: '#EF4444' }}
+                    onClick={() => { handleDeleteParsed(idx); resetSwipe(idx) }}
+                  >
+                    <View className="flex flex-col items-center">
+                      <X size={20} color="#fff" />
+                      <Text className="text-white text-xs mt-1">删除</Text>
+                    </View>
+                  </View>
+                  {/* Right action: Save (green) - revealed when swiping left */}
+                  <View
+                    className="flex items-center justify-center"
+                    style={{ width: '50%', backgroundColor: '#3D7C5F' }}
+                    onClick={() => { handleSaveSingle(idx); resetSwipe(idx) }}
+                  >
+                    <View className="flex flex-col items-center">
+                      <Check size={20} color="#fff" />
+                      <Text className="text-white text-xs mt-1">保存</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Foreground card */}
+                <View
+                  style={{
+                    transform: `translateX(${offset}px)`,
+                    transition: offset === 0 ? 'transform 0.2s ease' : 'none',
+                    position: 'relative',
+                    zIndex: 1,
+                  }}
+                  onTouchStart={(e) => handleTouchStart(idx, e)}
+                  onTouchMove={(e) => handleTouchMove(idx, e)}
+                  onTouchEnd={() => handleTouchEnd(idx)}
+                  onClick={() => {
+                    if (Math.abs(offset) < 5) {
+                      openEditModal(idx)
+                    }
+                  }}
+                >
+                  <Card className="border-[#E5E1D8]">
+                    <CardContent className="p-3">
+                      <View className="flex flex-row items-center justify-between">
+                        <View className="flex flex-col flex-1">
+                          <View className="flex flex-row items-center gap-2">
+                            <Text className="block text-base font-semibold text-[#1A1A1A]">{item.note || '未命名'}</Text>
+                            <Text className="block text-lg font-bold text-[#E8913A]">
+                              {item.amount != null ? `¥${item.amount}` : '待定'}
+                            </Text>
+                          </View>
+                          <View className="flex flex-row items-center gap-2 mt-1">
+                            <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category || '其他'}</Badge>
+                            {item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
+                          </View>
+                        </View>
+                      </View>
+                    </CardContent>
+                  </Card>
+                </View>
+              </View>
+            )
+          })}
+
+          {/* Save All button */}
+          <Button className="w-full bg-[#3D7C5F] text-white rounded-xl mt-2" onClick={handleSaveAll}>
+            <Text className="text-white text-sm font-medium">全部保存</Text>
+          </Button>
+        </View>
+      )}
+
+      {/* Edit Modal - same style as bills page */}
+      {editingIdx !== null && (
+        <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <ScrollView scrollY className="flex-1 w-full">
+              <View className="p-5 pb-4">
+                {/* Header */}
+                <View className="flex flex-row items-center justify-between mb-4">
+                  <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
+                  <Button className="bg-transparent p-0" onClick={closeEditModal}>
+                    <X size={20} color="#999" />
+                  </Button>
+                </View>
+
+                {/* Name + Amount on same line */}
+                <View className="flex flex-row items-center gap-3 mb-3">
+                  <View className="flex-1">
+                    <Text className="block text-sm text-gray-500 mb-1">名称</Text>
+                    <View className="bg-white rounded-lg px-3 py-2">
+                      <Input
+                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        value={editNote}
+                        onInput={(e) => setEditNote(e.detail.value)}
+                        placeholder="消费名称"
+                      />
+                    </View>
+                  </View>
+                  <View style={{ width: '100px' }}>
+                    <Text className="block text-sm text-gray-500 mb-1">金额</Text>
+                    <View className="bg-white rounded-lg px-3 py-2">
+                      <Input
+                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        type="digit"
+                        value={editAmount}
+                        onInput={(e) => setEditAmount(e.detail.value)}
+                        placeholder="金额"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Category selector */}
+                <View className="mb-3">
+                  <Text className="block text-sm text-gray-500 mb-1">分类</Text>
+                  <ScrollView scrollY className="w-full bg-white rounded-lg" style={{ maxHeight: '130px' }}>
+                    <View className="flex flex-row flex-wrap gap-2 p-3">
+                      {filteredCategories.map(cat => (
+                        <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
+                          <Badge className={`${editCategory === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs px-3 py-1`}>
+                            {cat.name}
+                          </Badge>
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                  {/* Search + Custom in one row */}
+                  <View className="flex flex-row items-center gap-2 mt-2">
+                    <View className="flex-1 bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
+                      <Search size={12} color="#999" />
+                      <Input
+                        className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
+                        placeholder="搜索..."
+                        value={catSearch}
+                        onInput={(e) => setCatSearch(e.detail.value)}
+                      />
+                    </View>
+                    {showCatInput ? (
+                      <View className="flex-1 bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-1">
+                        <Input
+                          className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
+                          placeholder="新分类名"
+                          value={newCatName}
+                          onInput={(e) => setNewCatName(e.detail.value)}
+                          onConfirm={() => handleCreateCategory()}
+                        />
+                        <View className="px-2 py-1 bg-[#3D7C5F] rounded" onClick={handleCreateCategory}>
+                          <Text className="text-white text-xs">加</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <View
+                        className="flex-1 bg-[#FFF7ED] rounded-lg flex flex-row items-center justify-center gap-1 py-2"
+                        onClick={() => setShowCatInput(true)}
+                      >
+                        <Plus size={14} color="#E8913A" />
+                        <Text className="text-xs text-[#E8913A] font-medium">自定义分类</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Date + Save in one row */}
+                <View className="flex flex-row items-end gap-3">
+                  <View className="flex-1">
+                    <Text className="block text-sm text-gray-500 mb-1">日期</Text>
+                    <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
+                      <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                        <Calendar size={14} color="#3D7C5F" />
+                        <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                      </View>
+                    </Picker>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      className="w-full bg-[#3D7C5F] text-white rounded-lg py-2"
+                      onClick={handleSaveEdit}
+                    >
+                      <Text className="text-white text-sm font-medium">完成编辑</Text>
+                    </Button>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
           </View>
         </View>
       )}
     </View>
   )
 }
-
-export default IndexPage
