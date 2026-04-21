@@ -48,6 +48,7 @@ const SubscriptionsPage = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [totalYearly, setTotalYearly] = useState(0)
   const [totalMonthly, setTotalMonthly] = useState(0)
+  const [cycleFilter, setCycleFilter] = useState<'all' | 'monthly' | 'quarterly' | 'yearly'>('all')
 
   // Edit modal
   const [editingSub, setEditingSub] = useState<SubscriptionRecord | null>(null)
@@ -170,6 +171,10 @@ const SubscriptionsPage = () => {
 
   // Current parsed result
   const currentParsed = editingIdx != null ? parsedResults[editingIdx] : null
+
+  // Filtered subscriptions
+  const filteredSubs = cycleFilter === 'all' ? subscriptions : subscriptions.filter(s => s.cycle === cycleFilter)
+  const filteredYearly = filteredSubs.reduce((sum, s) => sum + calcCosts(Number(s.amount), s.cycle).yearly, 0)
 
   return (
     <View className="min-h-full bg-[#F7F5F0]">
@@ -324,8 +329,32 @@ const SubscriptionsPage = () => {
           {/* Subscription List */}
           {subscriptions.length > 0 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">我的订阅</Text>
-              {subscriptions.map(sub => {
+              <View className="flex flex-row items-center justify-between mb-2">
+                <Text className="block text-base font-semibold text-[#1A1A1A]">我的订阅</Text>
+                {cycleFilter !== 'all' && (
+                  <Text className="block text-xs text-gray-400">¥{filteredYearly.toFixed(0)}/年</Text>
+                )}
+              </View>
+              {/* Cycle filter tabs */}
+              <View className="flex flex-row bg-white rounded-xl p-1 mb-3">
+                {([
+                  { key: 'all' as const, label: '全部' },
+                  { key: 'monthly' as const, label: '按月' },
+                  { key: 'quarterly' as const, label: '按季' },
+                  { key: 'yearly' as const, label: '按年' },
+                ]).map(opt => (
+                  <View
+                    key={opt.key}
+                    className={`flex-1 py-2 rounded-lg ${cycleFilter === opt.key ? 'bg-[#3D7C5F]' : ''}`}
+                    onClick={() => setCycleFilter(opt.key)}
+                  >
+                    <Text className={`block text-center text-xs font-medium ${cycleFilter === opt.key ? 'text-white' : 'text-gray-500'}`}>
+                      {opt.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {filteredSubs.map(sub => {
                 const costs = calcCosts(Number(sub.amount), sub.cycle)
                 const days = daysUntil(sub.next_billing_date)
                 const urgencyColor = days <= 3 ? '#EF4444' : days <= 7 ? '#E8913A' : '#3D7C5F'
