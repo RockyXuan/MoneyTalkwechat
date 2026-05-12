@@ -347,7 +347,7 @@ const BillsPage = () => {
                 <View className="flex flex-row items-center gap-3 mb-3">
                   <View className="flex-1">
                     <Text className="block text-sm text-muted-foreground mb-1">名称</Text>
-                    <View className="bg-card rounded-lg px-3 py-2">
+                    <View className="bg-muted rounded-lg px-3 py-2">
                       <Input
                         className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
                         value={editNote}
@@ -358,7 +358,7 @@ const BillsPage = () => {
                   </View>
                   <View style={{ width: '100px' }}>
                     <Text className="block text-sm text-muted-foreground mb-1">金额</Text>
-                    <View className="bg-card rounded-lg px-3 py-2">
+                    <View className="bg-muted rounded-lg px-3 py-2">
                       <Input
                         className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
                         type="digit"
@@ -374,7 +374,7 @@ const BillsPage = () => {
                 <View className="mb-3">
                   <Text className="block text-sm text-muted-foreground mb-1">分类</Text>
                   {/* Category grid - 3+ rows */}
-                  <ScrollView scrollY className="w-full bg-card rounded-lg" style={{ maxHeight: '130px' }}>
+                  <ScrollView scrollY className="w-full bg-muted rounded-lg" style={{ maxHeight: '130px' }}>
                     <View className="flex flex-row flex-wrap gap-2 p-3">
                       {filteredCategories.map(cat => (
                         <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
@@ -387,7 +387,7 @@ const BillsPage = () => {
                   </ScrollView>
                   {/* Search + Custom in one row */}
                   <View className="flex flex-row items-center gap-2 mt-2">
-                    <View className="flex-1 bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
+                    <View className="flex-1 bg-muted rounded-lg px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
                       <Search size={12} color="#999" />
                       <Input
                         className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
@@ -397,7 +397,7 @@ const BillsPage = () => {
                       />
                     </View>
                     {showCatInput ? (
-                      <View className="flex-1 bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-1">
+                      <View className="flex-1 bg-muted rounded-lg px-3 py-2 flex flex-row items-center gap-1">
                         <Input
                           className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
                           placeholder="新分类名"
@@ -426,7 +426,7 @@ const BillsPage = () => {
                   <View className="flex-1">
                     <Text className="block text-sm text-muted-foreground mb-1">日期</Text>
                     <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                      <View className="bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                      <View className="bg-muted rounded-lg px-3 py-2 flex flex-row items-center gap-2">
                         <Calendar size={14} color="var(--color-primary)" />
                         <Text className="text-sm text-primary">{editDate}</Text>
                       </View>

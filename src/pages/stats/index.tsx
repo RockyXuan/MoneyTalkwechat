@@ -377,7 +377,7 @@ const StatsPage = () => {
   }
 
   return (
-    <View className="min-h-full bg-muted">
+    <View className="min-h-full bg-background">
       {/* Full-screen backdrop when picker is open */}
       {showPicker && (
         <View

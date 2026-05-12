@@ -9,13 +9,13 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#F7F5F0',
+    navigationBarBackgroundColor: '#F2F2F7',
     navigationBarTitleText: '记一笔',
     navigationBarTextStyle: 'black'
   },
   tabBar: {
     color: '#999999',
-    selectedColor: '#3D7C5F',
+    selectedColor: '#007AFF',
     backgroundColor: '#FFFFFF',
     borderStyle: 'black',
     list: [
