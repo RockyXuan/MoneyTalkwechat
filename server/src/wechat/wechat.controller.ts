@@ -132,4 +132,21 @@ export class WechatController {
     const count = await this.wechatService.getPendingCount(userId)
     return { code: 200, msg: 'ok', data: { count } }
   }
+
+  /**
+   * Save parsed expense/subscription to inbox from mini program
+   */
+  @Post('save-to-inbox')
+  async saveToInbox(
+    @Body() body: { user_id: string; raw_text: string; record_type: string; parsed_data: any },
+  ): Promise<{ code: number; msg: string }> {
+    await this.wechatService.createPendingRecord(
+      body.user_id,
+      body.raw_text,
+      body.record_type || 'expense',
+      body.parsed_data || {},
+      'mini_program',
+    )
+    return { code: 200, msg: '已保存到收集箱' }
+  }
 }

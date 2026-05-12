@@ -131,6 +131,7 @@ interface ExpenseStore {
   confirmPendingRecord: (id: string) => Promise<PendingRecord>
   rejectPendingRecord: (id: string) => Promise<void>
   getPendingCount: () => Promise<number>
+  saveToInbox: (rawText: string, recordType: string, parsedData: Record<string, unknown>) => Promise<unknown>
 }
 
 export const useExpenseStore = create<ExpenseStore>((set, get) => ({
@@ -534,6 +535,26 @@ export const useExpenseStore = create<ExpenseStore>((set, get) => ({
     } catch (err) {
       console.error('getPendingCount error:', err)
       return 0
+    }
+  },
+
+  saveToInbox: async (rawText: string, recordType: string, parsedData: Record<string, unknown>) => {
+    try {
+      const res = await Network.request({
+        url: '/api/wechat/save-to-inbox',
+        method: 'POST',
+        data: {
+          user_id: DEFAULT_USER_ID,
+          raw_text: rawText,
+          record_type: recordType,
+          parsed_data: parsedData,
+        },
+      })
+      console.log('store saveToInbox:', res.data)
+      return res.data
+    } catch (err) {
+      console.error('saveToInbox error:', err)
+      throw err
     }
   },
 }))

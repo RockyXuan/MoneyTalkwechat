@@ -231,18 +231,18 @@ const SubscriptionsPage = () => {
   const filteredYearly = filteredSubs.reduce((sum, s) => sum + calcCosts(Number(s.amount), s.cycle).yearly, 0)
 
   return (
-    <View className="min-h-full bg-[#F7F5F0]">
+    <View className="min-h-full bg-background">
       <ScrollView scrollY className="min-h-full">
         <View className="pb-36">
           {/* Input Area */}
           <View className="px-4 pt-4 pb-2">
-            <Card className="border-[#E5E1D8]">
+            <Card className="border-border">
               <CardContent className="p-4">
                 <View className="flex flex-row items-center gap-2 mb-3">
-                  <CreditCard size={20} color="#3D7C5F" />
-                  <Text className="block text-base font-semibold text-[#1A1A1A]">添加订阅</Text>
+                  <CreditCard size={20} color="var(--color-primary)" />
+                  <Text className="block text-base font-semibold text-foreground">添加订阅</Text>
                 </View>
-                <View className="bg-[#F7F5F0] rounded-xl p-3 mb-3">
+                <View className="bg-background rounded-xl p-3 mb-3">
                   <Textarea
                     style={{ width: '100%', minHeight: '60px', backgroundColor: 'transparent' }}
                     placeholder="说说你的订阅，如：每月订阅了腾讯视频25元、每年ChatGPT Plus 200美元"
@@ -251,12 +251,12 @@ const SubscriptionsPage = () => {
                   />
                 </View>
                 <Button
-                  className="w-full bg-[#3D7C5F] text-white rounded-xl"
+                  className="w-full bg-primary text-primary-foreground rounded-xl"
                   onClick={handleParse}
                   disabled={isParsing}
                 >
                   {isParsing ? <Loader size={16} color="#fff" className="animate-spin" /> : <Send size={16} color="#fff" />}
-                  <Text className="text-white ml-2">{isParsing ? '识别中...' : '识别订阅'}</Text>
+                  <Text className="text-primary-foreground ml-2">{isParsing ? '识别中...' : '识别订阅'}</Text>
                 </Button>
               </CardContent>
             </Card>
@@ -265,10 +265,10 @@ const SubscriptionsPage = () => {
           {/* Parsed Results — Edit Mode */}
           {parsedResults.length > 0 && (
             <View className="px-4 mb-4">
-              <Card className="border-[#3D7C5F]">
+              <Card className="border-primary">
                 <CardContent className="p-4">
                   <View className="flex flex-row items-center justify-between mb-3">
-                    <Text className="block text-sm font-semibold text-[#3D7C5F]">识别结果（点击可编辑）</Text>
+                    <Text className="block text-sm font-semibold text-primary">识别结果（点击可编辑）</Text>
                     <Button className="bg-transparent p-0" onClick={() => { setParsedResults([]); setEditingIdx(null) }}>
                       <X size={16} color="#999" />
                     </Button>
@@ -279,10 +279,10 @@ const SubscriptionsPage = () => {
                       {parsedResults.map((_, idx) => (
                         <View
                           key={idx}
-                          className={`px-3 py-1 rounded-full ${editingIdx === idx ? 'bg-[#3D7C5F]' : 'bg-[#F7F5F0]'}`}
+                          className={`px-3 py-1 rounded-full ${editingIdx === idx ? 'bg-primary' : 'bg-background'}`}
                           onClick={() => setEditingIdx(idx)}
                         >
-                          <Text className={`block text-xs ${editingIdx === idx ? 'text-white' : 'text-gray-500'}`}>第{idx + 1}项</Text>
+                          <Text className={`block text-xs ${editingIdx === idx ? 'text-primary-foreground' : 'text-gray-500'}`}>第{idx + 1}项</Text>
                         </View>
                       ))}
                     </View>
@@ -330,7 +330,7 @@ const SubscriptionsPage = () => {
                           {(['monthly', 'quarterly', 'yearly'] as const).map(c => (
                             <View
                               key={c}
-                              className={`px-3 py-2 rounded-lg ${currentParsed.cycle === c ? 'bg-[#3D7C5F]' : 'bg-white'}`}
+                              className={`px-3 py-2 rounded-lg ${currentParsed.cycle === c ? 'bg-primary' : 'bg-white'}`}
                               onClick={() => {
                                 const idx = editingIdx!
                                 const updated = [...parsedResults]
@@ -338,7 +338,7 @@ const SubscriptionsPage = () => {
                                 setParsedResults(updated)
                               }}
                             >
-                              <Text className={`block text-xs ${currentParsed.cycle === c ? 'text-white' : 'text-gray-500'}`}>{CYCLE_LABELS[c]}</Text>
+                              <Text className={`block text-xs ${currentParsed.cycle === c ? 'text-primary-foreground' : 'text-gray-500'}`}>{CYCLE_LABELS[c]}</Text>
                             </View>
                           ))}
                         </View>
@@ -353,7 +353,7 @@ const SubscriptionsPage = () => {
                           ]).map(opt => (
                             <View
                               key={opt.key}
-                              className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${currentParsed.billing_type === opt.key ? 'bg-[#3D7C5F]' : 'bg-white'}`}
+                              className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${currentParsed.billing_type === opt.key ? 'bg-primary' : 'bg-white'}`}
                               onClick={() => {
                                 const idx = editingIdx!
                                 const updated = [...parsedResults]
@@ -362,7 +362,7 @@ const SubscriptionsPage = () => {
                               }}
                             >
                               {opt.icon === 'zap' ? <Zap size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#999'} /> : <Hand size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#999'} />}
-                              <Text className={`block text-xs ${currentParsed.billing_type === opt.key ? 'text-white' : 'text-gray-500'}`}>{opt.label}</Text>
+                              <Text className={`block text-xs ${currentParsed.billing_type === opt.key ? 'text-primary-foreground' : 'text-gray-500'}`}>{opt.label}</Text>
                             </View>
                           ))}
                         </View>
@@ -381,24 +381,24 @@ const SubscriptionsPage = () => {
                           }}
                         >
                           <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                            <Calendar size={14} color="#3D7C5F" />
-                            <Text className="text-sm text-[#3D7C5F]">{currentParsed.start_date || new Date().toISOString().slice(0, 10)}</Text>
+                            <Calendar size={14} color="var(--color-primary)" />
+                            <Text className="text-sm text-primary">{currentParsed.start_date || new Date().toISOString().slice(0, 10)}</Text>
                           </View>
                         </Picker>
                       </View>
                       {/* Cost preview */}
                       {currentParsed.amount != null && (
-                        <View className="bg-[#E8F5EE] rounded-lg p-3 mb-3">
+                        <View className="bg-accent bg-opacity-20 rounded-lg p-3 mb-3">
                           <View className="flex flex-row items-center justify-between">
-                            <Text className="block text-xs text-[#3D7C5F]">年费预估</Text>
-                            <Text className="block text-base font-bold text-[#3D7C5F]">¥{calcCosts(currentParsed.amount, currentParsed.cycle).yearly.toFixed(2)}/年</Text>
+                            <Text className="block text-xs text-primary">年费预估</Text>
+                            <Text className="block text-base font-bold text-primary">¥{calcCosts(currentParsed.amount, currentParsed.cycle).yearly.toFixed(2)}/年</Text>
                           </View>
                         </View>
                       )}
                     </View>
                   )}
-                  <Button className="w-full bg-[#3D7C5F] text-white rounded-xl" onClick={handleSave} disabled={isSaving}>
-                    <Text className="text-white">{isSaving ? '保存中...' : `保存${parsedResults.length}项订阅`}</Text>
+                  <Button className="w-full bg-primary text-primary-foreground rounded-xl" onClick={handleSave} disabled={isSaving}>
+                    <Text className="text-primary-foreground">{isSaving ? '保存中...' : `保存${parsedResults.length}项订阅`}</Text>
                   </Button>
                 </CardContent>
               </Card>
@@ -408,15 +408,15 @@ const SubscriptionsPage = () => {
           {/* Summary Card */}
           {subscriptions.length > 0 && (
             <View className="px-4 mb-4">
-              <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
+              <Card className="border-border bg-primary">
                 <CardContent className="p-4 flex flex-row items-center justify-between">
                   <View className="flex flex-col">
-                    <Text className="block text-white text-sm mb-1">订阅总览</Text>
-                    <Text className="block text-white text-xs opacity-70">共 {subscriptions.length} 项活跃订阅</Text>
+                    <Text className="block text-primary-foreground text-sm mb-1">订阅总览</Text>
+                    <Text className="block text-primary-foreground text-xs opacity-70">共 {subscriptions.length} 项活跃订阅</Text>
                   </View>
                   <View className="flex flex-col items-end">
-                    <Text className="block text-white text-2xl font-bold">¥{totalMonthly.toFixed(0)}<Text className="text-sm font-normal">/月</Text></Text>
-                    <Text className="block text-white text-xs opacity-70">≈ ¥{totalYearly.toFixed(0)}/年</Text>
+                    <Text className="block text-primary-foreground text-2xl font-bold">¥{totalMonthly.toFixed(0)}<Text className="text-sm font-normal">/月</Text></Text>
+                    <Text className="block text-primary-foreground text-xs opacity-70">≈ ¥{totalYearly.toFixed(0)}/年</Text>
                   </View>
                 </CardContent>
               </Card>
@@ -427,7 +427,7 @@ const SubscriptionsPage = () => {
           {subscriptions.length > 0 && (
             <View className="px-4 mb-4">
               <View className="flex flex-row items-center justify-between mb-2">
-                <Text className="block text-base font-semibold text-[#1A1A1A]">我的订阅</Text>
+                <Text className="block text-base font-semibold text-foreground">我的订阅</Text>
                 {cycleFilter !== 'all' && (
                   <Text className="block text-xs text-gray-400">¥{filteredYearly.toFixed(0)}/年</Text>
                 )}
@@ -442,10 +442,10 @@ const SubscriptionsPage = () => {
                 ]).map(opt => (
                   <View
                     key={opt.key}
-                    className={`flex-1 py-2 rounded-lg ${cycleFilter === opt.key ? 'bg-[#3D7C5F]' : ''}`}
+                    className={`flex-1 py-2 rounded-lg ${cycleFilter === opt.key ? 'bg-primary' : ''}`}
                     onClick={() => setCycleFilter(opt.key)}
                   >
-                    <Text className={`block text-center text-xs font-medium ${cycleFilter === opt.key ? 'text-white' : 'text-gray-500'}`}>
+                    <Text className={`block text-center text-xs font-medium ${cycleFilter === opt.key ? 'text-primary-foreground' : 'text-gray-500'}`}>
                       {opt.label}
                     </Text>
                   </View>
@@ -454,23 +454,23 @@ const SubscriptionsPage = () => {
               {filteredSubs.map(sub => {
                 const costs = calcCosts(Number(sub.amount), sub.cycle)
                 const days = daysUntil(sub.next_billing_date)
-                const urgencyColor = days <= 3 ? '#EF4444' : days <= 7 ? '#E8913A' : '#3D7C5F'
+                const urgencyColor = days <= 3 ? 'var(--color-destructive)' : days <= 7 ? 'var(--color-accent)' : 'var(--color-primary)'
                 const charged = calcTotalCharged(Number(sub.amount), sub.cycle, sub.start_date)
                 const isAuto = sub.billing_type !== 'manual'
                 return (
-                  <Card key={sub.id} className="border-[#E5E1D8] mb-3">
+                  <Card key={sub.id} className="border-border mb-3">
                     <CardContent className="p-4" onClick={() => openEditModal(sub)}>
                       {/* Row 1: Icon + Name (truncate) + Amount (no wrap) */}
                       <View className="flex flex-row items-center gap-2 mb-2">
-                        {isAuto ? <Zap size={14} color="#3D7C5F" /> : <Hand size={14} color="#E8913A" />}
+                        {isAuto ? <Zap size={14} color="var(--color-primary)" /> : <Hand size={14} color="var(--color-accent)" />}
                         <View className="flex flex-row items-center flex-1 min-w-0">
-                          <Text className="block text-base font-semibold text-[#1A1A1A] truncate">{sub.name}</Text>
-                          <Text className="block text-lg font-bold text-[#E8913A] flex-shrink-0 ml-2">¥{sub.amount}</Text>
+                          <Text className="block text-base font-semibold text-foreground truncate">{sub.name}</Text>
+                          <Text className="block text-lg font-bold text-accent flex-shrink-0 ml-2">¥{sub.amount}</Text>
                         </View>
                       </View>
                       {/* Row 2: Cycle badge + Auto/Manual badge */}
                       <View className="flex flex-row items-center gap-2 mb-2">
-                        <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Badge>
+                        <Badge className="bg-accent bg-opacity-20 text-primary text-xs">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Badge>
                         <Badge className={`${isAuto ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'} text-xs`}>
                           {isAuto ? '自动' : '手动'}
                         </Badge>
@@ -486,16 +486,16 @@ const SubscriptionsPage = () => {
                       </View>
                       {/* Row 4: Total charged from start to now */}
                       {charged.cycles > 0 && (
-                        <View className="bg-[#FFF8F0] rounded-lg px-3 py-2 mb-2 flex flex-row items-center justify-between">
-                          <Text className="block text-xs text-[#B8782A]">累计已扣 {charged.cycles} 次</Text>
-                          <Text className="block text-sm font-bold text-[#E8913A]">¥{charged.total.toFixed(2)}</Text>
+                        <View className="bg-warning bg-opacity-10 rounded-lg px-3 py-2 mb-2 flex flex-row items-center justify-between">
+                          <Text className="block text-xs text-warning">累计已扣 {charged.cycles} 次</Text>
+                          <Text className="block text-sm font-bold text-accent">¥{charged.total.toFixed(2)}</Text>
                         </View>
                       )}
                       {/* Row 5: Cost breakdown + Delete */}
                       <View className="flex flex-row items-center justify-between">
                         <Text className="block text-xs text-gray-400">≈ ¥{costs.yearly.toFixed(2)}/年 · ¥{costs.monthly.toFixed(2)}/月 · ¥{costs.daily.toFixed(2)}/天</Text>
                         <Button className="bg-transparent p-0" onClick={(e) => { e.stopPropagation(); handleDelete(sub.id) }}>
-                          <Trash2 size={16} color="#EF4444" />
+                          <Trash2 size={16} color="var(--color-destructive)" />
                         </Button>
                       </View>
                     </CardContent>
@@ -508,7 +508,7 @@ const SubscriptionsPage = () => {
           {/* Empty State */}
           {subscriptions.length === 0 && parsedResults.length === 0 && (
             <View className="flex flex-col items-center justify-center mt-16">
-              <CreditCard size={48} color="#E5E1D8" />
+              <CreditCard size={48} color="var(--color-muted-foreground)" />
               <Text className="block text-gray-400 mt-4 text-sm">还没有订阅记录</Text>
               <Text className="block text-gray-300 text-xs mt-1">说出你的订阅服务，如「每月订阅了腾讯视频25元」</Text>
             </View>
@@ -519,11 +519,11 @@ const SubscriptionsPage = () => {
       {/* Edit Subscription Modal */}
       {editingSub && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          <View className="w-full bg-background rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <ScrollView scrollY className="flex-1 w-full">
               <View className="p-5 pb-2">
                 <View className="flex flex-row items-center justify-between mb-4">
-                  <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑订阅</Text>
+                  <Text className="block text-lg font-semibold text-foreground">编辑订阅</Text>
                   <Button className="bg-transparent p-0" onClick={closeEditModal}>
                     <X size={20} color="#999" />
                   </Button>
@@ -558,7 +558,7 @@ const SubscriptionsPage = () => {
                     <Text className="block text-sm text-gray-500 mb-1">周期</Text>
                     <Picker mode="selector" range={['每月', '每季度', '每年']} value={['monthly', 'quarterly', 'yearly'].indexOf(editCycle)} onChange={(e) => setEditCycle(['monthly', 'quarterly', 'yearly'][Number(e.detail.value)])}>
                       <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                        <Text className="text-sm text-[#3D7C5F]">{CYCLE_LABELS[editCycle]}</Text>
+                        <Text className="text-sm text-primary">{CYCLE_LABELS[editCycle]}</Text>
                       </View>
                     </Picker>
                   </View>
@@ -574,11 +574,11 @@ const SubscriptionsPage = () => {
                     ]).map(opt => (
                       <View
                         key={opt.key}
-                        className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${editBillingType === opt.key ? 'bg-[#3D7C5F]' : 'bg-white'}`}
+                        className={`flex-1 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-1 ${editBillingType === opt.key ? 'bg-primary' : 'bg-white'}`}
                         onClick={() => setEditBillingType(opt.key)}
                       >
                         {opt.icon === 'zap' ? <Zap size={12} color={editBillingType === opt.key ? '#fff' : '#999'} /> : <Hand size={12} color={editBillingType === opt.key ? '#fff' : '#999'} />}
-                        <Text className={`block text-xs ${editBillingType === opt.key ? 'text-white' : 'text-gray-500'}`}>{opt.label}</Text>
+                        <Text className={`block text-xs ${editBillingType === opt.key ? 'text-primary-foreground' : 'text-gray-500'}`}>{opt.label}</Text>
                       </View>
                     ))}
                   </View>
@@ -589,8 +589,8 @@ const SubscriptionsPage = () => {
                   <Text className="block text-sm text-gray-500 mb-1">起始日期</Text>
                   <Picker mode="date" value={editStartDate} onChange={(e) => setEditStartDate(e.detail.value)}>
                     <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                      <Calendar size={14} color="#3D7C5F" />
-                      <Text className="text-sm text-[#3D7C5F]">{editStartDate}</Text>
+                      <Calendar size={14} color="var(--color-primary)" />
+                      <Text className="text-sm text-primary">{editStartDate}</Text>
                     </View>
                   </Picker>
                 </View>
@@ -600,22 +600,22 @@ const SubscriptionsPage = () => {
                   <Text className="block text-sm text-gray-500 mb-1">下次扣费日期</Text>
                   <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
                     <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                      <Calendar size={14} color="#3D7C5F" />
-                      <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                      <Calendar size={14} color="var(--color-primary)" />
+                      <Text className="text-sm text-primary">{editDate}</Text>
                     </View>
                   </Picker>
                 </View>
 
                 {/* Cost preview */}
                 {editAmount && (
-                  <View className="bg-[#E8F5EE] rounded-lg p-3 mb-2">
-                    <Text className="block text-xs text-[#3D7C5F]">年费 ≈ ¥{calcCosts(Number(editAmount) || 0, editCycle).yearly.toFixed(2)}</Text>
+                  <View className="bg-accent bg-opacity-20 rounded-lg p-3 mb-2">
+                    <Text className="block text-xs text-primary">年费 ≈ ¥{calcCosts(Number(editAmount) || 0, editCycle).yearly.toFixed(2)}</Text>
                   </View>
                 )}
               </View>
             </ScrollView>
-            <View className="p-4 pt-2" style={{ borderTop: '1px solid #E5E1D8' }}>
-              <Button className="w-full bg-[#3D7C5F] text-white rounded-xl" onClick={handleSaveEdit} disabled={isUpdating}>
+            <View className="p-4 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <Button className="w-full bg-primary text-primary-foreground rounded-xl" onClick={handleSaveEdit} disabled={isUpdating}>
                 {isUpdating ? '保存中...' : '保存修改'}
               </Button>
             </View>

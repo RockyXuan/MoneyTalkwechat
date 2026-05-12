@@ -11,23 +11,23 @@ page {
 :root,
 page,
 root-portal {
-  --background: #F7F5F0;
-  --foreground: #1A1A1A;
-  --card: #FFFFFF;
+  --background: #EFE6D5;
+  --foreground: #2E241A;
+  --card: #FFF8EA;
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #3D7C5F;
-  --primary-foreground: #FFFFFF;
+  --primary: #B8643A;
+  --primary-foreground: #ffffff;
   --secondary: #E8F0EB;
   --secondary-foreground: #3D7C5F;
-  --muted: #F7F5F0;
-  --muted-foreground: #6B7280;
+  --muted: #F5ECDA;
+  --muted-foreground: #6B5D4F;
   --accent: #E8913A;
   --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
+  --destructive: #C4433A;
   --destructive-foreground: #FFFFFF;
-  --border: #E5E1D8;
+  --border: #C4B89E;
   --input: #E5E1D8;
   --ring: #3D7C5F;
   --sidebar: #F7F5F0;
@@ -44,6 +44,13 @@ root-portal {
   --code-number: #6B7280;
   --selection: #3D7C5F;
   --selection-foreground: #FFFFFF;
+  --primary-container: #E8C4A8;
+  --surface-container-lowest: #F2EADB;
+  --surface-container-high: #FAF2E4;
+  --surface-container-highest: #FFF8EA;
+  --success: #6D7B45;
+  --warning: #D4943A;
+  --outline-variant: #D9CFBC;
   --tw-shadow: 0 0 #0000;
   --tw-shadow-color: initial;
   --tw-shadow-alpha: 100%;
@@ -136,6 +143,30 @@ root-portal {
   --color-selection-foreground: var(--selection-foreground);
   --color-code: var(--code);
   --radius-full: 9999px;
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--primary-foreground);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface: var(--card);
+  --color-surface-container: var(--muted);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--foreground);
+  --color-on-surface-variant: var(--muted-foreground);
+  --color-success: var(--success);
+  --color-error: var(--destructive);
+  --color-warning: var(--warning);
+  --color-outline: var(--border);
+  --color-outline-variant: var(--outline-variant);
+  --shadow-card: 0 4px 12px rgba(46,36,26,0.08);
+  --shadow-float: 0 10px 25px rgba(46,36,26,0.12);
+  --shadow-dialog: 0 25px 50px rgba(46,36,26,0.18);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --font-sans: "Noto Sans SC", system-ui, sans-serif;
+
 }
 
 page,

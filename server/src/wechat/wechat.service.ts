@@ -265,12 +265,12 @@ export class WechatService {
   /**
    * Create a pending record
    */
-  async createPendingRecord(userId: string, rawText: string, recordType: string, parsedData: any): Promise<void> {
+  async createPendingRecord(userId: string, rawText: string, recordType: string, parsedData: any, source = 'wechat_oa'): Promise<void> {
     const { error } = await this.supabase
       .from('pending_records')
       .insert({
         user_id: userId,
-        source: 'wechat_oa',
+        source,
         raw_text: rawText,
         record_type: recordType,
         parsed_data: parsedData,

@@ -248,24 +248,24 @@ const BillsPage = () => {
   )
 
   return (
-    <View className="min-h-full bg-[#F7F5F0] pb-20">
+    <View className="min-h-full bg-background pb-20">
       {/* Month Selector */}
       <View className="px-4 pt-4 pb-2 flex flex-row items-center justify-between">
         <Button className="bg-transparent p-0" onClick={prevMonth}>
-          <ChevronLeft size={24} color="#3D7C5F" />
+          <ChevronLeft size={24} color="var(--color-primary)" />
         </Button>
-        <Text className="block text-lg font-semibold text-[#1A1A1A]">{currentMonth}</Text>
+        <Text className="block text-lg font-semibold text-foreground">{currentMonth}</Text>
         <Button className="bg-transparent p-0" onClick={nextMonth}>
-          <ChevronRight size={24} color="#3D7C5F" />
+          <ChevronRight size={24} color="var(--color-primary)" />
         </Button>
       </View>
 
       {/* Month Total */}
       <View className="px-4 mb-3">
-        <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
+        <Card className="border-border bg-primary">
           <CardContent className="p-4 flex flex-row items-center justify-between">
-            <Text className="block text-white text-sm">本月支出</Text>
-            <Text className="block text-white text-2xl font-bold">¥{monthTotal.toFixed(2)}</Text>
+            <Text className="block text-primary-foreground text-sm">本月支出</Text>
+            <Text className="block text-primary-foreground text-2xl font-bold">¥{monthTotal.toFixed(2)}</Text>
           </CardContent>
         </Card>
       </View>
@@ -276,27 +276,27 @@ const BillsPage = () => {
         return (
           <View key={date} className="px-4 mb-3">
             <View className="flex flex-row items-center justify-between mb-1 px-1">
-              <Text className="block text-sm font-medium text-[#1A1A1A]">{date}</Text>
-              <Text className="block text-sm text-[#E8913A]">¥{dayTotal.toFixed(2)}</Text>
+              <Text className="block text-sm font-medium text-foreground">{date}</Text>
+              <Text className="block text-sm text-accent-foreground">¥{dayTotal.toFixed(2)}</Text>
             </View>
             {groupedExpenses[date].map((item) => (
-              <Card key={item.id} className={`border-[#E5E1D8] mb-2 ${item.is_subscription ? 'bg-[#FFFDF5]' : ''}`}>
+              <Card key={item.id} className={`border-border mb-2 ${item.is_subscription ? 'bg-accent bg-opacity-20' : ''}`}>
                 <CardContent className="p-3 flex flex-row items-center justify-between">
                   <View className="flex flex-col flex-1" onClick={() => !item.is_subscription && openEditModal(item)}>
                     {/* Line 1: Name + Amount */}
                     <View className="flex flex-row items-center gap-2">
-                      {item.is_subscription && (item.billing_type === 'manual' ? <Hand size={12} color="#E8913A" /> : <Zap size={12} color="#3D7C5F" />)}
-                      <Text className="block text-base font-semibold text-[#1A1A1A]">
+                      {item.is_subscription && (item.billing_type === 'manual' ? <Hand size={12} color="var(--color-primary)" /> : <Zap size={12} color="var(--color-primary)" />)}
+                      <Text className="block text-base font-semibold text-foreground">
                         {item.note || item.raw_text || '未命名'}
                       </Text>
-                      <Text className="block text-lg font-bold text-[#E8913A]">¥{item.amount}</Text>
+                      <Text className="block text-lg font-bold text-accent-foreground">¥{item.amount}</Text>
                     </View>
                     {/* Line 2: Category */}
                     <View className="flex flex-row items-center gap-2 mt-1">
-                      <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
+                      <Badge className="bg-primary bg-opacity-10 text-primary text-xs">{item.category}</Badge>
                       {item.is_subscription && (
                         <View className="flex flex-row items-center gap-1">
-                          <Badge className="bg-[#FFF7ED] text-[#E8913A] text-xs">
+                          <Badge className="bg-accent text-accent-foreground text-xs">
                             {item.cycle === 'monthly' ? '月订阅' : item.cycle === 'quarterly' ? '季订阅' : item.cycle === 'yearly' ? '年订阅' : '订阅'}
                           </Badge>
                           <Badge className={`${item.billing_type === 'manual' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'} text-xs`}>
@@ -304,13 +304,13 @@ const BillsPage = () => {
                           </Badge>
                         </View>
                       )}
-                      {!item.is_subscription && item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
+                      {!item.is_subscription && item.tag && <Text className="text-xs text-accent-foreground">{item.tag}</Text>}
                     </View>
                   </View>
                   <View className="flex flex-row items-center">
                     {!item.is_subscription && (
                       <Button className="bg-transparent p-0" onClick={() => handleDelete(item.id)}>
-                        <Trash2 size={16} color="#EF4444" />
+                        <Trash2 size={16} color="var(--color-destructive)" />
                       </Button>
                     )}
                   </View>
@@ -324,30 +324,30 @@ const BillsPage = () => {
       {/* Empty State */}
       {sortedDates.length === 0 && (
         <View className="flex flex-col items-center justify-center mt-24">
-          <Receipt size={48} color="#E5E1D8" />
-          <Text className="block text-gray-400 mt-4 text-sm">本月暂无记录</Text>
+          <Receipt size={48} color="var(--color-muted-foreground)" />
+          <Text className="block text-muted-foreground mt-4 text-sm">本月暂无记录</Text>
         </View>
       )}
 
       {/* Edit Modal */}
       {editingRecord && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          <View className="w-full bg-background rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <ScrollView scrollY className="flex-1 w-full">
               <View className="p-5 pb-4">
                 {/* Header */}
                 <View className="flex flex-row items-center justify-between mb-4">
-                  <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
+                  <Text className="block text-lg font-semibold text-foreground">编辑记录</Text>
                   <Button className="bg-transparent p-0" onClick={closeEditModal}>
-                    <X size={20} color="#999" />
+                    <X size={20} color="var(--color-muted-foreground)" />
                   </Button>
                 </View>
 
                 {/* Name + Amount on same line */}
                 <View className="flex flex-row items-center gap-3 mb-3">
                   <View className="flex-1">
-                    <Text className="block text-sm text-gray-500 mb-1">名称</Text>
-                    <View className="bg-white rounded-lg px-3 py-2">
+                    <Text className="block text-sm text-muted-foreground mb-1">名称</Text>
+                    <View className="bg-card rounded-lg px-3 py-2">
                       <Input
                         className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
                         value={editNote}
@@ -357,8 +357,8 @@ const BillsPage = () => {
                     </View>
                   </View>
                   <View style={{ width: '100px' }}>
-                    <Text className="block text-sm text-gray-500 mb-1">金额</Text>
-                    <View className="bg-white rounded-lg px-3 py-2">
+                    <Text className="block text-sm text-muted-foreground mb-1">金额</Text>
+                    <View className="bg-card rounded-lg px-3 py-2">
                       <Input
                         className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
                         type="digit"
@@ -372,13 +372,13 @@ const BillsPage = () => {
 
                 {/* Category selector */}
                 <View className="mb-3">
-                  <Text className="block text-sm text-gray-500 mb-1">分类</Text>
+                  <Text className="block text-sm text-muted-foreground mb-1">分类</Text>
                   {/* Category grid - 3+ rows */}
-                  <ScrollView scrollY className="w-full bg-white rounded-lg" style={{ maxHeight: '130px' }}>
+                  <ScrollView scrollY className="w-full bg-card rounded-lg" style={{ maxHeight: '130px' }}>
                     <View className="flex flex-row flex-wrap gap-2 p-3">
                       {filteredCategories.map(cat => (
                         <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
-                          <Badge className={`${editCategory === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs px-3 py-1`}>
+                          <Badge className={`${editCategory === cat.name ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'} text-xs px-3 py-1`}>
                             {cat.name}
                           </Badge>
                         </View>
@@ -387,7 +387,7 @@ const BillsPage = () => {
                   </ScrollView>
                   {/* Search + Custom in one row */}
                   <View className="flex flex-row items-center gap-2 mt-2">
-                    <View className="flex-1 bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
+                    <View className="flex-1 bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
                       <Search size={12} color="#999" />
                       <Input
                         className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
@@ -397,7 +397,7 @@ const BillsPage = () => {
                       />
                     </View>
                     {showCatInput ? (
-                      <View className="flex-1 bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-1">
+                      <View className="flex-1 bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-1">
                         <Input
                           className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
                           placeholder="新分类名"
@@ -405,17 +405,17 @@ const BillsPage = () => {
                           onInput={(e) => setNewCatName(e.detail.value)}
                           onConfirm={() => handleCreateCategory()}
                         />
-                        <View className="px-2 py-1 bg-[#3D7C5F] rounded" onClick={handleCreateCategory}>
-                          <Text className="text-white text-xs">加</Text>
+                        <View className="px-2 py-1 bg-primary rounded" onClick={handleCreateCategory}>
+                          <Text className="text-primary-foreground text-xs">加</Text>
                         </View>
                       </View>
                     ) : (
                       <View
-                        className="flex-1 bg-[#FFF7ED] rounded-lg flex flex-row items-center justify-center gap-1 py-2"
+                        className="flex-1 bg-accent rounded-lg flex flex-row items-center justify-center gap-1 py-2"
                         onClick={() => setShowCatInput(true)}
                       >
-                        <Plus size={14} color="#E8913A" />
-                        <Text className="text-xs text-[#E8913A] font-medium">自定义分类</Text>
+                        <Plus size={14} color="var(--color-primary)" />
+                        <Text className="text-xs text-primary font-medium">自定义分类</Text>
                       </View>
                     )}
                   </View>
@@ -424,21 +424,21 @@ const BillsPage = () => {
                 {/* Date + Save in one row */}
                 <View className="flex flex-row items-end gap-3">
                   <View className="flex-1">
-                    <Text className="block text-sm text-gray-500 mb-1">日期</Text>
+                    <Text className="block text-sm text-muted-foreground mb-1">日期</Text>
                     <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                      <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                        <Calendar size={14} color="#3D7C5F" />
-                        <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                      <View className="bg-card rounded-lg px-3 py-2 flex flex-row items-center gap-2">
+                        <Calendar size={14} color="var(--color-primary)" />
+                        <Text className="text-sm text-primary">{editDate}</Text>
                       </View>
                     </Picker>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Button
-                      className="w-full bg-[#3D7C5F] text-white rounded-lg py-2"
+                      className="w-full bg-primary text-primary-foreground rounded-lg py-2"
                       onClick={handleSaveEdit}
                       disabled={isUpdating}
                     >
-                      <Text className="text-white text-sm font-medium">{isUpdating ? '保存中...' : '完成编辑'}</Text>
+                      <Text className="text-primary-foreground text-sm font-medium">{isUpdating ? '保存中...' : '完成编辑'}</Text>
                     </Button>
                   </View>
                 </View>

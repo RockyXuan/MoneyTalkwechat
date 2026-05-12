@@ -63,7 +63,7 @@ const PieChart = ({ data, total }: { data: CategoryStat[]; total: number }) => {
         {data.slice(0, 6).map((item, i) => (
           <View key={item.category} className="flex flex-row items-center gap-2 mb-1">
             <View className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColor(item.category, i) }} />
-            <Text className="block text-xs text-[#1A1A1A] flex-1" numberOfLines={1}>{item.category}</Text>
+            <Text className="block text-xs text-foreground flex-1" numberOfLines={1}>{item.category}</Text>
             <Text className="block text-xs text-gray-500 flex-shrink-0">{item.percent}%</Text>
           </View>
         ))}
@@ -86,9 +86,9 @@ const TrendChart = ({ trends }: { trends: TrendItem[] }) => {
         const height = Math.max((t.total / maxVal) * 100, 4)
         return (
           <View key={t.label} className="flex flex-col items-center flex-1">
-            <Text className="block text-xs text-[#E8913A] mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
+            <Text className="block text-xs text-accent mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
             <View
-              className="w-full rounded-t bg-[#3D7C5F]"
+              className="w-full rounded-t bg-primary"
               style={{ height: `${height}px` }}
             />
             <Text className="block text-xs text-gray-400 mt-1">{t.label}</Text>
@@ -129,11 +129,11 @@ const PeriodPicker = ({
         {/* Year nav */}
         <View className="flex flex-row items-center justify-between mb-4">
           <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#3D7C5F" />
+            <ChevronLeft size={20} color="var(--color-primary)" />
           </Button>
-          <Text className="block text-base font-semibold text-[#1A1A1A]">{pickerYear}年</Text>
+          <Text className="block text-base font-semibold text-foreground">{pickerYear}年</Text>
           <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#3D7C5F" />
+            <ChevronRight size={20} color="var(--color-primary)" />
           </Button>
         </View>
         {/* Month grid */}
@@ -153,9 +153,9 @@ const PeriodPicker = ({
                 }}
               >
                 <View
-                  className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+                  className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-primary' : isCurrent ? 'bg-accent bg-opacity-20' : 'bg-muted'}`}
                 >
-                  <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                  <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-primary' : 'text-foreground'}`}>
                     {label}
                   </Text>
                 </View>
@@ -173,11 +173,11 @@ const PeriodPicker = ({
         {/* Year nav */}
         <View className="flex flex-row items-center justify-between mb-4">
           <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#3D7C5F" />
+            <ChevronLeft size={20} color="var(--color-primary)" />
           </Button>
-          <Text className="block text-base font-semibold text-[#1A1A1A]">{pickerYear}年</Text>
+          <Text className="block text-base font-semibold text-foreground">{pickerYear}年</Text>
           <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#3D7C5F" />
+            <ChevronRight size={20} color="var(--color-primary)" />
           </Button>
         </View>
         {/* Quarter grid 2x2 */}
@@ -196,9 +196,9 @@ const PeriodPicker = ({
                 }}
               >
                 <View
-                  className={`mx-1 py-4 rounded-xl flex flex-col items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+                  className={`mx-1 py-4 rounded-xl flex flex-col items-center justify-center ${isActive ? 'bg-primary' : isCurrent ? 'bg-accent bg-opacity-20' : 'bg-muted'}`}
                 >
-                  <Text className={`block text-lg font-bold ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                  <Text className={`block text-lg font-bold ${isActive ? 'text-white' : isCurrent ? 'text-primary' : 'text-foreground'}`}>
                     {label}
                   </Text>
                   <Text className={`block text-xs mt-1 ${isActive ? 'text-white' : 'text-gray-400'}`} style={isActive ? { opacity: 0.7 } : {}}>
@@ -226,11 +226,11 @@ const PeriodPicker = ({
       {/* Decade nav */}
       <View className="flex flex-row items-center justify-between mb-4">
         <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 12)}>
-          <ChevronLeft size={20} color="#3D7C5F" />
+          <ChevronLeft size={20} color="var(--color-primary)" />
         </Button>
-        <Text className="block text-base font-semibold text-[#1A1A1A]">{startYear} - {startYear + 11}</Text>
+        <Text className="block text-base font-semibold text-foreground">{startYear} - {startYear + 11}</Text>
         <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 12)}>
-          <ChevronRight size={20} color="#3D7C5F" />
+          <ChevronRight size={20} color="var(--color-primary)" />
         </Button>
       </View>
       {/* Year grid */}
@@ -248,9 +248,9 @@ const PeriodPicker = ({
               }}
             >
               <View
-                className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-[#3D7C5F]' : isCurrent ? 'bg-[#E8F5EE]' : 'bg-[#F7F5F0]'}`}
+                className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-primary' : isCurrent ? 'bg-accent bg-opacity-20' : 'bg-muted'}`}
               >
-                <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-[#3D7C5F]' : 'text-[#1A1A1A]'}`}>
+                <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-primary' : 'text-foreground'}`}>
                   {y}
                 </Text>
               </View>
@@ -377,7 +377,7 @@ const StatsPage = () => {
   }
 
   return (
-    <View className="min-h-full bg-[#F7F5F0]">
+    <View className="min-h-full bg-muted">
       {/* Full-screen backdrop when picker is open */}
       {showPicker && (
         <View
@@ -396,7 +396,7 @@ const StatsPage = () => {
               {periodOptions.map(opt => (
                 <View
                   key={opt.key}
-                  className={`flex-1 py-2 rounded-lg ${period === opt.key ? 'bg-[#3D7C5F]' : ''}`}
+                  className={`flex-1 py-2 rounded-lg ${period === opt.key ? 'bg-primary' : ''}`}
                   onClick={() => handlePeriodChange(opt.key)}
                 >
                   <Text className={`block text-center text-sm font-medium ${period === opt.key ? 'text-white' : 'text-gray-500'}`}>
@@ -411,8 +411,8 @@ const StatsPage = () => {
               className="flex flex-row items-center justify-center py-2"
               onClick={openPicker}
             >
-              <Text className="block text-lg font-semibold text-[#1A1A1A]">{periodLabel}</Text>
-              <ChevronDown size={18} color="#3D7C5F" className="ml-1" />
+              <Text className="block text-lg font-semibold text-foreground">{periodLabel}</Text>
+              <ChevronDown size={18} color="var(--color-primary)" className="ml-1" />
             </View>
           </View>
 
@@ -434,7 +434,7 @@ const StatsPage = () => {
 
           {/* Total Expense Card */}
           <View className="px-4 mb-4">
-            <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
+            <Card className="border-border bg-primary">
               <CardContent className="p-4 flex flex-col items-center">
                 <Text className="block text-white text-sm mb-1">
                   {period === 'year' ? '年度总支出' : period === 'quarter' ? '季度总支出' : '本月总支出'}
@@ -447,8 +447,8 @@ const StatsPage = () => {
           {/* Expense Distribution Pie Chart */}
           {categoryStats.length > 0 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">消费分布</Text>
-              <Card className="border-[#E5E1D8]">
+              <Text className="block text-base font-semibold text-foreground mb-2">消费分布</Text>
+              <Card className="border-border">
                 <CardContent className="p-4">
                   <PieChart data={categoryStats} total={totalExpense} />
                 </CardContent>
@@ -459,25 +459,25 @@ const StatsPage = () => {
           {/* Category Detail List — clickable to view records */}
           {categoryStats.length > 0 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">分类明细</Text>
+              <Text className="block text-base font-semibold text-foreground mb-2">分类明细</Text>
               {categoryStats.map((cat, i) => {
                 const color = getColor(cat.category, i)
                 return (
-                  <Card key={cat.category} className="border-[#E5E1D8] mb-2">
+                  <Card key={cat.category} className="border-border mb-2">
                     <CardContent className="p-3" onClick={() => navigateToCategory(cat.category)}>
                       <View className="flex flex-row items-center justify-between mb-2">
                         <View className="flex flex-row items-center gap-2">
                           <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                          <Text className="block text-sm font-medium text-[#1A1A1A]">{cat.category}</Text>
+                          <Text className="block text-sm font-medium text-foreground">{cat.category}</Text>
                           <Text className="block text-xs text-gray-500">{cat.count}笔</Text>
                         </View>
                         <View className="flex flex-row items-center gap-2">
-                          <Text className="block text-base font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
-                          <Badge className="bg-[#F7F5F0] text-gray-500 text-xs">{cat.percent}%</Badge>
+                          <Text className="block text-base font-bold text-accent">¥{cat.total.toFixed(2)}</Text>
+                          <Badge className="bg-muted text-gray-500 text-xs">{cat.percent}%</Badge>
                           <ChevronRight size={14} color="#999" />
                         </View>
                       </View>
-                      <View className="w-full h-2 bg-[#F7F5F0] rounded-full">
+                      <View className="w-full h-2 bg-muted rounded-full">
                         <View
                           className="h-2 rounded-full"
                           style={{ width: `${cat.percent}%`, backgroundColor: color }}
@@ -493,10 +493,10 @@ const StatsPage = () => {
           {/* Trend Chart */}
           {trends.length > 0 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">
+              <Text className="block text-base font-semibold text-foreground mb-2">
                 {period === 'year' ? '季度趋势' : period === 'quarter' ? '月度趋势' : '每日消费趋势'}
               </Text>
-              <Card className="border-[#E5E1D8]">
+              <Card className="border-border">
                 <CardContent className="p-4">
                   <TrendChart trends={trends} />
                 </CardContent>
@@ -507,21 +507,21 @@ const StatsPage = () => {
           {/* TOP3 Pie */}
           {categoryStats.length >= 3 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">TOP3 消费分类</Text>
-              <Card className="border-[#E5E1D8]">
+              <Text className="block text-base font-semibold text-foreground mb-2">TOP3 消费分类</Text>
+              <Card className="border-border">
                 <CardContent className="p-4">
                   <PieChart data={categoryStats.slice(0, 3)} total={totalExpense} />
-                  <View className="mt-3 pt-3" style={{ borderTop: '1px solid #E5E1D8' }}>
+                  <View className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
                     {categoryStats.slice(0, 3).map((cat, i) => {
                       const color = getColor(cat.category, i)
                       return (
                         <View key={cat.category} className="flex flex-row items-center justify-between mb-2">
                           <View className="flex flex-row items-center gap-2">
                             <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                            <Text className="block text-sm text-[#1A1A1A]">{cat.category}</Text>
+                            <Text className="block text-sm text-foreground">{cat.category}</Text>
                           </View>
                           <View className="flex flex-row items-center gap-3">
-                            <Text className="block text-sm font-bold text-[#E8913A]">¥{cat.total.toFixed(2)}</Text>
+                            <Text className="block text-sm font-bold text-accent">¥{cat.total.toFixed(2)}</Text>
                             <Text className="block text-xs text-gray-500">{cat.percent}%</Text>
                           </View>
                         </View>
@@ -536,33 +536,33 @@ const StatsPage = () => {
           {/* Subscription Stats */}
           {subStats && subStats.subscription_count > 0 && (
             <View className="px-4 mb-4">
-              <Text className="block text-base font-semibold text-[#1A1A1A] mb-2">
+              <Text className="block text-base font-semibold text-foreground mb-2">
                 <View className="inline-flex flex-row items-center gap-1">
-                  <CreditCard size={16} color="#3D7C5F" />
+                  <CreditCard size={16} color="var(--color-primary)" />
                 </View>
                 订阅支出
               </Text>
-              <Card className="border-[#E5E1D8]">
+              <Card className="border-border">
                 <CardContent className="p-4">
                   {/* Total overview */}
-                  <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid #E5E1D8' }}>
+                  <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <View className="flex flex-col">
                       <Text className="block text-xs text-gray-500">活跃订阅</Text>
-                      <Text className="block text-lg font-bold text-[#3D7C5F]">{subStats.subscription_count} 项</Text>
+                      <Text className="block text-lg font-bold text-primary">{subStats.subscription_count} 项</Text>
                     </View>
                     <View className="flex flex-col items-end">
                       <View className="flex flex-row items-center gap-3">
                         <View className="flex flex-col items-end">
                           <Text className="block text-xs text-gray-400">日均</Text>
-                          <Text className="block text-sm font-semibold text-[#E8913A]">¥{subStats.total_daily.toFixed(2)}</Text>
+                          <Text className="block text-sm font-semibold text-accent">¥{subStats.total_daily.toFixed(2)}</Text>
                         </View>
                         <View className="flex flex-col items-end">
                           <Text className="block text-xs text-gray-400">月均</Text>
-                          <Text className="block text-sm font-semibold text-[#E8913A]">¥{subStats.total_monthly.toFixed(2)}</Text>
+                          <Text className="block text-sm font-semibold text-accent">¥{subStats.total_monthly.toFixed(2)}</Text>
                         </View>
                         <View className="flex flex-col items-end">
                           <Text className="block text-xs text-gray-400">年总计</Text>
-                          <Text className="block text-lg font-bold text-[#EF4444]">¥{subStats.total_yearly.toFixed(2)}</Text>
+                          <Text className="block text-lg font-bold text-destructive">¥{subStats.total_yearly.toFixed(2)}</Text>
                         </View>
                       </View>
                     </View>
@@ -571,13 +571,13 @@ const StatsPage = () => {
                   {Object.entries(subStats.by_category).map(([cat, info]) => (
                     <View key={cat} className="mb-2">
                       {info.items.map((item, i) => (
-                        <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F7F5F0' } : {}}>
+                        <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid var(--color-muted)' } : {}}>
                           <View className="flex flex-row items-center gap-2">
-                            <Text className="block text-sm text-[#1A1A1A]">{item.name}</Text>
-                            <Badge className="bg-[#E8F5EE] text-[#3D7C5F] text-xs">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Badge>
+                            <Text className="block text-sm text-foreground">{item.name}</Text>
+                            <Badge className="bg-accent bg-opacity-20 text-primary text-xs">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Badge>
                           </View>
                           <View className="flex flex-row items-center gap-3">
-                            <Text className="block text-sm font-semibold text-[#E8913A]">¥{item.amount}</Text>
+                            <Text className="block text-sm font-semibold text-accent">¥{item.amount}</Text>
                             <Text className="block text-xs text-gray-400">¥{item.yearly.toFixed(0)}/年</Text>
                           </View>
                         </View>
@@ -592,7 +592,7 @@ const StatsPage = () => {
           {/* Empty State */}
           {categoryStats.length === 0 && (
             <View className="flex flex-col items-center justify-center mt-24">
-              <ChartNoAxesColumn size={48} color="#E5E1D8" />
+              <ChartNoAxesColumn size={48} color="var(--color-muted-foreground)" />
               <Text className="block text-gray-400 mt-4 text-sm">该时段暂无数据</Text>
             </View>
           )}

@@ -189,16 +189,16 @@ const CategoryDetailPage = () => {
   const filteredCategories = categories.filter(c => !catSearch || c.name.includes(catSearch))
 
   return (
-    <View className="min-h-full bg-[#F7F5F0]">
+    <View className="min-h-full bg-background">
       {/* Header Card */}
       <View className="px-4 pt-4 pb-2">
-        <Card className="border-[#E5E1D8] bg-[#3D7C5F]">
+        <Card className="border-border bg-primary">
           <CardContent className="p-4">
             <View className="flex flex-row items-center justify-between mb-1">
-              <Text className="block text-white text-sm">{periodLabel}</Text>
-              <Badge className="bg-white text-[#3D7C5F] text-xs">{category}</Badge>
+              <Text className="block text-primary-foreground text-sm">{periodLabel}</Text>
+              <Badge className="bg-white text-primary text-xs">{category}</Badge>
             </View>
-            <Text className="block text-white text-3xl font-bold">¥{totalAmount.toFixed(2)}</Text>
+            <Text className="block text-primary-foreground text-3xl font-bold">¥{totalAmount.toFixed(2)}</Text>
           </CardContent>
         </Card>
       </View>
@@ -210,29 +210,29 @@ const CategoryDetailPage = () => {
           return (
             <View key={date} className="px-4 mb-3">
               <View className="flex flex-row items-center justify-between mb-1 px-1">
-                <Text className="block text-sm font-medium text-[#1A1A1A]">{date}</Text>
-                <Text className="block text-sm text-[#E8913A]">¥{dayTotal.toFixed(2)}</Text>
+                <Text className="block text-sm font-medium text-foreground">{date}</Text>
+                <Text className="block text-sm text-accent">¥{dayTotal.toFixed(2)}</Text>
               </View>
               {groupedExpenses[date].map((item) => (
-                <Card key={item.id} className="border-[#E5E1D8] mb-2">
+                <Card key={item.id} className="border-border mb-2">
                   <CardContent className="p-3 flex flex-row items-center justify-between">
                     <View className="flex flex-col flex-1" onClick={() => openEditModal(item)}>
                       {/* Line 1: Name + Amount */}
                       <View className="flex flex-row items-center gap-2">
-                        <Text className="block text-base font-semibold text-[#1A1A1A]">
+                        <Text className="block text-base font-semibold text-foreground">
                           {item.note || item.raw_text || '未命名'}
                         </Text>
-                        <Text className="block text-lg font-bold text-[#E8913A]">¥{item.amount}</Text>
+                        <Text className="block text-lg font-bold text-accent">¥{item.amount}</Text>
                       </View>
                       {/* Line 2: Category */}
                       <View className="flex flex-row items-center gap-2 mt-1">
-                        <Badge className="bg-[#E8F0EB] text-[#3D7C5F] text-xs">{item.category}</Badge>
-                        {item.tag && <Text className="text-xs text-[#E8913A]">{item.tag}</Text>}
+                        <Badge className="bg-accent bg-opacity-15 text-primary text-xs">{item.category}</Badge>
+                        {item.tag && <Text className="text-xs text-accent">{item.tag}</Text>}
                       </View>
                     </View>
                     <View className="flex flex-row items-center">
                       <Button className="bg-transparent p-0" onClick={() => handleDelete(item.id)}>
-                        <Trash2 size={16} color="#EF4444" />
+                        <Trash2 size={16} color="var(--color-destructive)" />
                       </Button>
                     </View>
                   </CardContent>
@@ -245,7 +245,7 @@ const CategoryDetailPage = () => {
         {/* Empty State */}
         {sortedDates.length === 0 && (
           <View className="flex flex-col items-center justify-center mt-24">
-            <Receipt size={48} color="#E5E1D8" />
+            <Receipt size={48} color="var(--color-muted-foreground)" />
             <Text className="block text-gray-400 mt-4 text-sm">该分类暂无记录</Text>
           </View>
         )}
@@ -254,12 +254,12 @@ const CategoryDetailPage = () => {
       {/* Edit Modal */}
       {editingRecord && (
         <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-[#F7F5F0] rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+          <View className="w-full bg-background rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <ScrollView scrollY className="flex-1 w-full">
               <View className="p-5 pb-4">
                 {/* Header */}
                 <View className="flex flex-row items-center justify-between mb-4">
-                  <Text className="block text-lg font-semibold text-[#1A1A1A]">编辑记录</Text>
+                  <Text className="block text-lg font-semibold text-foreground">编辑记录</Text>
                   <Button className="bg-transparent p-0" onClick={closeEditModal}>
                     <X size={20} color="#999" />
                   </Button>
@@ -300,7 +300,7 @@ const CategoryDetailPage = () => {
                     <View className="flex flex-row flex-wrap gap-2 p-3">
                       {filteredCategories.map(cat => (
                         <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
-                          <Badge className={`${editCategory === cat.name ? 'bg-[#3D7C5F] text-white' : 'bg-[#F7F5F0] text-gray-500'} text-xs px-3 py-1`}>
+                          <Badge className={`${editCategory === cat.name ? 'bg-primary text-primary-foreground' : 'bg-background text-gray-500'} text-xs px-3 py-1`}>
                             {cat.name}
                           </Badge>
                         </View>
@@ -327,17 +327,17 @@ const CategoryDetailPage = () => {
                           onInput={(e) => setNewCatName(e.detail.value)}
                           onConfirm={() => handleCreateCategory()}
                         />
-                        <View className="px-2 py-1 bg-[#3D7C5F] rounded" onClick={handleCreateCategory}>
-                          <Text className="text-white text-xs">加</Text>
+                        <View className="px-2 py-1 bg-primary rounded" onClick={handleCreateCategory}>
+                          <Text className="text-primary-foreground text-xs">加</Text>
                         </View>
                       </View>
                     ) : (
                       <View
-                        className="flex-1 bg-[#FFF7ED] rounded-lg flex flex-row items-center justify-center gap-1 py-2"
+                        className="flex-1 bg-warning bg-opacity-10 rounded-lg flex flex-row items-center justify-center gap-1 py-2"
                         onClick={() => setShowCatInput(true)}
                       >
-                        <Plus size={14} color="#E8913A" />
-                        <Text className="text-xs text-[#E8913A] font-medium">自定义分类</Text>
+                        <Plus size={14} color="var(--color-accent)" />
+                        <Text className="text-xs text-accent font-medium">自定义分类</Text>
                       </View>
                     )}
                   </View>
@@ -349,18 +349,18 @@ const CategoryDetailPage = () => {
                     <Text className="block text-sm text-gray-500 mb-1">日期</Text>
                     <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
                       <View className="bg-white rounded-lg px-3 py-2 flex flex-row items-center gap-2">
-                        <Calendar size={14} color="#3D7C5F" />
-                        <Text className="text-sm text-[#3D7C5F]">{editDate}</Text>
+                        <Calendar size={14} color="var(--color-primary)" />
+                        <Text className="text-sm text-primary">{editDate}</Text>
                       </View>
                     </Picker>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Button
-                      className="w-full bg-[#3D7C5F] text-white rounded-lg py-2"
+                      className="w-full bg-primary text-primary-foreground rounded-lg py-2"
                       onClick={handleSaveEdit}
                       disabled={isUpdating}
                     >
-                      <Text className="text-white text-sm font-medium">{isUpdating ? '保存中...' : '完成编辑'}</Text>
+                      <Text className="text-primary-foreground text-sm font-medium">{isUpdating ? '保存中...' : '完成编辑'}</Text>
                     </Button>
                   </View>
                 </View>
