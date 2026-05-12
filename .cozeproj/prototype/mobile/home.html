@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1, user-scalable=no" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/google-all-fonts.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #B8643A;
+      --color-primary-container:    #E8C4A8;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #EFE6D5;
+      --color-surface-container-lowest:   #F2EADB;
+      --color-surface:                    #FFF8EA;
+      --color-surface-container:          #F5ECDA;
+      --color-surface-container-high:     #FAF2E4;
+      --color-surface-container-highest:  #FFF8EA;
+      /* === 文字 === */
+      --color-on-surface:           #2E241A;
+      --color-on-surface-variant:   #6B5D4F;
+      /* === 功能色 === */
+      --color-success:  #6D7B45;
+      --color-error:    #C4433A;
+      --color-warning:  #D4943A;
+      /* === 边框 === */
+      --color-outline:          #C4B89E;
+      --color-outline-variant:  #D9CFBC;
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.625rem;
+      --radius-lg:   0.875rem;
+      --radius-xl:   1.25rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 4px 12px rgba(46,36,26,0.08);
+      --shadow-float:  0 10px 25px rgba(46,36,26,0.12);
+      --shadow-dialog: 0 25px 50px rgba(46,36,26,0.18);
+      /* === 字体 === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <style>
+    body {
+      min-height: max(812px, 100dvh);
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <div class="fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant/20 z-50 safe-area-bottom">
+    <div class="flex items-center justify-around py-1.5">
+      <a href="home.html" class="flex flex-col items-center gap-0.5 text-primary" aria-current="page">
+        <i data-lucide="pen-line" class="w-5 h-5"></i>
+        <span class="text-[10px]">记一笔</span>
+      </a>
+      <a href="bills.html" class="flex flex-col items-center gap-0.5 text-on-surface-variant">
+        <i data-lucide="receipt" class="w-5 h-5"></i>
+        <span class="text-[10px]">账单</span>
+      </a>
+      <a href="stats.html" class="flex flex-col items-center gap-0.5 text-on-surface-variant">
+        <i data-lucide="chart-bar" class="w-5 h-5"></i>
+        <span class="text-[10px]">统计</span>
+      </a>
+      <a href="subscriptions.html" class="flex flex-col items-center gap-0.5 text-on-surface-variant">
+        <i data-lucide="repeat" class="w-5 h-5"></i>
+        <span class="text-[10px]">订阅</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center gap-0.5 text-on-surface-variant">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[10px]">我的</span>
+      </a>
+    </div>
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <main class="flex-1 pb-16">
+    <!-- @main-content:start -->
+
+    <!-- === 顶部输入区 === -->
+    <section class="px-4 pt-4">
+      <div class="bg-surface rounded-2xl shadow-card p-4">
+        <textarea id="input-text"
+          class="w-full bg-surface-container border-none rounded-xl px-4 py-3 text-base
+                 text-on-surface placeholder:text-on-surface-variant/50
+                 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none"
+          rows="3"
+          placeholder="说点什么开始记账吧...">早饭20 中饭30 晚饭10 电话费30</textarea>
+
+        <!-- 日期选择器 -->
+        <div class="flex items-center gap-3 mt-3">
+          <div id="date-mode-switch" class="flex bg-surface-container rounded-lg p-0.5">
+            <button id="btn-mode-date" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-on-primary transition-colors">按日期</button>
+            <button id="btn-mode-month" class="px-3 py-1.5 text-xs font-semibold rounded-md text-on-surface-variant transition-colors">按月份</button>
+          </div>
+          <div class="flex-1 flex items-center bg-surface-container rounded-lg px-3 py-1.5">
+            <i data-lucide="calendar" class="w-4 h-4 text-on-surface-variant mr-2"></i>
+            <span id="date-display" class="text-sm text-on-surface">2026-01-15</span>
+          </div>
+        </div>
+
+        <!-- 智能解析按钮 -->
+        <button id="btn-parse"
+          class="w-full mt-3 bg-primary text-on-primary py-3 rounded-xl text-base font-semibold
+                 hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>智能解析
+        </button>
+      </div>
+    </section>
+
+    <!-- === 解析结果区域 === -->
+    <section id="parse-result-section" class="px-4 mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-semibold text-on-surface">解析结果</h2>
+        <span id="parse-total" class="text-sm font-semibold text-primary">合计 ¥90</span>
+      </div>
+
+      <!-- 解析结果-项目1 -->
+      <div class="bg-surface rounded-xl shadow-card p-4 mb-3">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3">
+            <i data-lucide="utensils" class="w-5 h-5 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-on-surface">早饭</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">餐饮 · 2026-01-15</p>
+          </div>
+          <span class="text-base font-bold text-on-surface mr-3">¥20</span>
+          <button id="btn-edit-0" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+            <i data-lucide="pencil" class="w-4 h-4 text-on-surface-variant"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 解析结果-项目2 -->
+      <div class="bg-surface rounded-xl shadow-card p-4 mb-3">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3">
+            <i data-lucide="utensils" class="w-5 h-5 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-on-surface">中饭</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">餐饮 · 2026-01-15</p>
+          </div>
+          <span class="text-base font-bold text-on-surface mr-3">¥30</span>
+          <button id="btn-edit-1" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+            <i data-lucide="pencil" class="w-4 h-4 text-on-surface-variant"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 解析结果-项目3 -->
+      <div class="bg-surface rounded-xl shadow-card p-4 mb-3">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-warning/15 rounded-xl flex items-center justify-center mr-3">
+            <i data-lucide="utensils" class="w-5 h-5 text-warning"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-on-surface">晚饭</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">餐饮 · 2026-01-15</p>
+          </div>
+          <span class="text-base font-bold text-on-surface mr-3">¥10</span>
+          <button id="btn-edit-2" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+            <i data-lucide="pencil" class="w-4 h-4 text-on-surface-variant"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 解析结果-项目4 -->
+      <div class="bg-surface rounded-xl shadow-card p-4 mb-3">
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3">
+            <i data-lucide="phone" class="w-5 h-5 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-on-surface">电话费</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">通讯 · 2026-01-15</p>
+          </div>
+          <span class="text-base font-bold text-on-surface mr-3">¥30</span>
+          <button id="btn-edit-3" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+            <i data-lucide="pencil" class="w-4 h-4 text-on-surface-variant"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- === 收集箱区域 === -->
+    <section id="inbox-section" class="px-4 mt-6 mb-6">
+      <!-- 标题栏：点击可折叠 -->
+      <div id="inbox-header" class="flex items-center justify-between mb-3 cursor-pointer">
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-semibold text-on-surface">收集箱</h2>
+          <span id="inbox-badge" class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold bg-primary text-on-primary">3</span>
+        </div>
+        <i data-lucide="chevron-down" id="inbox-chevron" class="w-4 h-4 text-on-surface-variant transition-transform"></i>
+      </div>
+
+      <!-- 收集箱列表 -->
+      <div id="inbox-list">
+        <!-- 收集箱-记录1：小程序来源 -->
+        <div class="bg-surface rounded-xl shadow-card p-4 mb-3" id="inbox-item-1">
+          <div class="flex items-start">
+            <div class="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+              <i data-lucide="smartphone" class="w-4 h-4 text-primary"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-on-surface">餐饮 · 打车</span>
+                <span class="text-base font-bold text-on-surface">¥35</span>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1 truncate">打车去公司35</p>
+              <p class="text-xs text-on-surface-variant/60 mt-0.5">今天 08:30</p>
+            </div>
+            <div class="flex items-center gap-2 ml-2">
+              <button id="btn-confirm-inbox-1" class="h-8 px-3 bg-success/15 text-success text-xs font-semibold rounded-lg hover:bg-success/25 active:scale-[0.96] transition-all">确认</button>
+              <button id="btn-delete-inbox-1" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+                <i data-lucide="x" class="w-4 h-4 text-on-surface-variant"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 收集箱-记录2：公众号来源 -->
+        <div class="bg-surface rounded-xl shadow-card p-4 mb-3" id="inbox-item-2">
+          <div class="flex items-start">
+            <div class="w-9 h-9 bg-success/10 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+              <i data-lucide="message-circle" class="w-4 h-4 text-success"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-on-surface">日用品 · 洗衣液</span>
+                <span class="text-base font-bold text-on-surface">¥28</span>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1 truncate">洗衣液28块</p>
+              <p class="text-xs text-on-surface-variant/60 mt-0.5">昨天 21:15</p>
+            </div>
+            <div class="flex items-center gap-2 ml-2">
+              <button id="btn-confirm-inbox-2" class="h-8 px-3 bg-success/15 text-success text-xs font-semibold rounded-lg hover:bg-success/25 active:scale-[0.96] transition-all">确认</button>
+              <button id="btn-delete-inbox-2" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+                <i data-lucide="x" class="w-4 h-4 text-on-surface-variant"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 收集箱-记录3：公众号来源 -->
+        <div class="bg-surface rounded-xl shadow-card p-4 mb-3" id="inbox-item-3">
+          <div class="flex items-start">
+            <div class="w-9 h-9 bg-success/10 rounded-lg flex items-center justify-center mr-3 mt-0.5">
+              <i data-lucide="message-circle" class="w-4 h-4 text-success"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-on-surface">交通 · 地铁充值</span>
+                <span class="text-base font-bold text-on-surface">¥100</span>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1 truncate">地铁充值100</p>
+              <p class="text-xs text-on-surface-variant/60 mt-0.5">昨天 18:40</p>
+            </div>
+            <div class="flex items-center gap-2 ml-2">
+              <button id="btn-confirm-inbox-3" class="h-8 px-3 bg-success/15 text-success text-xs font-semibold rounded-lg hover:bg-success/25 active:scale-[0.96] transition-all">确认</button>
+              <button id="btn-delete-inbox-3" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container active:bg-surface-container-high transition-colors">
+                <i data-lucide="x" class="w-4 h-4 text-on-surface-variant"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 收集箱底部操作栏 -->
+        <div id="inbox-actions" class="flex items-center gap-3 mt-2">
+          <button id="btn-confirm-all" class="flex-1 bg-success/15 text-success py-2.5 rounded-xl text-sm font-semibold
+                         hover:bg-success/25 active:scale-[0.98] transition-all">全部确认</button>
+          <button id="btn-clear-inbox" class="flex-1 bg-surface-container text-on-surface-variant py-2.5 rounded-xl text-sm font-semibold
+                         hover:bg-surface-container-high active:scale-[0.98] transition-all">清空</button>
+        </div>
+      </div>
+
+      <!-- 收集箱空状态（默认隐藏） -->
+      <div id="inbox-empty" class="hidden py-8 text-center">
+        <i data-lucide="inbox" class="w-10 h-10 text-on-surface-variant/30 mx-auto mb-2"></i>
+        <p class="text-sm text-on-surface-variant">收集箱空空如也</p>
+        <p class="text-xs text-on-surface-variant/60 mt-1">可通过公众号发消息或在此输入记账</p>
+      </div>
+    </section>
+
+    <!-- === 底部固定操作栏（占位，避免内容被遮挡） === -->
+    <div class="h-20"></div>
+
+    <!-- === 底部固定操作栏 === -->
+    <div id="bottom-bar" class="fixed bottom-14 left-0 right-0 bg-surface/95 backdrop-blur-sm border-t border-outline-variant/15 z-40 px-4 py-3">
+      <div class="flex items-center gap-3">
+        <button id="btn-confirm-record"
+          class="flex-1 bg-primary text-on-primary py-3 rounded-xl text-base font-semibold
+                 hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+          <i data-lucide="check" class="w-5 h-5"></i>确认记账
+        </button>
+        <button id="btn-clear-results"
+          class="bg-surface-container text-on-surface-variant py-3 px-5 rounded-xl text-base font-semibold
+                 hover:bg-surface-container-high active:scale-[0.98] transition-all">
+          清空结果
+        </button>
+      </div>
+    </div>
+
+    <!-- === 编辑弹窗 === -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end">
+      <div class="bg-surface rounded-t-2xl w-full max-h-[85vh] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+        <!-- 弹窗标题 -->
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-lg font-bold text-on-surface">编辑记录</h3>
+          <button id="btn-close-modal" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+            <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
+          </button>
+        </div>
+
+        <!-- 名称 + 金额 同行 -->
+        <div class="flex items-center gap-3 mb-5">
+          <div class="flex-1">
+            <label class="text-xs font-semibold text-on-surface-variant mb-1 block">名称</label>
+            <input id="edit-name" type="text" value="早饭"
+              class="w-full bg-surface-container border-none rounded-xl px-4 py-3 text-base
+                     text-on-surface placeholder:text-on-surface-variant/50
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+          </div>
+          <div class="w-28">
+            <label class="text-xs font-semibold text-on-surface-variant mb-1 block">金额</label>
+            <input id="edit-amount" type="text" value="20"
+              class="w-full bg-surface-container border-none rounded-xl px-4 py-3 text-base
+                     text-on-surface placeholder:text-on-surface-variant/50
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+          </div>
+        </div>
+
+        <!-- 分类网格 -->
+        <label class="text-xs font-semibold text-on-surface-variant mb-2 block">分类</label>
+        <div id="category-grid" class="grid grid-cols-4 gap-2 mb-3">
+          <!-- 分类-餐饮 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-primary/10 border-2 border-primary transition-colors" data-category="餐饮">
+            <i data-lucide="utensils" class="w-5 h-5 text-primary"></i>
+            <span class="text-[10px] font-semibold text-primary">餐饮</span>
+          </button>
+          <!-- 分类-交通 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="交通">
+            <i data-lucide="car" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">交通</span>
+          </button>
+          <!-- 分类-通讯 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="通讯">
+            <i data-lucide="phone" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">通讯</span>
+          </button>
+          <!-- 分类-日用 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="日用">
+            <i data-lucide="shopping-bag" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">日用</span>
+          </button>
+          <!-- 分类-娱乐 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="娱乐">
+            <i data-lucide="gamepad-2" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">娱乐</span>
+          </button>
+          <!-- 分类-购物 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="购物">
+            <i data-lucide="shopping-cart" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">购物</span>
+          </button>
+          <!-- 分类-医疗 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="医疗">
+            <i data-lucide="heart-pulse" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">医疗</span>
+          </button>
+          <!-- 分类-教育 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="教育">
+            <i data-lucide="book-open" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">教育</span>
+          </button>
+          <!-- 分类-居住 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="居住">
+            <i data-lucide="home" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">居住</span>
+          </button>
+          <!-- 分类-社交 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="社交">
+            <i data-lucide="users" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">社交</span>
+          </button>
+          <!-- 分类-宠物 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="宠物">
+            <i data-lucide="cat" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">宠物</span>
+          </button>
+          <!-- 分类-其他 -->
+          <button class="category-item flex flex-col items-center gap-1 py-2.5 rounded-xl bg-surface-container border-2 border-transparent hover:bg-surface-container-high transition-colors" data-category="其他">
+            <i data-lucide="more-horizontal" class="w-5 h-5 text-on-surface-variant"></i>
+            <span class="text-[10px] font-semibold text-on-surface-variant">其他</span>
+          </button>
+        </div>
+
+        <!-- 搜索 + 自定义分类 同行 -->
+        <div class="flex items-center gap-2 mb-5">
+          <div class="flex-1 relative">
+            <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input id="edit-category-search" type="text" placeholder="搜索分类"
+              class="w-full bg-surface-container border-none rounded-xl pl-9 pr-4 py-2.5 text-sm
+                     text-on-surface placeholder:text-on-surface-variant/50
+                     focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+          </div>
+          <button id="btn-custom-category"
+            class="bg-surface-container text-on-surface-variant py-2.5 px-4 rounded-xl text-sm font-semibold
+                   hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-1">
+            <i data-lucide="plus" class="w-4 h-4"></i>自定义
+          </button>
+        </div>
+
+        <!-- 日期 + 完成编辑 同行 -->
+        <div class="flex items-center gap-3">
+          <div class="flex-1 flex items-center bg-surface-container rounded-xl px-4 py-3">
+            <i data-lucide="calendar" class="w-4 h-4 text-on-surface-variant mr-2"></i>
+            <span id="edit-date" class="text-sm text-on-surface">2026-01-15</span>
+          </div>
+          <button id="btn-save-edit"
+            class="bg-primary text-on-primary py-3 px-6 rounded-xl text-base font-semibold
+                   hover:opacity-90 active:scale-[0.98] transition-all">
+            完成编辑
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- @main-content:end -->
+  </main>
+
+  <script>
+  $(function() {
+    // === 导航辅助函数 ===
+    function navPush(route) {
+      console.log('[原型演示] PUSH 到: ' + route);
+      window.location.href = route;
+    }
+    function navReplace(route) {
+      console.log('[原型演示] REPLACE 为: ' + route);
+      window.location.replace(route);
+    }
+    function navReset(route) {
+      console.log('[原型演示] RESET 到: ' + route);
+      window.location.href = route;
+    }
+    function navBack() {
+      console.log('[原型演示] BACK 返回上一页');
+      if(window.history.length > 1) window.history.back();
+    }
+
+    // === TabBar 导航 ===
+    $('nav a, [aria-current="page"]').closest('div').find('a').on('click', function(e) {
+      // TabBar 链接已由 href 处理
+    });
+
+    // === 日期模式切换 ===
+    $('#btn-mode-date').on('click', function() {
+      $(this).addClass('bg-primary text-on-primary').removeClass('text-on-surface-variant');
+      $('#btn-mode-month').removeClass('bg-primary text-on-primary').addClass('text-on-surface-variant');
+      $('#date-display').text('2026-01-15');
+    });
+    $('#btn-mode-month').on('click', function() {
+      $(this).addClass('bg-primary text-on-primary').removeClass('text-on-surface-variant');
+      $('#btn-mode-date').removeClass('bg-primary text-on-primary').addClass('text-on-surface-variant');
+      $('#date-display').text('2026年1月');
+    });
+
+    // === 智能解析按钮 ===
+    $('#btn-parse').on('click', function() {
+      // 复杂交互 - 实际应实现：
+      // 1. 获取输入框文本内容
+      // 2. 调用 AI 解析接口，传入文本和日期
+      // 3. 解析返回后，渲染解析结果列表
+      // 4. 滚动到解析结果区域
+      console.log('[原型演示] 智能解析：', $('#input-text').val());
+      // 原型中数据已硬编码，点击后滚动到解析结果
+      $('html, body').animate({ scrollTop: $('#parse-result-section').offset().top - 20 }, 400);
+    });
+
+    // === 收集箱折叠/展开 ===
+    var inboxExpanded = true;
+    $('#inbox-header').on('click', function() {
+      inboxExpanded = !inboxExpanded;
+      if (inboxExpanded) {
+        $('#inbox-list').slideDown(250);
+        $('#inbox-chevron').css('transform', 'rotate(0deg)');
+      } else {
+        $('#inbox-list').slideUp(250);
+        $('#inbox-chevron').css('transform', 'rotate(-90deg)');
+      }
+    });
+
+    // === 收集箱单条确认 ===
+    function updateInboxBadge() {
+      var count = $('#inbox-list .bg-surface').length;
+      if (count > 0) {
+        $('#inbox-badge').text(count).show();
+        $('#inbox-actions').show();
+        $('#inbox-empty').addClass('hidden');
+        $('#inbox-list').removeClass('hidden');
+      } else {
+        $('#inbox-badge').hide();
+        $('#inbox-actions').hide();
+        $('#inbox-empty').removeClass('hidden');
+        $('#inbox-list').addClass('hidden');
+      }
+    }
+
+    $('#btn-confirm-inbox-1').on('click', function(e) {
+      e.stopPropagation();
+      // 实际应调用 POST /api/records 确认该条记录为正式支出
+      console.log('[原型演示] 确认收集箱记录: inbox-item-1');
+      $('#inbox-item-1').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    $('#btn-confirm-inbox-2').on('click', function(e) {
+      e.stopPropagation();
+      console.log('[原型演示] 确认收集箱记录: inbox-item-2');
+      $('#inbox-item-2').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    $('#btn-confirm-inbox-3').on('click', function(e) {
+      e.stopPropagation();
+      console.log('[原型演示] 确认收集箱记录: inbox-item-3');
+      $('#inbox-item-3').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    // === 收集箱单条删除 ===
+    $('#btn-delete-inbox-1').on('click', function(e) {
+      e.stopPropagation();
+      console.log('[原型演示] 删除收集箱记录: inbox-item-1');
+      $('#inbox-item-1').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    $('#btn-delete-inbox-2').on('click', function(e) {
+      e.stopPropagation();
+      console.log('[原型演示] 删除收集箱记录: inbox-item-2');
+      $('#inbox-item-2').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    $('#btn-delete-inbox-3').on('click', function(e) {
+      e.stopPropagation();
+      console.log('[原型演示] 删除收集箱记录: inbox-item-3');
+      $('#inbox-item-3').animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300, function() {
+        $(this).remove();
+        updateInboxBadge();
+      });
+    });
+
+    // === 全部确认 ===
+    $('#btn-confirm-all').on('click', function() {
+      // 实际应调用批量确认接口
+      console.log('[原型演示] 全部确认收集箱记录');
+      $('#inbox-list .bg-surface').each(function() {
+        $(this).animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300);
+      });
+      setTimeout(function() {
+        $('#inbox-list .bg-surface').remove();
+        updateInboxBadge();
+      }, 400);
+    });
+
+    // === 清空收集箱 ===
+    $('#btn-clear-inbox').on('click', function() {
+      // 实际应调用批量删除接口
+      console.log('[原型演示] 清空收集箱');
+      $('#inbox-list .bg-surface').each(function() {
+        $(this).animate({ opacity: 0, height: 0, marginBottom: 0, padding: 0 }, 300);
+      });
+      setTimeout(function() {
+        $('#inbox-list .bg-surface').remove();
+        updateInboxBadge();
+      }, 400);
+    });
+
+    // === 编辑弹窗 ===
+    function openEditModal(name, amount, category, date) {
+      $('#edit-name').val(name);
+      $('#edit-amount').val(amount);
+      $('#edit-date').text(date);
+      // 重置分类选中状态
+      $('#category-grid .category-item').each(function() {
+        var cat = $(this).data('category');
+        if (cat === category) {
+          $(this).addClass('bg-primary/10 border-primary').removeClass('bg-surface-container border-transparent');
+          $(this).find('i, span').addClass('text-primary').removeClass('text-on-surface-variant');
+        } else {
+          $(this).removeClass('bg-primary/10 border-primary').addClass('bg-surface-container border-transparent');
+          $(this).find('i, span').removeClass('text-primary').addClass('text-on-surface-variant');
+        }
+      });
+      $('#edit-modal').removeClass('hidden');
+    }
+
+    // 解析结果的编辑按钮
+    $('#btn-edit-0').on('click', function() {
+      openEditModal('早饭', '20', '餐饮', '2026-01-15');
+    });
+    $('#btn-edit-1').on('click', function() {
+      openEditModal('中饭', '30', '餐饮', '2026-01-15');
+    });
+    $('#btn-edit-2').on('click', function() {
+      openEditModal('晚饭', '10', '餐饮', '2026-01-15');
+    });
+    $('#btn-edit-3').on('click', function() {
+      openEditModal('电话费', '30', '通讯', '2026-01-15');
+    });
+
+    // 关闭弹窗
+    $('#btn-close-modal').on('click', function() {
+      $('#edit-modal').addClass('hidden');
+    });
+    // 点击遮罩关闭
+    $('#edit-modal').on('click', function(e) {
+      if ($(e.target).is('#edit-modal')) {
+        $('#edit-modal').addClass('hidden');
+      }
+    });
+
+    // 分类网格选择
+    $('#category-grid').on('click', '.category-item', function() {
+      // 取消其他选中
+      $('#category-grid .category-item').each(function() {
+        $(this).removeClass('bg-primary/10 border-primary').addClass('bg-surface-container border-transparent');
+        $(this).find('i, span').removeClass('text-primary').addClass('text-on-surface-variant');
+      });
+      // 设置当前选中
+      $(this).addClass('bg-primary/10 border-primary').removeClass('bg-surface-container border-transparent');
+      $(this).find('i, span').addClass('text-primary').removeClass('text-on-surface-variant');
+      console.log('[原型演示] 选择分类: ' + $(this).data('category'));
+    });
+
+    // 自定义分类按钮
+    $('#btn-custom-category').on('click', function() {
+      // 复杂交互 - 实际应实现：
+      // 1. 弹出内联输入框，让用户输入自定义分类名称
+      // 2. 选择一个 lucide 图标作为分类图标
+      // 3. 将新分类添加到分类网格中
+      // 4. 自动选中新添加的分类
+      console.log('[原型演示] 自定义分类 - 应弹出输入框让用户创建新分类');
+    });
+
+    // 完成编辑
+    $('#btn-save-edit').on('click', function() {
+      // 复杂交互 - 实际应实现：
+      // 1. 读取修改后的名称、金额、分类、日期
+      // 2. 校验金额是否为有效数字
+      // 3. 更新对应的解析结果卡片数据
+      // 4. 重新计算合计金额
+      // 5. 关闭弹窗
+      console.log('[原型演示] 完成编辑 - 应保存修改并更新对应解析结果卡片');
+      $('#edit-modal').addClass('hidden');
+    });
+
+    // === 底部操作栏 ===
+    $('#btn-confirm-record').on('click', function() {
+      // 实际应实现：
+      // 1. 获取所有解析结果数据
+      // 2. 调用 POST /api/records/batch 批量创建正式记录
+      // 3. 成功后清空解析结果和输入框
+      // 4. 显示成功提示 toast
+      console.log('[原型演示] 确认记账 - 应批量保存解析结果为正式记录');
+      // 原型中简单隐藏解析结果
+      $('#parse-result-section').slideUp(300);
+    });
+
+    $('#btn-clear-results').on('click', function() {
+      console.log('[原型演示] 清空结果');
+      $('#parse-result-section').slideUp(300);
+    });
+
+    // 初始化收集箱 badge
+    updateInboxBadge();
+  });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
