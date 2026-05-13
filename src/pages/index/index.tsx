@@ -2,11 +2,27 @@ import { useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Picker, ScrollView } from '@tarojs/components'
 import { Button } from '@/components/ui/button'
-
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader, PenLine, X, Pencil, Calendar, Plus, Search, MessageCircle, Smartphone, Check, Trash2, ChevronDown, Inbox, Sparkles, TrendingUp } from 'lucide-react-taro'
+import {
+  Loader, X, Pencil, Calendar, Plus, Search,
+  MessageCircle, Smartphone, ChevronDown, Inbox,
+  Sparkles, Clock, Lightbulb, ChevronRight
+} from 'lucide-react-taro'
 import { useExpenseStore, ParsedExpense, PendingRecord } from '@/store/expense-store'
+
+// Category emoji map - matching the GPT5.5 template exactly
+const CATEGORY_ICONS: Record<string, string> = {
+  '餐饮': '🍜', '交通': '🚌', '购物': '🛍️', '娱乐': '🎮',
+  '居住': '🏠', '医疗': '💊', '教育': '📚', '其他': '📦',
+  '订阅': '📱', '通讯': '📞', '服饰': '👔', '美妆': '💄',
+  '运动': '⚽', '旅行': '✈️', '宠物': '🐾', '礼物': '🎁',
+  '工资': '💰', '理财': '📈', '红包': '🧧', '退款': '💳',
+}
+
+const getCategoryIcon = (name: string) => CATEGORY_ICONS[name] || '📦'
+
+const DEFAULT_CATEGORIES = ['餐饮', '交通', '购物', '娱乐', '居住', '医疗', '教育', '其他']
 
 const IndexPage = () => {
   const [inputText, setInputText] = useState('')
@@ -38,9 +54,8 @@ const IndexPage = () => {
   const [pendingRecords, setPendingRecords] = useState<PendingRecord[]>([])
   const [showInbox, setShowInbox] = useState(false)
 
-  // Today's summary
-  const [todayTotal, setTodayTotal] = useState(0)
-  const [monthTotal, setMonthTotal] = useState(0)
+  // Selected category chip
+  const [selectedCategory, setSelectedCategory] = useState('餐饮')
 
   const { addExpenses, categories, fetchCategories, createCategory, savePreference,
     fetchPendingRecords, confirmPendingRecord, rejectPendingRecord, createSubscription } = useExpenseStore()
@@ -48,30 +63,7 @@ const IndexPage = () => {
   useEffect(() => {
     fetchCategories()
     loadPendingRecords()
-    loadTodaySummary()
   }, [])
-
-  const loadTodaySummary = async () => {
-    try {
-      const todayStr = new Date().toISOString().slice(0, 10)
-      const now = new Date()
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-      const nextMonth = now.getMonth() === 11
-        ? `${now.getFullYear() + 1}-01-01`
-        : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, '0')}-01`
-
-      const [todayData, monthData] = await Promise.all([
-        useExpenseStore.getState().fetchExpensesByMonth(todayStr, `${todayStr}T23:59:59`),
-        useExpenseStore.getState().fetchExpensesByMonth(monthStart, nextMonth),
-      ])
-      const todaySum = todayData.reduce((s, e) => s + (Number(e.amount) || 0), 0)
-      const monthSum = monthData.reduce((s, e) => s + (Number(e.amount) || 0), 0)
-      setTodayTotal(todaySum)
-      setMonthTotal(monthSum)
-    } catch (err) {
-      console.error('loadTodaySummary error:', err)
-    }
-  }
 
   const loadPendingRecords = async () => {
     try {
@@ -110,7 +102,6 @@ const IndexPage = () => {
       }
       Taro.showToast({ title: '已确认', icon: 'success' })
       loadPendingRecords()
-      loadTodaySummary()
     } catch (err) {
       console.error('confirmPending error:', err)
       Taro.showToast({ title: '确认失败', icon: 'none' })
@@ -186,7 +177,6 @@ const IndexPage = () => {
       setParsedResults([])
       setInputText('')
       setEditingIdx(null)
-      loadTodaySummary()
     } catch (err) {
       console.error('保存失败', err)
       Taro.showToast({ title: '保存失败', icon: 'none' })
@@ -197,20 +187,6 @@ const IndexPage = () => {
 
   const handleRemoveResult = (idx: number) => {
     setParsedResults(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const handleSaveToInbox = async (idx: number) => {
-    const item = parsedResults[idx]
-    if (!item) return
-    try {
-      const rawText = `${item.note || item.category} ${item.amount || 0}`
-      await useExpenseStore.getState().saveToInbox(rawText, 'expense', item as unknown as Record<string, unknown>)
-      handleRemoveResult(idx)
-      Taro.showToast({ title: '已存入收集箱', icon: 'success' })
-      fetchPendingRecords()
-    } catch {
-      Taro.showToast({ title: '保存失败', icon: 'error' })
-    }
   }
 
   const handleCreateCategory = async () => {
@@ -267,360 +243,365 @@ const IndexPage = () => {
     return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
 
-  const todayLabel = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
+  // Merge user categories with defaults for chip display
+  const allCategoryNames = [...new Set([...DEFAULT_CATEGORIES, ...categories.map(c => c.name)])]
 
   return (
-    <View className="h-full flex flex-col" style={{ backgroundColor: '#F7F8FA' }}>
-      <ScrollView scrollY className="flex-1">
-        {/* Gradient Header Card */}
-        <View
-          className="mx-4 mt-4 rounded-2xl p-5"
-          style={{
-            background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
-          }}
-        >
-          <View className="flex flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="block text-white text-lg font-semibold opacity-90">{todayLabel}</Text>
-              <Text className="block text-white text-2xl font-bold mt-1">记一笔</Text>
-            </View>
-            {pendingRecords.length > 0 && (
-              <View
-                className="flex flex-row items-center gap-1 bg-white bg-opacity-20 rounded-full px-3 py-1"
-                onClick={() => setShowInbox(!showInbox)}
-              >
-                <Inbox size={14} color="#fff" />
-                <Text className="text-white text-xs">{pendingRecords.length} 待确认</Text>
-                <ChevronDown size={12} color="#fff" className={showInbox ? 'rotate-180' : ''} />
-              </View>
-            )}
-          </View>
-          <View className="flex flex-row gap-4">
-            <View className="flex-1 bg-white bg-opacity-15 rounded-xl p-3">
-              <Text className="block text-white text-xs opacity-75">今日支出</Text>
-              <Text className="block text-white text-xl font-bold mt-1">¥{todayTotal.toFixed(2)}</Text>
-            </View>
-            <View className="flex-1 bg-white bg-opacity-15 rounded-xl p-3">
-              <Text className="block text-white text-xs opacity-75">本月支出</Text>
-              <Text className="block text-white text-xl font-bold mt-1">¥{monthTotal.toFixed(2)}</Text>
-            </View>
-          </View>
-        </View>
+    <View className="h-full flex flex-col" style={{ backgroundColor: '#F2F3F5' }}>
+      <ScrollView scrollY className="flex-1" style={{ paddingBottom: '80px' }}>
 
-        {/* Inbox (收集箱) */}
-        {showInbox && (
-          <View className="mx-4 mt-3">
-            <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-              <View className="flex flex-row items-center gap-2 mb-3">
-                <Inbox size={16} color="#2563EB" />
-                <Text className="block text-sm font-semibold text-foreground">收集箱</Text>
-                <Text className="block text-xs text-muted-foreground">来自公众号和小程序的待确认记录</Text>
-              </View>
-              {pendingRecords.length > 0 ? (
-                <>
-                  {pendingRecords.map(record => {
-                    const pd = record.parsed_data || {}
-                    const isSub = record.record_type === 'subscription'
-                    const isFromWechat = record.source === 'wechat_oa'
-                    return (
-                      <View key={record.id} className="border-b border-border pb-3 mb-3 last:border-b-0 last:mb-0 last:pb-0">
-                        {/* Source + type */}
-                        <View className="flex flex-row items-center gap-2 mb-2">
-                          {isFromWechat ? (
-                            <View className="flex flex-row items-center gap-1 bg-blue-50 rounded-full px-2 py-1">
-                              <MessageCircle size={10} color="#2563EB" />
-                              <Text className="text-xs text-primary">公众号</Text>
-                            </View>
-                          ) : (
-                            <View className="flex flex-row items-center gap-1 bg-green-50 rounded-full px-2 py-1">
-                              <Smartphone size={10} color="#22C55E" />
-                              <Text className="text-xs text-green-600">小程序</Text>
-                            </View>
-                          )}
-                          <View className="bg-purple-50 rounded-full px-2 py-1">
-                            <Text className="text-xs text-purple-600">{isSub ? '订阅' : '支出'}</Text>
-                          </View>
-                          <Text className="block text-xs text-muted-foreground ml-auto">{formatTime(record.created_at)}</Text>
-                        </View>
-                        {/* Name + amount */}
-                        <View className="flex flex-row items-center justify-between mb-2">
-                          <Text className="block text-sm font-medium text-foreground truncate" style={{ maxWidth: '65%' }}>
-                            {pd.note || pd.name || record.raw_text}
-                          </Text>
-                          <Text className="block text-base font-bold text-amber-500 flex-shrink-0">
-                            {pd.amount != null ? `¥${pd.amount}` : '金额待定'}
-                          </Text>
-                        </View>
-                        {record.raw_text && (pd.note || pd.name) && record.raw_text !== (pd.note || pd.name) && (
-                          <Text className="block text-xs text-muted-foreground mb-2 truncate">&ldquo;{record.raw_text}&rdquo;</Text>
-                        )}
-                        <View className="flex flex-row items-center gap-2 mb-2">
-                          <View className="bg-slate-100 rounded-full px-2 py-1">
-                            <Text className="text-xs text-slate-600">{pd.category || '未分类'}</Text>
-                          </View>
-                          {isSub && (
-                            <View className="bg-slate-100 rounded-full px-2 py-1">
-                              <Text className="text-xs text-slate-600">{pd.cycle === 'monthly' ? '每月' : pd.cycle === 'quarterly' ? '每季度' : pd.cycle === 'yearly' ? '每年' : pd.cycle}</Text>
-                            </View>
-                          )}
-                        </View>
-                        <View className="flex flex-row gap-2">
-                          <View style={{ flex: 1 }}>
-                            <Button className="w-full bg-green-500 text-white rounded-xl text-xs" onClick={() => handleConfirmPending(record)}>
-                              <View className="flex flex-row items-center justify-center gap-1">
-                                <Check size={12} color="#fff" />
-                                <Text className="text-white text-xs">确认</Text>
-                              </View>
-                            </Button>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Button className="w-full bg-white border border-slate-200 text-slate-500 rounded-xl text-xs" onClick={() => handleRejectPending(record.id)}>
-                              <View className="flex flex-row items-center justify-center gap-1">
-                                <X size={12} color="#94A3B8" />
-                                <Text className="text-xs text-slate-500">删除</Text>
-                              </View>
-                            </Button>
-                          </View>
-                        </View>
-                      </View>
-                    )
-                  })}
-                  <View className="flex flex-row gap-2 mt-3">
-                    <View style={{ flex: 1 }}>
-                      <Button className="w-full bg-green-500 text-white rounded-xl" onClick={handleConfirmAll}>
-                        <View className="flex flex-row items-center justify-center gap-1">
-                          <Check size={14} color="#fff" />
-                          <Text className="text-white text-xs">全部确认</Text>
-                        </View>
-                      </Button>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Button className="w-full bg-white border border-red-200 text-red-500 rounded-xl" onClick={handleClearInbox}>
-                        <View className="flex flex-row items-center justify-center gap-1">
-                          <Trash2 size={14} color="#EF4444" />
-                          <Text className="text-xs text-red-500">清空</Text>
-                        </View>
-                      </Button>
-                    </View>
-                  </View>
-                </>
-              ) : (
-                <View className="flex flex-col items-center justify-center py-6">
-                  <Inbox size={28} color="#CBD5E1" />
-                  <Text className="block text-sm text-muted-foreground mt-2">收集箱空空如也</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Date Selector */}
-        <View className="mx-4 mt-3">
-          <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-            <View className="flex flex-row items-center gap-3">
-              <Calendar size={18} color="#2563EB" />
-              <View className="flex flex-row bg-slate-100 rounded-xl p-1">
-                <View
-                  className={`px-3 py-1 rounded-lg ${dateMode === 'today' ? 'bg-white' : ''}`}
-                  style={dateMode === 'today' ? { boxShadow: '0 1px 2px rgba(0,0,0,0.1)' } : {}}
-                  onClick={() => setDateMode('today')}
-                >
-                  <Text className={`block text-xs ${dateMode === 'today' ? 'text-primary font-medium' : 'text-slate-400'}`}>
-                    按日期
-                  </Text>
-                </View>
-                <View
-                  className={`px-3 py-1 rounded-lg ${dateMode === 'month' ? 'bg-white' : ''}`}
-                  style={dateMode === 'month' ? { boxShadow: '0 1px 2px rgba(0,0,0,0.1)' } : {}}
-                  onClick={() => setDateMode('month')}
-                >
-                  <Text className={`block text-xs ${dateMode === 'month' ? 'text-primary font-medium' : 'text-slate-400'}`}>
-                    按月份
-                  </Text>
-                </View>
-              </View>
-              {dateMode === 'today' ? (
-                <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
-                  <View className="px-3 py-1 bg-blue-50 rounded-lg">
-                    <Text className="block text-sm text-primary font-medium">{selectedDate}</Text>
-                  </View>
-                </Picker>
-              ) : (
-                <Picker
-                  mode="date" fields="month" value={`${selectedMonth}-01`}
-                  onChange={(e) => { const val = e.detail.value as string; setSelectedMonth(val.slice(0, 7)) }}
-                >
-                  <View className="px-3 py-1 bg-blue-50 rounded-lg">
-                    <Text className="block text-sm text-primary font-medium">{selectedMonth}</Text>
-                  </View>
-                </Picker>
-              )}
-            </View>
-            {dateMode === 'month' && (
-              <Text className="block text-xs text-muted-foreground mt-2">
-                按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
+        {/* === 日期切换条 === */}
+        <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
+          <View style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
+            <View
+              onClick={() => setDateMode('today')}
+              style={{
+                padding: '6px 16px', borderRadius: '8px',
+                backgroundColor: dateMode === 'today' ? '#0066FF' : '#F2F3F5',
+              }}
+            >
+              <Text style={{ color: dateMode === 'today' ? '#FFFFFF' : '#4E5969', fontSize: '14px', fontWeight: dateMode === 'today' ? '500' : '400' }}>
+                按日期
               </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Input Area */}
-        <View className="mx-4 mt-3">
-          <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-            <View className="flex flex-row items-center gap-2 mb-3">
-              <Sparkles size={16} color="#2563EB" />
-              <Text className="block text-sm font-semibold text-foreground">智能记账</Text>
             </View>
-            <View className="bg-slate-50 rounded-xl p-3">
-              <Textarea
-                style={{ width: '100%', minHeight: '72px', backgroundColor: 'transparent', fontSize: '15px', lineHeight: '22px', color: '#1E293B' }}
-                placeholder="今天花了什么？说说看..."
-                placeholderStyle="color:#94A3B8"
-                value={inputText}
-                onInput={(e) => setInputText(e.detail.value)}
-                maxlength={500}
-              />
-            </View>
-            <View className="mt-3">
-              <Button
-                className="w-full text-white rounded-xl"
-                style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
-                onClick={handleParse}
-                disabled={isParsing || !inputText.trim()}
-              >
-                {isParsing ? (
-                  <View className="flex flex-row items-center justify-center gap-2">
-                    <Loader size={16} color="#fff" className="animate-spin" />
-                    <Text className="text-white">解析中</Text>
-                  </View>
-                ) : (
-                  <View className="flex flex-row items-center justify-center gap-2">
-                    <Send size={16} color="#fff" />
-                    <Text className="text-white">智能记账</Text>
-                  </View>
-                )}
-              </Button>
+            <View
+              onClick={() => setDateMode('month')}
+              style={{
+                padding: '6px 16px', borderRadius: '8px',
+                backgroundColor: dateMode === 'month' ? '#0066FF' : '#F2F3F5',
+              }}
+            >
+              <Text style={{ color: dateMode === 'month' ? '#FFFFFF' : '#4E5969', fontSize: '14px', fontWeight: dateMode === 'month' ? '500' : '400' }}>
+                按月份
+              </Text>
             </View>
           </View>
-        </View>
-
-        {/* Parsed Results */}
-        {parsedResults.length > 0 && (
-          <View className="mx-4 mt-4 pb-36">
-            <View className="flex flex-row items-center justify-between mb-3">
-              <View className="flex flex-row items-center gap-2">
-                <PenLine size={16} color="#2563EB" />
-                <Text className="block text-base font-semibold text-foreground">AI 解析结果</Text>
-                <View className="bg-blue-50 rounded-full px-2 py-1">
-                  <Text className="text-xs text-primary">{parsedResults.length} 笔</Text>
-                </View>
+          {dateMode === 'today' ? (
+            <Picker mode="date" value={selectedDate} onChange={(e) => setSelectedDate(e.detail.value)}>
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: '#F2F3F5', borderRadius: '8px' }}>
+                <Calendar size={14} color="#86909C" />
+                <Text style={{ fontSize: '14px', color: '#1D2129' }}>{selectedDate}</Text>
+                <ChevronDown size={12} color="#86909C" />
               </View>
-              <Text className="block text-lg font-bold text-amber-500">合计 ¥{totalParsedAmount.toFixed(2)}</Text>
-            </View>
+            </Picker>
+          ) : (
+            <Picker mode="date" fields="month" value={`${selectedMonth}-01`}
+              onChange={(e) => { const val = e.detail.value as string; setSelectedMonth(val.slice(0, 7)) }}
+            >
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', padding: '6px 12px', backgroundColor: '#F2F3F5', borderRadius: '8px' }}>
+                <Calendar size={14} color="#86909C" />
+                <Text style={{ fontSize: '14px', color: '#1D2129' }}>{selectedMonth}</Text>
+                <ChevronDown size={12} color="#86909C" />
+              </View>
+            </Picker>
+          )}
+        </View>
 
-            {parsedResults.map((result, idx) => (
-              <View key={idx} className="bg-white rounded-2xl p-4 mb-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                <View className="flex flex-row items-center justify-between">
-                  <View className="flex flex-col flex-1">
-                    <View className="flex flex-row items-center gap-2">
-                      <Text className="block text-base font-semibold text-foreground">
-                        {result.note || '未命名'}
-                      </Text>
-                      <Text className="block text-lg font-bold text-amber-500">
-                        {result.amount != null ? `¥${result.amount}` : '--'}
+        {/* === 输入区白色卡片 === */}
+        <View style={{ margin: '0 16px', backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          {/* 备注输入框 */}
+          <View style={{ backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '12px', minHeight: '120px', position: 'relative' }}>
+            <Textarea
+              style={{ width: '100%', minHeight: '80px', backgroundColor: 'transparent', fontSize: '14px', lineHeight: '22px', color: '#1D2129' }}
+              placeholder="今天花了什么？一句话记下来"
+              placeholderStyle="color:#C9CDD4"
+              value={inputText}
+              onInput={(e) => setInputText(e.detail.value)}
+              maxlength={200}
+            />
+            <Text style={{ position: 'absolute', bottom: '8px', right: '12px', fontSize: '12px', color: '#C9CDD4' }}>
+              {inputText.length}/200
+            </Text>
+          </View>
+
+          {/* 常用分类 */}
+          <View style={{ marginTop: '16px' }}>
+            <Text style={{ fontSize: '14px', color: '#86909C', marginBottom: '10px' }}>常用分类</Text>
+            <ScrollView scrollX style={{ width: '100%', whiteSpace: 'nowrap' }}>
+              <View style={{ display: 'flex', flexDirection: 'row', gap: '8px', paddingBottom: '4px' }}>
+                {allCategoryNames.map(name => {
+                  const isActive = selectedCategory === name
+                  return (
+                    <View
+                      key={name}
+                      onClick={() => setSelectedCategory(name)}
+                      style={{
+                        display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px',
+                        padding: '8px 16px', borderRadius: '24px',
+                        backgroundColor: isActive ? '#E8F3FF' : '#F2F3F5',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Text style={{ fontSize: '14px' }}>{getCategoryIcon(name)}</Text>
+                      <Text
+                        style={{
+                          fontSize: '14px', fontWeight: isActive ? '500' : '400',
+                          color: isActive ? '#0066FF' : '#4E5969',
+                        }}
+                      >
+                        {name}
                       </Text>
                     </View>
-                    <View className="flex flex-row items-center gap-2 mt-2">
-                      <View className="bg-blue-50 rounded-full px-2 py-1">
-                        <Text className="text-xs text-primary">{result.category}</Text>
-                      </View>
-                      {result.tag && (
-                        <View className="bg-amber-50 rounded-full px-2 py-1">
-                          <Text className="text-xs text-amber-600">{result.tag}</Text>
+                  )
+                })}
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* 智能记账按钮 */}
+          <View style={{ marginTop: '16px' }}>
+            <Button
+              className="w-full rounded-full text-white"
+              style={{ backgroundColor: '#0066FF', height: '48px', borderRadius: '24px' }}
+              onClick={handleParse}
+              disabled={isParsing || !inputText.trim()}
+            >
+              {isParsing ? (
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Loader size={16} color="#fff" className="animate-spin" />
+                  <Text style={{ color: '#FFFFFF', fontSize: '16px', fontWeight: '500' }}>解析中...</Text>
+                </View>
+              ) : (
+                <Text style={{ color: '#FFFFFF', fontSize: '16px', fontWeight: '500' }}>智能记账</Text>
+              )}
+            </Button>
+            <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
+              <Sparkles size={12} color="#86909C" />
+              <Text style={{ fontSize: '12px', color: '#86909C' }}>AI分析, 安全记账</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* === 收集箱（如果有待确认记录） === */}
+        {pendingRecords.length > 0 && (
+          <View style={{ margin: '12px 16px 0' }}>
+            <View onClick={() => setShowInbox(!showInbox)} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#FFFFFF', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                <Inbox size={16} color="#0066FF" />
+                <Text style={{ fontSize: '16px', fontWeight: '500', color: '#1D2129' }}>收集箱</Text>
+                <View style={{ backgroundColor: '#E8F3FF', borderRadius: '24px', padding: '2px 8px' }}>
+                  <Text style={{ fontSize: '12px', color: '#0066FF' }}>{pendingRecords.length} 待确认</Text>
+                </View>
+              </View>
+              <ChevronDown size={16} color="#86909C" style={{ transform: showInbox ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            </View>
+            {showInbox && (
+              <View style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '16px', marginTop: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                {pendingRecords.map(record => {
+                  const pd = record.parsed_data || {}
+                  const isSub = record.record_type === 'subscription'
+                  const isFromWechat = record.source === 'wechat_oa'
+                  return (
+                    <View key={record.id} style={{ borderBottomWidth: '1px', borderBottomColor: '#F2F3F5', borderBottomStyle: 'solid', paddingBottom: '12px', marginBottom: '12px' }}>
+                      {/* Source tag + type */}
+                      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        {isFromWechat ? (
+                          <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2px', backgroundColor: '#E8F3FF', borderRadius: '24px', padding: '2px 8px' }}>
+                            <MessageCircle size={10} color="#0066FF" />
+                            <Text style={{ fontSize: '12px', color: '#0066FF' }}>公众号</Text>
+                          </View>
+                        ) : (
+                          <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2px', backgroundColor: '#E8F6EF', borderRadius: '24px', padding: '2px 8px' }}>
+                            <Smartphone size={10} color="#00B42A" />
+                            <Text style={{ fontSize: '12px', color: '#00B42A' }}>小程序</Text>
+                          </View>
+                        )}
+                        <View style={{ backgroundColor: '#F2F3F5', borderRadius: '24px', padding: '2px 8px' }}>
+                          <Text style={{ fontSize: '12px', color: '#4E5969' }}>{isSub ? '订阅' : '支出'}</Text>
                         </View>
-                      )}
+                        <Text style={{ fontSize: '12px', color: '#86909C', marginLeft: 'auto' }}>{formatTime(record.created_at)}</Text>
+                      </View>
+                      {/* Name + amount */}
+                      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <Text style={{ fontSize: '14px', fontWeight: '500', color: '#1D2129', maxWidth: '65%' }} numberOfLines={1}>
+                          {pd.note || pd.name || record.raw_text}
+                        </Text>
+                        <Text style={{ fontSize: '16px', fontWeight: '700', color: '#FF7D00', flexShrink: 0 }}>
+                          {pd.amount != null ? `¥${pd.amount}` : '金额待定'}
+                        </Text>
+                      </View>
+                      {/* Category tag */}
+                      <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <View style={{ backgroundColor: '#F2F3F5', borderRadius: '24px', padding: '2px 8px' }}>
+                          <Text style={{ fontSize: '12px', color: '#4E5969' }}>{pd.category || '未分类'}</Text>
+                        </View>
+                      </View>
+                      {/* Confirm / Delete */}
+                      <View style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
+                        <View style={{ flex: 1 }}>
+                          <Button style={{ backgroundColor: '#0066FF', borderRadius: '8px', height: '36px' }} onClick={() => handleConfirmPending(record)}>
+                            <Text style={{ color: '#FFFFFF', fontSize: '13px', fontWeight: '500' }}>确认</Text>
+                          </Button>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Button style={{ backgroundColor: '#FFFFFF', borderWidth: '1px', borderColor: '#E5E6EB', borderRadius: '8px', height: '36px' }} onClick={() => handleRejectPending(record.id)}>
+                            <Text style={{ color: '#86909C', fontSize: '13px' }}>删除</Text>
+                          </Button>
+                        </View>
+                      </View>
                     </View>
+                  )
+                })}
+                {/* Batch actions */}
+                <View style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginTop: '4px' }}>
+                  <View style={{ flex: 1 }}>
+                    <Button style={{ backgroundColor: '#00B42A', borderRadius: '8px', height: '36px' }} onClick={handleConfirmAll}>
+                      <Text style={{ color: '#FFFFFF', fontSize: '13px', fontWeight: '500' }}>全部确认</Text>
+                    </Button>
                   </View>
-                  <View className="flex flex-row items-center gap-1">
-                    <Button className="bg-transparent p-0" onClick={() => handleSaveToInbox(idx)}>
-                      <Inbox size={14} color="#2563EB" />
-                    </Button>
-                    <Button className="bg-transparent p-0" onClick={() => openEditModal(idx)}>
-                      <Pencil size={14} color="#94A3B8" />
-                    </Button>
-                    <Button className="bg-transparent p-0" onClick={() => handleRemoveResult(idx)}>
-                      <X size={14} color="#EF4444" />
+                  <View style={{ flex: 1 }}>
+                    <Button style={{ backgroundColor: '#FFFFFF', borderWidth: '1px', borderColor: '#FF7D00', borderRadius: '8px', height: '36px' }} onClick={handleClearInbox}>
+                      <Text style={{ color: '#FF7D00', fontSize: '13px' }}>清空</Text>
                     </Button>
                   </View>
                 </View>
               </View>
-            ))}
+            )}
           </View>
         )}
 
-        {/* Empty State */}
-        {parsedResults.length === 0 && (
-          <View className="flex flex-col items-center justify-center mt-16 mb-8">
-            <View className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-              <TrendingUp size={28} color="#94A3B8" />
+        {/* === 最近记录 === */}
+        <View style={{ margin: '12px 16px 0', backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <View>
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+                <Clock size={16} color="#86909C" />
+                <Text style={{ fontSize: '16px', fontWeight: '500', color: '#1D2129' }}>最近记录</Text>
+              </View>
+              <Text style={{ fontSize: '12px', color: '#86909C', marginTop: '2px' }}>快速继续上次记录</Text>
             </View>
-            <Text className="block text-muted-foreground mt-4 text-sm">说点什么开始记账吧</Text>
+            {parsedResults.length > 0 && (
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px' }}>
+                <Text style={{ fontSize: '14px', fontWeight: '700', color: '#FF7D00' }}>¥{totalParsedAmount.toFixed(2)}</Text>
+              </View>
+            )}
+          </View>
+
+          {parsedResults.length > 0 ? (
+            <View>
+              {parsedResults.map((result, idx) => (
+                <View
+                  key={idx}
+                  style={{
+                    display: 'flex', flexDirection: 'row', alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottomWidth: idx < parsedResults.length - 1 ? '1px' : '0',
+                    borderBottomColor: '#F2F3F5', borderBottomStyle: 'solid',
+                  }}
+                >
+                  {/* Icon */}
+                  <View style={{ width: '36px', height: '36px', borderRadius: '18px', backgroundColor: '#F7F8FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Text style={{ fontSize: '18px' }}>{getCategoryIcon(result.category || '其他')}</Text>
+                  </View>
+                  {/* Name + category */}
+                  <View style={{ flex: 1, marginLeft: '10px' }}>
+                    <Text style={{ fontSize: '14px', color: '#1D2129', fontWeight: '400' }} numberOfLines={1}>
+                      {result.note || '未命名'}
+                    </Text>
+                    <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                      <View style={{ backgroundColor: '#F2F3F5', borderRadius: '4px', padding: '1px 6px' }}>
+                        <Text style={{ fontSize: '11px', color: '#86909C' }}>{result.category || '其他'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  {/* Amount + actions */}
+                  <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <Text style={{ fontSize: '16px', fontWeight: '700', color: '#1D2129' }}>
+                      {result.amount != null ? `¥${result.amount}` : '--'}
+                    </Text>
+                    <Button style={{ backgroundColor: 'transparent', padding: '0', minWidth: 'auto' }} onClick={() => openEditModal(idx)}>
+                      <Pencil size={14} color="#86909C" />
+                    </Button>
+                    <Button style={{ backgroundColor: 'transparent', padding: '0', minWidth: 'auto' }} onClick={() => handleRemoveResult(idx)}>
+                      <X size={14} color="#C9CDD4" />
+                    </Button>
+                  </View>
+                </View>
+              ))}
+              {/* Save all button */}
+              <View style={{ marginTop: '12px' }}>
+                <Button
+                  style={{ backgroundColor: '#0066FF', borderRadius: '24px', height: '44px' }}
+                  className="w-full text-white"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? '保存中...' : `确认记账（${parsedResults.length} 笔）`}
+                </Button>
+              </View>
+            </View>
+          ) : (
+            <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '24px', paddingBottom: '24px' }}>
+              <Inbox size={32} color="#E5E6EB" />
+              <Text style={{ fontSize: '14px', color: '#86909C', marginTop: '8px' }}>暂无记录</Text>
+              <Text style={{ fontSize: '14px', color: '#0066FF', marginTop: '4px' }}>去记一笔 {'>'} </Text>
+            </View>
+          )}
+        </View>
+
+        {/* === AI建议 === */}
+        <View style={{ margin: '12px 16px 0', backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '6px', marginBottom: '12px' }}>
+            <Sparkles size={16} color="#0066FF" />
+            <View>
+              <Text style={{ fontSize: '16px', fontWeight: '500', color: '#1D2129' }}>AI建议</Text>
+              <Text style={{ fontSize: '12px', color: '#86909C', marginTop: '2px' }}>试试这样描述</Text>
+            </View>
+          </View>
+          {['午餐花了28元', '打车去机场65元', '超市购物156元'].map((text, i) => (
+            <View
+              key={i}
+              onClick={() => { setInputText(text); setSelectedCategory(text.includes('午餐') || text.includes('超市') ? '餐饮' : text.includes('打车') ? '交通' : '其他') }}
+              style={{
+                display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                backgroundColor: '#F7F8FA', borderRadius: '8px', height: '40px',
+                padding: '0 16px', marginTop: i > 0 ? '8px' : '0',
+              }}
+            >
+              <Text style={{ fontSize: '14px', color: '#1D2129' }}>{text}</Text>
+              <ChevronRight size={14} color="#C9CDD4" />
+            </View>
+          ))}
+        </View>
+
+        {/* === 一句话记账提示 === */}
+        <View style={{ margin: '12px 16px 16px', backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '12px 16px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <Lightbulb size={16} color="#FFC107" />
+          <Text style={{ fontSize: '14px', color: '#4E5969' }}>
+            一句话记账, 越简单越准
+          </Text>
+        </View>
+
+        {dateMode === 'month' && (
+          <View style={{ margin: '0 16px 16px', padding: '8px 12px', backgroundColor: '#E8F3FF', borderRadius: '8px' }}>
+            <Text style={{ fontSize: '12px', color: '#0066FF' }}>
+              按月模式：所有记录将记入 {selectedMonth}，无需重复说日期
+            </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Fixed bottom save bar */}
-      {parsedResults.length > 0 && (
-        <View
-          style={{
-            position: 'fixed', bottom: 50, left: 0, right: 0,
-            display: 'flex', flexDirection: 'row', gap: '12px',
-            padding: '12px 16px', backgroundColor: '#FFFFFF',
-            borderTop: '1px solid #E2E8F0', zIndex: 100,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Button
-              className="w-full rounded-xl text-white"
-              style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? '保存中...' : `确认记账（${parsedResults.length} 笔）`}
-            </Button>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button
-              className="w-full rounded-xl bg-white border border-slate-200 text-foreground"
-              onClick={() => { setParsedResults([]); setEditingIdx(null) }}
-            >
-              清空结果
-            </Button>
-          </View>
-        </View>
-      )}
-
       {/* Edit Modal */}
       {editingIdx !== null && (
-        <View className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View className="w-full bg-white rounded-t-2xl" style={{ maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <ScrollView scrollY className="flex-1 w-full">
-              <View className="p-5 pb-4">
+        <View style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ width: '100%', backgroundColor: '#FFFFFF', borderRadius: '16px 16px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <ScrollView scrollY style={{ flex: 1, width: '100%' }}>
+              <View style={{ padding: '20px' }}>
                 {/* Header */}
-                <View className="flex flex-row items-center justify-between mb-4">
-                  <Text className="block text-lg font-semibold text-foreground">编辑记录</Text>
-                  <Button className="bg-transparent p-0" onClick={closeEditModal}>
-                    <X size={20} color="#94A3B8" />
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <Text style={{ fontSize: '18px', fontWeight: '600', color: '#1D2129' }}>编辑记录</Text>
+                  <Button style={{ backgroundColor: 'transparent', padding: '0' }} onClick={closeEditModal}>
+                    <X size={20} color="#86909C" />
                   </Button>
                 </View>
 
                 {/* Name + Amount */}
-                <View className="flex flex-row items-center gap-3 mb-3">
-                  <View className="flex-1">
-                    <Text className="block text-sm text-muted-foreground mb-1">名称</Text>
-                    <View className="bg-slate-50 rounded-xl px-3 py-2">
+                <View style={{ display: 'flex', flexDirection: 'row', gap: '12px', marginBottom: '12px' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: '14px', color: '#86909C', marginBottom: '4px' }}>名称</Text>
+                    <View style={{ backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '8px 12px' }}>
                       <Input
-                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        style={{ width: '100%', fontSize: '14px', backgroundColor: 'transparent' }}
                         value={editNote}
                         onInput={(e) => setEditNote(e.detail.value)}
                         placeholder="消费名称"
@@ -628,10 +609,10 @@ const IndexPage = () => {
                     </View>
                   </View>
                   <View style={{ width: '100px' }}>
-                    <Text className="block text-sm text-muted-foreground mb-1">金额</Text>
-                    <View className="bg-slate-50 rounded-xl px-3 py-2">
+                    <Text style={{ fontSize: '14px', color: '#86909C', marginBottom: '4px' }}>金额</Text>
+                    <View style={{ backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '8px 12px' }}>
                       <Input
-                        className="border-0 bg-transparent text-sm ring-0 focus-within:ring-0"
+                        style={{ width: '100%', fontSize: '14px', backgroundColor: 'transparent' }}
                         type="digit"
                         value={editAmount}
                         onInput={(e) => setEditAmount(e.detail.value)}
@@ -642,14 +623,20 @@ const IndexPage = () => {
                 </View>
 
                 {/* Category selector */}
-                <View className="mb-3">
-                  <Text className="block text-sm text-muted-foreground mb-1">分类</Text>
-                  <ScrollView scrollY className="w-full bg-slate-50 rounded-xl" style={{ maxHeight: '130px' }}>
-                    <View className="flex flex-row flex-wrap gap-2 p-3">
+                <View style={{ marginBottom: '12px' }}>
+                  <Text style={{ fontSize: '14px', color: '#86909C', marginBottom: '4px' }}>分类</Text>
+                  <ScrollView scrollY style={{ width: '100%', backgroundColor: '#F7F8FA', borderRadius: '12px', maxHeight: '130px' }}>
+                    <View style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px', padding: '12px' }}>
                       {filteredCategories.map(cat => (
                         <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
-                          <View className={`${editCategory === cat.name ? 'bg-blue-500' : 'bg-white border border-slate-200'} rounded-full px-3 py-1`}>
-                            <Text className={`text-xs ${editCategory === cat.name ? 'text-white' : 'text-slate-600'}`}>
+                          <View style={{
+                            borderRadius: '24px', padding: '6px 14px',
+                            backgroundColor: editCategory === cat.name ? '#0066FF' : '#FFFFFF',
+                            borderWidth: '1px', borderStyle: 'solid',
+                            borderColor: editCategory === cat.name ? '#0066FF' : '#E5E6EB',
+                          }}
+                          >
+                            <Text style={{ fontSize: '13px', color: editCategory === cat.name ? '#FFFFFF' : '#4E5969' }}>
                               {cat.name}
                             </Text>
                           </View>
@@ -657,59 +644,59 @@ const IndexPage = () => {
                       ))}
                     </View>
                   </ScrollView>
-                  <View className="flex flex-row items-center gap-2 mt-2">
-                    <View className="flex-1 bg-slate-50 rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px' }}>
-                      <Search size={12} color="#94A3B8" />
+                  <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                    <View style={{ flex: 1, backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '8px 12px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', minHeight: '36px' }}>
+                      <Search size={12} color="#86909C" />
                       <Input
-                        className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
+                        style={{ flex: 1, fontSize: '13px', backgroundColor: 'transparent' }}
                         placeholder="搜索..."
                         value={catSearch}
                         onInput={(e) => setCatSearch(e.detail.value)}
                       />
                     </View>
                     {showCatInput ? (
-                      <View className="flex-1 bg-slate-50 rounded-xl px-3 py-2 flex flex-row items-center gap-1">
+                      <View style={{ flex: 1, backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '8px 12px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px' }}>
                         <Input
-                          className="border-0 bg-transparent text-xs ring-0 focus-within:ring-0 flex-1"
+                          style={{ flex: 1, fontSize: '13px', backgroundColor: 'transparent' }}
                           placeholder="新分类名"
                           value={newCatName}
                           onInput={(e) => setNewCatName(e.detail.value)}
                           onConfirm={() => handleCreateCategory()}
                         />
-                        <View className="px-2 py-1 bg-blue-500 rounded-lg" onClick={handleCreateCategory}>
-                          <Text className="text-white text-xs">加</Text>
+                        <View style={{ padding: '4px 10px', backgroundColor: '#0066FF', borderRadius: '8px' }} onClick={handleCreateCategory}>
+                          <Text style={{ color: '#FFFFFF', fontSize: '13px' }}>加</Text>
                         </View>
                       </View>
                     ) : (
                       <View
-                        className="flex-1 bg-amber-50 rounded-xl flex flex-row items-center justify-center gap-1 py-2"
+                        style={{ flex: 1, backgroundColor: '#FFF7E6', borderRadius: '12px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '4px', paddingTop: '8px', paddingBottom: '8px' }}
                         onClick={() => setShowCatInput(true)}
                       >
-                        <Plus size={14} color="#F59E0B" />
-                        <Text className="text-xs text-amber-600 font-medium">自定义分类</Text>
+                        <Plus size={14} color="#FF7D00" />
+                        <Text style={{ fontSize: '13px', color: '#FF7D00', fontWeight: '500' }}>自定义分类</Text>
                       </View>
                     )}
                   </View>
                 </View>
 
                 {/* Date + Save */}
-                <View className="flex flex-row items-end gap-3">
-                  <View className="flex-1">
-                    <Text className="block text-sm text-muted-foreground mb-1">日期</Text>
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: '12px' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: '14px', color: '#86909C', marginBottom: '4px' }}>日期</Text>
                     <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                      <View className="bg-slate-50 rounded-xl px-3 py-2 flex flex-row items-center gap-2">
-                        <Calendar size={14} color="#2563EB" />
-                        <Text className="text-sm text-primary">{editDate}</Text>
+                      <View style={{ backgroundColor: '#F7F8FA', borderRadius: '12px', padding: '8px 12px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={14} color="#0066FF" />
+                        <Text style={{ fontSize: '14px', color: '#0066FF' }}>{editDate}</Text>
                       </View>
                     </Picker>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Button
-                      className="w-full text-white rounded-xl py-2"
-                      style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
+                      style={{ backgroundColor: '#0066FF', borderRadius: '12px', height: '36px' }}
+                      className="w-full text-white"
                       onClick={handleSaveEdit}
                     >
-                      <Text className="text-white text-sm font-medium">完成编辑</Text>
+                      <Text style={{ color: '#FFFFFF', fontSize: '14px', fontWeight: '500' }}>完成编辑</Text>
                     </Button>
                   </View>
                 </View>
