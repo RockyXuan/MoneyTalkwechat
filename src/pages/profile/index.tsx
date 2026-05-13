@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { User, BookOpen, Brain, Trash2, MessageCircle, Check, Copy } from 'lucide-react-taro'
+import { User, BookOpen, Brain, Trash2, MessageCircle, Check, Copy, ChevronRight, Settings, LifeBuoy, Star, Shield } from 'lucide-react-taro'
 import { Network } from '@/network'
 import { useExpenseStore } from '@/store/expense-store'
 
@@ -31,7 +29,6 @@ const ProfilePage = () => {
     checkBindingStatus()
   }, [])
 
-  // Refresh on every tab switch
   useDidShow(() => {
     fetchPreferences()
   })
@@ -100,135 +97,200 @@ const ProfilePage = () => {
   }
 
   return (
-    <View className="min-h-full bg-background pb-20">
-      {/* User Card */}
-      <View className="px-4 pt-4">
-        <Card className="border-border bg-primary">
-          <CardContent className="p-5 flex flex-row items-center gap-4">
-            <View className="w-14 h-14 rounded-full bg-white flex items-center justify-center">
-              <User size={28} color="var(--color-primary)" />
-            </View>
-            <View className="flex flex-col">
-              <Text className="block text-primary-foreground text-lg font-semibold">记账达人</Text>
-              <Text className="block text-primary-foreground text-sm" style={{ opacity: 0.7 }}>让 AI 帮你轻松记账</Text>
-            </View>
-          </CardContent>
-        </Card>
+    <View className="min-h-full pb-20" style={{ backgroundColor: '#F7F8FA' }}>
+      {/* User Header - Gradient Card */}
+      <View className="mx-4 mt-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)' }}>
+        <View className="flex flex-row items-center gap-4">
+          <View className="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <User size={30} color="#fff" />
+          </View>
+          <View className="flex flex-col">
+            <Text className="block text-white text-xl font-bold">记账达人</Text>
+            <Text className="block text-white text-sm" style={{ opacity: 0.7 }}>让 AI 帮你轻松记账</Text>
+          </View>
+        </View>
       </View>
 
       {/* AI Memory Section */}
-      <View className="px-4 mt-4">
+      <View className="mx-4 mt-4">
         <View className="flex flex-row items-center gap-2 mb-2">
-          <Brain size={18} color="var(--color-primary)" />
+          <Brain size={18} color="#7C3AED" />
           <Text className="block text-base font-semibold text-foreground">AI 记忆偏好</Text>
-          <Badge className="bg-primary bg-opacity-10 text-primary text-xs">{preferences.length} 条</Badge>
+          <View className="bg-purple-50 rounded-full px-2 py-1">
+            <Text className="text-xs text-purple-600">{preferences.length} 条</Text>
+          </View>
         </View>
 
         {preferences.length > 0 ? (
           preferences.map((pref) => (
-            <Card key={pref.id} className="border-border mb-2">
-              <CardContent className="p-3 flex flex-row items-center justify-between">
+            <View key={pref.id} className="bg-white rounded-2xl p-4 mb-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <View className="flex flex-row items-center justify-between">
                 <View className="flex flex-col flex-1">
                   <View className="flex flex-row items-center gap-2">
                     <Text className="block text-sm font-medium text-foreground">{pref.key_word}</Text>
-                    <Text className="block text-xs text-gray-400">→</Text>
-                    <Badge className="bg-primary bg-opacity-10 text-primary text-xs">{pref.mapped_value}</Badge>
+                    <Text className="block text-xs text-slate-400">→</Text>
+                    <View className="bg-blue-50 rounded-full px-2 py-1">
+                      <Text className="text-xs text-blue-600">{pref.mapped_value}</Text>
+                    </View>
                   </View>
-                  <Text className="block text-xs text-gray-400 mt-1">
+                  <Text className="block text-xs text-slate-400 mt-1">
                     来源：{pref.source === 'user_correction' ? '手动修正' : 'AI 建议'} · 置信度 {pref.confidence}%
                   </Text>
                 </View>
                 <Button className="bg-transparent p-0" onClick={() => handleDeletePreference(pref.id)}>
-                  <Trash2 size={14} color="var(--color-destructive)" />
+                  <Trash2 size={14} color="#EF4444" />
                 </Button>
-              </CardContent>
-            </Card>
+              </View>
+            </View>
           ))
         ) : (
-          <Card className="border-border">
-            <CardContent className="p-5 flex flex-col items-center">
-              <Brain size={32} color="var(--color-muted-foreground)" />
-              <Text className="block text-sm text-gray-400 mt-2 text-center">
-                还没有偏好记忆{'\n'}修改 AI 的分类后，系统会自动记住
-              </Text>
-            </CardContent>
-          </Card>
+          <View className="bg-white rounded-2xl p-5 flex flex-col items-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <View className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center">
+              <Brain size={24} color="#94A3B8" />
+            </View>
+            <Text className="block text-sm text-slate-400 mt-2 text-center">
+              还没有偏好记忆{'\n'}修改 AI 的分类后，系统会自动记住
+            </Text>
+          </View>
         )}
       </View>
 
       {/* WeChat Binding Section */}
-      <View className="px-4 mt-4">
+      <View className="mx-4 mt-4">
         <View className="flex flex-row items-center gap-2 mb-2">
-          <MessageCircle size={18} color="var(--color-primary)" />
+          <MessageCircle size={18} color="#10B981" />
           <Text className="block text-base font-semibold text-foreground">微信绑定</Text>
-          {isBound && <Badge className="bg-primary bg-opacity-15 text-primary text-xs">已绑定</Badge>}
+          {isBound && (
+            <View className="bg-green-50 rounded-full px-2 py-1">
+              <Text className="text-xs text-green-600">已绑定</Text>
+            </View>
+          )}
         </View>
 
         {isBound ? (
-          <Card className="border-border">
-            <CardContent className="p-4 flex flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-full bg-primary bg-opacity-15 flex items-center justify-center">
-                <Check size={20} color="var(--color-primary)" />
-              </View>
-              <View className="flex flex-col flex-1">
-                <Text className="block text-sm font-medium text-foreground">已绑定微信公众号</Text>
-                <Text className="block text-xs text-gray-400">直接对公众号发消息即可记账</Text>
-              </View>
-            </CardContent>
-          </Card>
+          <View className="bg-white rounded-2xl p-4 flex flex-row items-center gap-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <View className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
+              <Check size={20} color="#10B981" />
+            </View>
+            <View className="flex flex-col flex-1">
+              <Text className="block text-sm font-medium text-foreground">已绑定微信公众号</Text>
+              <Text className="block text-xs text-slate-400">直接对公众号发消息即可记账</Text>
+            </View>
+          </View>
         ) : bindingCode ? (
-          <Card className="border-border">
-            <CardContent className="p-4">
-              <View className="flex flex-col items-center mb-3">
-                <Text className="block text-xs text-gray-500 mb-2">您的绑定码</Text>
-                <Text className="block text-3xl font-bold text-primary tracking-widest">{bindingCode}</Text>
+          <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <View className="flex flex-col items-center mb-3">
+              <Text className="block text-xs text-slate-400 mb-2">您的绑定码</Text>
+              <Text className="block text-3xl font-bold text-blue-600 tracking-widest">{bindingCode}</Text>
+            </View>
+            <View className="bg-slate-50 rounded-xl p-3 mb-3">
+              <Text className="block text-xs text-slate-600 mb-1">使用步骤：</Text>
+              <Text className="block text-xs text-slate-500">1. 在微信搜索关注记账服务公众号</Text>
+              <Text className="block text-xs text-slate-500">2. 对公众号发送「绑定 {bindingCode}」</Text>
+              <Text className="block text-xs text-slate-500">3. 绑定成功后直接发消息即可记账</Text>
+            </View>
+            <Button className="w-full bg-blue-600 text-white rounded-xl" onClick={handleCopyCode}>
+              <View className="flex flex-row items-center justify-center gap-2">
+                <Copy size={14} color="#fff" />
+                <Text className="text-white text-sm">复制绑定码</Text>
               </View>
-              <View className="bg-background rounded-lg p-3 mb-3">
-                <Text className="block text-xs text-gray-600 mb-1">使用步骤：</Text>
-                <Text className="block text-xs text-gray-500">1. 在微信搜索关注记账服务公众号</Text>
-                <Text className="block text-xs text-gray-500">2. 对公众号发送「绑定 {bindingCode}」</Text>
-                <Text className="block text-xs text-gray-500">3. 绑定成功后直接发消息即可记账</Text>
-              </View>
-              <Button className="w-full bg-primary text-primary-foreground" onClick={handleCopyCode}>
-                <View className="flex flex-row items-center justify-center gap-2">
-                  <Copy size={14} color="var(--color-primary-foreground)" />
-                  <Text className="text-primary-foreground text-sm">复制绑定码</Text>
-                </View>
-              </Button>
-            </CardContent>
-          </Card>
+            </Button>
+          </View>
         ) : (
-          <Card className="border-border">
-            <CardContent className="p-4">
-              <Text className="block text-sm text-gray-600 mb-3">绑定微信公众号后，可直接在微信聊天中记账，无需打开小程序。</Text>
-              <Button className="w-full bg-primary text-primary-foreground" onClick={handleGenerateCode} disabled={isGenerating}>
-                <View className="flex flex-row items-center justify-center gap-2">
-                  <MessageCircle size={14} color="var(--color-primary-foreground)" />
-                  <Text className="text-primary-foreground text-sm">{isGenerating ? '生成中...' : '获取绑定码'}</Text>
-                </View>
-              </Button>
-            </CardContent>
-          </Card>
+          <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <Text className="block text-sm text-slate-600 mb-3">绑定微信公众号后，可直接在微信聊天中记账，无需打开小程序。</Text>
+            <Button className="w-full bg-blue-600 text-white rounded-xl" onClick={handleGenerateCode} disabled={isGenerating}>
+              <View className="flex flex-row items-center justify-center gap-2">
+                <MessageCircle size={14} color="#fff" />
+                <Text className="text-white text-sm">{isGenerating ? '生成中...' : '获取绑定码'}</Text>
+              </View>
+            </Button>
+          </View>
         )}
       </View>
 
+      {/* Menu Items */}
+      <View className="mx-4 mt-4">
+        <View className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <View className="flex flex-row items-center justify-between p-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+            <View className="flex flex-row items-center gap-3">
+              <View className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Settings size={16} color="#2563EB" />
+              </View>
+              <Text className="block text-sm text-foreground">设置</Text>
+            </View>
+            <ChevronRight size={16} color="#94A3B8" />
+          </View>
+          <View className="flex flex-row items-center justify-between p-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+            <View className="flex flex-row items-center gap-3">
+              <View className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Star size={16} color="#F59E0B" />
+              </View>
+              <Text className="block text-sm text-foreground">给个好评</Text>
+            </View>
+            <ChevronRight size={16} color="#94A3B8" />
+          </View>
+          <View className="flex flex-row items-center justify-between p-4" style={{ borderBottom: '1px solid #F1F5F9' }}>
+            <View className="flex flex-row items-center gap-3">
+              <View className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                <LifeBuoy size={16} color="#10B981" />
+              </View>
+              <Text className="block text-sm text-foreground">帮助与反馈</Text>
+            </View>
+            <ChevronRight size={16} color="#94A3B8" />
+          </View>
+          <View className="flex flex-row items-center justify-between p-4">
+            <View className="flex flex-row items-center gap-3">
+              <View className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                <Shield size={16} color="#64748B" />
+              </View>
+              <Text className="block text-sm text-foreground">隐私政策</Text>
+            </View>
+            <ChevronRight size={16} color="#94A3B8" />
+          </View>
+        </View>
+      </View>
+
       {/* Tips */}
-      <View className="px-4 mt-4">
+      <View className="mx-4 mt-4">
         <View className="flex flex-row items-center gap-2 mb-2">
-          <BookOpen size={18} color="var(--color-primary)" />
+          <BookOpen size={18} color="#F59E0B" />
           <Text className="block text-base font-semibold text-foreground">使用技巧</Text>
         </View>
-        <Card className="border-border">
-          <CardContent className="p-4">
-            <View className="flex flex-col gap-3">
-              <Text className="block text-sm text-gray-600">1. 直接输入&ldquo;午饭花了30&rdquo;即可自动记账</Text>
-              <Text className="block text-sm text-gray-600">2. 小程序端可按住语音按钮说话记账</Text>
-              <Text className="block text-sm text-gray-600">3. 修改 AI 分类后，系统会记住你的偏好</Text>
-              <Text className="block text-sm text-gray-600">4. 用得越多，AI 越懂你的消费习惯</Text>
-              <Text className="block text-sm text-gray-600">5. 绑定微信公众号后，直接发消息即可记账</Text>
+        <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <View className="flex flex-col gap-3">
+            <View className="flex flex-row items-start gap-2">
+              <View className="w-5 h-5 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <Text className="text-xs text-blue-600 font-bold">1</Text>
+              </View>
+              <Text className="block text-sm text-slate-600">直接输入&ldquo;午饭花了30&rdquo;即可自动记账</Text>
             </View>
-          </CardContent>
-        </Card>
+            <View className="flex flex-row items-start gap-2">
+              <View className="w-5 h-5 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <Text className="text-xs text-blue-600 font-bold">2</Text>
+              </View>
+              <Text className="block text-sm text-slate-600">小程序端可按住语音按钮说话记账</Text>
+            </View>
+            <View className="flex flex-row items-start gap-2">
+              <View className="w-5 h-5 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <Text className="text-xs text-blue-600 font-bold">3</Text>
+              </View>
+              <Text className="block text-sm text-slate-600">修改 AI 分类后，系统会记住你的偏好</Text>
+            </View>
+            <View className="flex flex-row items-start gap-2">
+              <View className="w-5 h-5 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <Text className="text-xs text-blue-600 font-bold">4</Text>
+              </View>
+              <Text className="block text-sm text-slate-600">用得越多，AI 越懂你的消费习惯</Text>
+            </View>
+            <View className="flex flex-row items-start gap-2">
+              <View className="w-5 h-5 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <Text className="text-xs text-blue-600 font-bold">5</Text>
+              </View>
+              <Text className="block text-sm text-slate-600">绑定微信公众号后，直接发消息即可记账</Text>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   )
