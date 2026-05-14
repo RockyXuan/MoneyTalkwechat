@@ -11,6 +11,14 @@
     {
       "type": "html",
       "options": {
+        "path": ".cozeproj/prototype/mobile/subscriptions.html"
+      },
+      "title": "订阅管理",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
         "path": ".cozeproj/prototype/mobile/bills.html"
       },
       "title": "账单",
@@ -22,14 +30,6 @@
         "path": ".cozeproj/prototype/mobile/stats.html"
       },
       "title": "统计",
-      "size": "mobile"
-    },
-    {
-      "type": "html",
-      "options": {
-        "path": ".cozeproj/prototype/mobile/subscriptions.html"
-      },
-      "title": "订阅",
       "size": "mobile"
     },
     {

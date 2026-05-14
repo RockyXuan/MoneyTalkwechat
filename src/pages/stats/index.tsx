@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
-import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, ChevronDown, ChartNoAxesColumn, CreditCard, ChevronRight as ChevronRightIcon } from 'lucide-react-taro'
+import { ChevronLeft, ChevronRight, ChevronDown, ChartNoAxesColumn, CreditCard, ChevronRight as ChevronRightIcon, Sparkles } from 'lucide-react-taro'
 import { useExpenseStore } from '@/store/expense-store'
 
 type PeriodType = 'year' | 'quarter' | 'month'
@@ -19,40 +18,12 @@ interface TrendItem {
   total: number
 }
 
-const PALETTE = ['#2563EB', '#7C3AED', '#F59E0B', '#10B981', '#EF4444', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16']
+const PALETTE = ['#2F7BFF', '#5B9BFF', '#FF7D00', '#00B42A', '#F53F3F', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16']
 const getColor = (_category: string, index: number) => PALETTE[index % PALETTE.length]
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4']
 const QUARTER_SUBS = ['1-3月', '4-6月', '7-9月', '10-12月']
-
-const PieChart = ({ data, total }: { data: CategoryStat[]; total: number }) => {
-  if (total === 0 || data.length === 0) return null
-  let cumulativePercent = 0
-  const stops = data.map((item, i) => {
-    const startPercent = cumulativePercent
-    cumulativePercent += item.percent
-    const color = getColor(item.category, i)
-    return `${color} ${startPercent}% ${cumulativePercent}%`
-  })
-  const gradient = `conic-gradient(${stops.join(', ')})`
-
-  return (
-    <View className="flex flex-row items-center gap-4">
-      <View className="rounded-full flex-shrink-0" style={{ width: '120px', height: '120px', background: gradient }} />
-      <View className="flex-1">
-        {data.slice(0, 6).map((item, i) => (
-          <View key={item.category} className="flex flex-row items-center gap-2 mb-1">
-            <View className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getColor(item.category, i) }} />
-            <Text className="block text-xs text-foreground flex-1" numberOfLines={1}>{item.category}</Text>
-            <Text className="block text-xs text-slate-400 flex-shrink-0">{item.percent}%</Text>
-          </View>
-        ))}
-        {data.length > 6 && <Text className="block text-xs text-slate-300">+{data.length - 6}个分类</Text>}
-      </View>
-    </View>
-  )
-}
 
 const TrendChart = ({ trends }: { trends: TrendItem[] }) => {
   if (trends.length === 0) return null
@@ -63,9 +34,9 @@ const TrendChart = ({ trends }: { trends: TrendItem[] }) => {
         const height = Math.max((t.total / maxVal) * 100, 4)
         return (
           <View key={t.label} className="flex flex-col items-center flex-1">
-            <Text className="block text-xs text-blue-600 mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
-            <View className="w-full rounded-t" style={{ height: `${height}px`, background: 'linear-gradient(180deg, #2563EB, #93C5FD)' }} />
-            <Text className="block text-xs text-slate-400 mt-1">{t.label}</Text>
+            <Text className="block text-xs text-[#2F7BFF] mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
+            <View className="w-full rounded-t" style={{ height: `${height}px`, background: 'linear-gradient(180deg, #2F7BFF, #5B9BFF)' }} />
+            <Text className="block text-xs text-[#86909C] mt-1">{t.label}</Text>
           </View>
         )
       })}
@@ -87,13 +58,13 @@ const PeriodPicker = ({
     return (
       <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <View className="flex flex-row items-center justify-between mb-4">
-          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#2563EB" />
-          </Button>
-          <Text className="block text-base font-semibold text-foreground">{pickerYear}年</Text>
-          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#2563EB" />
-          </Button>
+          <View onClick={() => onChangePickerYear(pickerYear - 1)}>
+            <ChevronLeft size={20} color="#2F7BFF" />
+          </View>
+          <Text className="block text-base font-semibold text-[#1D2129]">{pickerYear}年</Text>
+          <View onClick={() => onChangePickerYear(pickerYear + 1)}>
+            <ChevronRight size={20} color="#2F7BFF" />
+          </View>
         </View>
         <View className="flex flex-row flex-wrap">
           {MONTH_LABELS.map((label, i) => {
@@ -105,8 +76,10 @@ const PeriodPicker = ({
                 key={m} className="w-1/4 mb-3"
                 onClick={() => { onSelect(`${pickerYear}-${String(m).padStart(2, '0')}`); onClose() }}
               >
-                <View className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-blue-500' : isCurrent ? 'bg-blue-50' : 'bg-slate-50'}`}>
-                  <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-blue-600' : 'text-foreground'}`}>{label}</Text>
+                <View className="mx-1 py-3 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+                >
+                  <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{label}</Text>
                 </View>
               </View>
             )
@@ -120,13 +93,13 @@ const PeriodPicker = ({
     return (
       <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <View className="flex flex-row items-center justify-between mb-4">
-          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#2563EB" />
-          </Button>
-          <Text className="block text-base font-semibold text-foreground">{pickerYear}年</Text>
-          <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#2563EB" />
-          </Button>
+          <View onClick={() => onChangePickerYear(pickerYear - 1)}>
+            <ChevronLeft size={20} color="#2F7BFF" />
+          </View>
+          <Text className="block text-base font-semibold text-[#1D2129]">{pickerYear}年</Text>
+          <View onClick={() => onChangePickerYear(pickerYear + 1)}>
+            <ChevronRight size={20} color="#2F7BFF" />
+          </View>
         </View>
         <View className="flex flex-row flex-wrap">
           {QUARTER_LABELS.map((label, i) => {
@@ -135,9 +108,11 @@ const PeriodPicker = ({
             const isCurrent = pickerYear === now.getFullYear() && q === Math.ceil((now.getMonth() + 1) / 3)
             return (
               <View key={q} className="w-1/2 mb-3" onClick={() => { onSelect(q); onClose() }}>
-                <View className={`mx-1 py-4 rounded-xl flex flex-col items-center justify-center ${isActive ? 'bg-blue-500' : isCurrent ? 'bg-blue-50' : 'bg-slate-50'}`}>
-                  <Text className={`block text-lg font-bold ${isActive ? 'text-white' : isCurrent ? 'text-blue-600' : 'text-foreground'}`}>{label}</Text>
-                  <Text className={`block text-xs mt-1 ${isActive ? 'text-white' : 'text-slate-400'}`} style={isActive ? { opacity: 0.7 } : {}}>{QUARTER_SUBS[i]}</Text>
+                <View className="mx-1 py-4 rounded-xl flex flex-col items-center justify-center"
+                  style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+                >
+                  <Text className="block text-lg font-bold" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{label}</Text>
+                  <Text className="block text-xs mt-1" style={{ color: isActive ? 'rgba(255,255,255,0.7)' : '#86909C' }}>{QUARTER_SUBS[i]}</Text>
                 </View>
               </View>
             )
@@ -155,13 +130,13 @@ const PeriodPicker = ({
   return (
     <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
       <View className="flex flex-row items-center justify-between mb-4">
-        <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear - 12)}>
-          <ChevronLeft size={20} color="#2563EB" />
-        </Button>
-        <Text className="block text-base font-semibold text-foreground">{startYear} - {startYear + 11}</Text>
-        <Button className="bg-transparent p-1" onClick={() => onChangePickerYear(pickerYear + 12)}>
-          <ChevronRight size={20} color="#2563EB" />
-        </Button>
+        <View onClick={() => onChangePickerYear(pickerYear - 12)}>
+          <ChevronLeft size={20} color="#2F7BFF" />
+        </View>
+        <Text className="block text-base font-semibold text-[#1D2129]">{startYear} - {startYear + 11}</Text>
+        <View onClick={() => onChangePickerYear(pickerYear + 12)}>
+          <ChevronRight size={20} color="#2F7BFF" />
+        </View>
       </View>
       <View className="flex flex-row flex-wrap">
         {years.map(y => {
@@ -169,8 +144,10 @@ const PeriodPicker = ({
           const isCurrent = y === now.getFullYear()
           return (
             <View key={y} className="w-1/4 mb-3" onClick={() => { onSelect(y); onClose() }}>
-              <View className={`mx-1 py-3 rounded-xl flex items-center justify-center ${isActive ? 'bg-blue-500' : isCurrent ? 'bg-blue-50' : 'bg-slate-50'}`}>
-                <Text className={`block text-sm font-medium ${isActive ? 'text-white' : isCurrent ? 'text-blue-600' : 'text-foreground'}`}>{y}</Text>
+              <View className="mx-1 py-3 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+              >
+                <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{y}</Text>
               </View>
             </View>
           )
@@ -239,7 +216,7 @@ const StatsPage = () => {
   }
 
   return (
-    <View className="min-h-full" style={{ backgroundColor: '#F7F8FA' }}>
+    <View className="min-h-full" style={{ backgroundColor: '#F5F7FB' }}>
       {showPicker && <View className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }} onClick={() => setShowPicker(false)} />}
 
       <ScrollView scrollY className="min-h-full">
@@ -250,17 +227,17 @@ const StatsPage = () => {
               {periodOptions.map(opt => (
                 <View
                   key={opt.key}
-                  className={`flex-1 py-2 rounded-lg ${period === opt.key ? 'bg-white' : ''}`}
-                  style={period === opt.key ? { boxShadow: '0 1px 2px rgba(0,0,0,0.1)' } : {}}
+                  className="flex-1 py-2 rounded-lg"
+                  style={period === opt.key ? { backgroundColor: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' } : {}}
                   onClick={() => handlePeriodChange(opt.key)}
                 >
-                  <Text className={`block text-center text-sm font-medium ${period === opt.key ? 'text-blue-600' : 'text-slate-400'}`}>{opt.label}</Text>
+                  <Text className="block text-center text-sm font-medium" style={{ color: period === opt.key ? '#2F7BFF' : '#86909C' }}>{opt.label}</Text>
                 </View>
               ))}
             </View>
             <View className="flex flex-row items-center justify-center py-2" onClick={openPicker}>
-              <Text className="block text-lg font-semibold text-foreground">{periodLabel}</Text>
-              <ChevronDown size={18} color="#2563EB" className="ml-1" />
+              <Text className="block text-lg font-semibold text-[#1D2129]">{periodLabel}</Text>
+              <ChevronDown size={18} color="#2F7BFF" className="ml-1" />
             </View>
           </View>
 
@@ -274,7 +251,7 @@ const StatsPage = () => {
           )}
 
           {/* Total Expense - Gradient Card */}
-          <View className="mx-4 mb-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)' }}>
+          <View className="mx-4 mb-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}>
             <View className="flex flex-row items-center justify-between">
               <View>
                 <Text className="block text-white text-sm opacity-80">
@@ -288,86 +265,66 @@ const StatsPage = () => {
             </View>
           </View>
 
-          {/* Expense Distribution */}
+          {/* Category Ranking with Progress Bars */}
           {categoryStats.length > 0 && (
             <View className="mx-4 mb-4">
-              <Text className="block text-base font-semibold text-foreground mb-2">消费分布</Text>
-              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                <PieChart data={categoryStats} total={totalExpense} />
+              <Text className="block text-base font-semibold text-[#1D2129] mb-2">分类排行</Text>
+              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                {categoryStats.map((cat, i) => {
+                  const color = getColor(cat.category, i)
+                  return (
+                    <View key={cat.category} className="mb-3 last:mb-0" onClick={() => navigateToCategory(cat.category)}>
+                      <View className="flex flex-row items-center justify-between mb-1">
+                        <View className="flex flex-row items-center gap-2">
+                          <View className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
+                            <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                          </View>
+                          <Text className="block text-sm font-medium text-[#1D2129]">{cat.category}</Text>
+                        </View>
+                        <View className="flex flex-row items-center gap-2">
+                          <Text className="block text-base font-bold text-[#1D2129]">¥{cat.total.toFixed(2)}</Text>
+                          <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F5F7FB' }}>
+                            <Text className="text-xs text-[#86909C]">{cat.percent}%</Text>
+                          </View>
+                          <ChevronRightIcon size={14} color="#C9CDD4" />
+                        </View>
+                      </View>
+                      <View className="w-full h-2 rounded-full" style={{ backgroundColor: '#F5F7FB' }}>
+                        <View className="h-2 rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: color }} />
+                      </View>
+                    </View>
+                  )
+                })}
               </View>
             </View>
           )}
 
-          {/* Category Detail List */}
-          {categoryStats.length > 0 && (
-            <View className="mx-4 mb-4">
-              <Text className="block text-base font-semibold text-foreground mb-2">分类明细</Text>
-              {categoryStats.map((cat, i) => {
-                const color = getColor(cat.category, i)
-                return (
-                  <View key={cat.category} className="bg-white rounded-2xl p-4 mb-2" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }} onClick={() => navigateToCategory(cat.category)}>
-                    <View className="flex flex-row items-center justify-between mb-2">
-                      <View className="flex flex-row items-center gap-2">
-                        <View className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
-                          <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                        </View>
-                        <View className="flex flex-col">
-                          <Text className="block text-sm font-medium text-foreground">{cat.category}</Text>
-                          <Text className="block text-xs text-slate-400">{cat.count}笔</Text>
-                        </View>
-                      </View>
-                      <View className="flex flex-row items-center gap-2">
-                        <Text className="block text-base font-bold text-foreground">¥{cat.total.toFixed(2)}</Text>
-                        <View className="bg-slate-100 rounded-full px-2 py-1">
-                          <Text className="text-xs text-slate-500">{cat.percent}%</Text>
-                        </View>
-                        <ChevronRightIcon size={14} color="#94A3B8" />
-                      </View>
-                    </View>
-                    <View className="w-full h-2 bg-slate-100 rounded-full">
-                      <View className="h-2 rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: color }} />
-                    </View>
-                  </View>
-                )
-              })}
-            </View>
-          )}
-
-          {/* Trend Chart */}
+          {/* Monthly Trend Chart */}
           {trends.length > 0 && (
             <View className="mx-4 mb-4">
-              <Text className="block text-base font-semibold text-foreground mb-2">
+              <Text className="block text-base font-semibold text-[#1D2129] mb-2">
                 {period === 'year' ? '季度趋势' : period === 'quarter' ? '月度趋势' : '每日消费趋势'}
               </Text>
-              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                 <TrendChart trends={trends} />
               </View>
             </View>
           )}
 
-          {/* TOP3 */}
-          {categoryStats.length >= 3 && (
+          {/* AI Financial Insight */}
+          {categoryStats.length > 0 && (
             <View className="mx-4 mb-4">
-              <Text className="block text-base font-semibold text-foreground mb-2">TOP3 消费分类</Text>
-              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                <PieChart data={categoryStats.slice(0, 3)} total={totalExpense} />
-                <View className="mt-3 pt-3" style={{ borderTop: '1px solid #E2E8F0' }}>
-                  {categoryStats.slice(0, 3).map((cat, i) => {
-                    const color = getColor(cat.category, i)
-                    return (
-                      <View key={cat.category} className="flex flex-row items-center justify-between mb-2">
-                        <View className="flex flex-row items-center gap-2">
-                          <View className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                          <Text className="block text-sm text-foreground">{cat.category}</Text>
-                        </View>
-                        <View className="flex flex-row items-center gap-3">
-                          <Text className="block text-sm font-bold text-foreground">¥{cat.total.toFixed(2)}</Text>
-                          <Text className="block text-xs text-slate-400">{cat.percent}%</Text>
-                        </View>
-                      </View>
-                    )
-                  })}
+              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <View className="flex flex-row items-center gap-2 mb-2">
+                  <Sparkles size={16} color="#2F7BFF" />
+                  <Text className="block text-sm font-semibold text-[#2F7BFF]">AI 财务洞察</Text>
                 </View>
+                <Text className="block text-xs text-[#86909C] leading-5">
+                  {categoryStats.length > 0
+                    ? `本月${categoryStats[0].category}占比最高达${categoryStats[0].percent}%，建议关注该类支出是否合理。`
+                    : '暂无数据，记录更多消费后可获得 AI 分析。'
+                  }
+                </Text>
               </View>
             </View>
           )}
@@ -375,31 +332,31 @@ const StatsPage = () => {
           {/* Subscription Stats */}
           {subStats && subStats.subscription_count > 0 && (
             <View className="mx-4 mb-4">
-              <Text className="block text-base font-semibold text-foreground mb-2">
+              <Text className="block text-base font-semibold text-[#1D2129] mb-2">
                 <View className="inline-flex flex-row items-center gap-1">
-                  <CreditCard size={16} color="#7C3AED" />
+                  <CreditCard size={16} color="#2F7BFF" />
                 </View>
                 订阅支出
               </Text>
-              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid #E2E8F0' }}>
+              <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid #E5E6EB' }}>
                   <View className="flex flex-col">
-                    <Text className="block text-xs text-slate-400">活跃订阅</Text>
-                    <Text className="block text-lg font-bold text-purple-600">{subStats.subscription_count} 项</Text>
+                    <Text className="block text-xs text-[#86909C]">活跃订阅</Text>
+                    <Text className="block text-lg font-bold text-[#2F7BFF]">{subStats.subscription_count} 项</Text>
                   </View>
                   <View className="flex flex-col items-end">
                     <View className="flex flex-row items-center gap-3">
                       <View className="flex flex-col items-end">
-                        <Text className="block text-xs text-slate-400">日均</Text>
-                        <Text className="block text-sm font-semibold text-amber-500">¥{subStats.total_daily.toFixed(2)}</Text>
+                        <Text className="block text-xs text-[#86909C]">日均</Text>
+                        <Text className="block text-sm font-semibold text-[#FF7D00]">¥{subStats.total_daily.toFixed(2)}</Text>
                       </View>
                       <View className="flex flex-col items-end">
-                        <Text className="block text-xs text-slate-400">月均</Text>
-                        <Text className="block text-sm font-semibold text-amber-500">¥{subStats.total_monthly.toFixed(2)}</Text>
+                        <Text className="block text-xs text-[#86909C]">月均</Text>
+                        <Text className="block text-sm font-semibold text-[#FF7D00]">¥{subStats.total_monthly.toFixed(2)}</Text>
                       </View>
                       <View className="flex flex-col items-end">
-                        <Text className="block text-xs text-slate-400">年总计</Text>
-                        <Text className="block text-lg font-bold text-red-500">¥{subStats.total_yearly.toFixed(2)}</Text>
+                        <Text className="block text-xs text-[#86909C]">年总计</Text>
+                        <Text className="block text-lg font-bold text-[#F53F3F]">¥{subStats.total_yearly.toFixed(2)}</Text>
                       </View>
                     </View>
                   </View>
@@ -407,16 +364,16 @@ const StatsPage = () => {
                 {Object.entries(subStats.by_category).map(([cat, info]) => (
                   <View key={cat} className="mb-2">
                     {info.items.map((item, i) => (
-                      <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F1F5F9' } : {}}>
+                      <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F5F7FB' } : {}}>
                         <View className="flex flex-row items-center gap-2">
-                          <Text className="block text-sm text-foreground">{item.name}</Text>
-                          <View className="bg-purple-50 rounded-full px-2 py-1">
-                            <Text className="text-xs text-purple-600">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Text>
+                          <Text className="block text-sm text-[#1D2129]">{item.name}</Text>
+                          <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F0F5FF' }}>
+                            <Text className="text-xs text-[#2F7BFF]">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Text>
                           </View>
                         </View>
                         <View className="flex flex-row items-center gap-3">
-                          <Text className="block text-sm font-semibold text-foreground">¥{item.amount}</Text>
-                          <Text className="block text-xs text-slate-400">¥{item.yearly.toFixed(0)}/年</Text>
+                          <Text className="block text-sm font-semibold text-[#1D2129]">¥{item.amount}</Text>
+                          <Text className="block text-xs text-[#86909C]">¥{item.yearly.toFixed(0)}/年</Text>
                         </View>
                       </View>
                     ))}
@@ -429,10 +386,10 @@ const StatsPage = () => {
           {/* Empty State */}
           {categoryStats.length === 0 && (
             <View className="flex flex-col items-center justify-center mt-24">
-              <View className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
-                <ChartNoAxesColumn size={28} color="#2563EB" />
+              <View className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F0F5FF' }}>
+                <ChartNoAxesColumn size={28} color="#2F7BFF" />
               </View>
-              <Text className="block text-slate-400 mt-4 text-sm">该时段暂无数据</Text>
+              <Text className="block text-[#86909C] mt-4 text-sm">该时段暂无数据</Text>
             </View>
           )}
         </View>
