@@ -130,11 +130,11 @@ const SubscriptionsPage = () => {
   const filteredYearly = filteredSubs.reduce((sum, s) => sum + calcCosts(Number(s.amount), s.cycle).yearly, 0)
 
   return (
-    <View className="min-h-full" style={{ backgroundColor: '#F5F7FB' }}>
+    <View className="min-h-full" style={{ backgroundColor: '#F8F9FC' }}>
       <ScrollView scrollY className="min-h-full">
         <View className="pb-36">
           {/* Gradient Header Card */}
-          <View className="mx-4 mt-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}>
+          <View className="mx-4 mt-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }}>
             <View className="flex flex-row items-center gap-2 mb-3">
               <CreditCard size={20} color="#fff" />
               <Text className="block text-lg font-semibold text-white">订阅管理</Text>
@@ -164,10 +164,10 @@ const SubscriptionsPage = () => {
                 <View key={opt.key}
                   className="px-4 py-2 rounded-full"
                   style={{
-                    backgroundColor: cycleFilter === opt.key ? '#2F7BFF' : '#fff',
+                    backgroundColor: cycleFilter === opt.key ? '#2979FF' : '#fff',
                     borderWidth: '1px',
                     borderStyle: 'solid',
-                    borderColor: cycleFilter === opt.key ? '#2F7BFF' : '#E5E6EB',
+                    borderColor: cycleFilter === opt.key ? '#2979FF' : '#E5E6EB',
                   }}
                   onClick={() => setCycleFilter(opt.key)}
                 >
@@ -190,24 +190,24 @@ const SubscriptionsPage = () => {
               {filteredSubs.map(sub => {
                 const costs = calcCosts(Number(sub.amount), sub.cycle)
                 const days = daysUntil(sub.next_billing_date)
-                const urgencyColor = days <= 3 ? '#F53F3F' : days <= 7 ? '#FF7D00' : '#2F7BFF'
+                const urgencyColor = days <= 3 ? '#F53F3F' : days <= 7 ? '#FF7D00' : '#2979FF'
                 const charged = calcTotalCharged(Number(sub.amount), sub.cycle, sub.start_date)
                 const isAuto = sub.billing_type !== 'manual'
                 return (
                   <View key={sub.id} className="bg-white rounded-2xl p-4 mb-3" onClick={() => openEditModal(sub)}>
                     <View className="flex flex-row items-center justify-between mb-2">
                       <View className="flex flex-row items-center gap-2">
-                        {isAuto ? <Zap size={14} color="#2F7BFF" /> : <Hand size={14} color="#FF7D00" />}
+                        {isAuto ? <Zap size={14} color="#2979FF" /> : <Hand size={14} color="#FF7D00" />}
                         <Text className="block text-base font-semibold text-[#1D2129]">{sub.name}</Text>
                       </View>
-                      <Text className="block text-lg font-bold text-[#2F7BFF]">¥{sub.amount}</Text>
+                      <Text className="block text-lg font-bold text-[#2979FF]">¥{sub.amount}</Text>
                     </View>
                     <View className="flex flex-row items-center gap-2 mb-2">
                       <View className="rounded-full px-3 py-1" style={{ backgroundColor: '#F0F5FF' }}>
-                        <Text className="text-xs text-[#2F7BFF]">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Text>
+                        <Text className="text-xs text-[#2979FF]">{CYCLE_LABELS[sub.cycle] || sub.cycle}</Text>
                       </View>
                       <View className="rounded-full px-3 py-1" style={{ backgroundColor: isAuto ? '#F0F5FF' : '#FFF7E8' }}>
-                        <Text className="text-xs" style={{ color: isAuto ? '#2F7BFF' : '#FF7D00' }}>{isAuto ? '自动续费' : '手动续费'}</Text>
+                        <Text className="text-xs" style={{ color: isAuto ? '#2979FF' : '#FF7D00' }}>{isAuto ? '自动续费' : '手动续费'}</Text>
                       </View>
                     </View>
                     <View className="flex flex-row items-center gap-2 mb-2">
@@ -239,10 +239,10 @@ const SubscriptionsPage = () => {
           <View className="mx-4 mt-4">
             <View className="bg-white rounded-2xl p-4">
               <View className="flex flex-row items-center gap-2 mb-3">
-                <Sparkles size={16} color="#2F7BFF" />
+                <Sparkles size={16} color="#2979FF" />
                 <Text className="block text-sm font-semibold text-[#1D2129]">订阅识别</Text>
               </View>
-              <View className="rounded-xl p-3 mb-3" style={{ backgroundColor: '#F5F7FB' }}>
+              <View className="rounded-xl p-3 mb-3" style={{ backgroundColor: '#F8F9FC' }}>
                 <Textarea
                   style={{ width: '100%', minHeight: '60px', backgroundColor: 'transparent', fontSize: '15px', color: '#1D2129' }}
                   placeholder="说说你的订阅，如：每月订阅了腾讯视频25元"
@@ -253,7 +253,7 @@ const SubscriptionsPage = () => {
               </View>
               <Button
                 className="w-full text-white rounded-xl"
-                style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}
+                style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }}
                 onClick={handleParse}
                 disabled={isParsing}
               >
@@ -266,9 +266,9 @@ const SubscriptionsPage = () => {
           {/* Parsed Results */}
           {parsedResults.length > 0 && (
             <View className="mx-4 mt-3">
-              <View className="bg-white rounded-2xl p-4" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: '#2F7BFF' }}>
+              <View className="bg-white rounded-2xl p-4" style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: '#2979FF' }}>
                 <View className="flex flex-row items-center justify-between mb-3">
-                  <Text className="block text-sm font-semibold text-[#2F7BFF]">识别结果（点击可编辑）</Text>
+                  <Text className="block text-sm font-semibold text-[#2979FF]">识别结果（点击可编辑）</Text>
                   <View onClick={() => { setParsedResults([]); setEditingIdx(null) }}>
                     <X size={16} color="#86909C" />
                   </View>
@@ -278,7 +278,7 @@ const SubscriptionsPage = () => {
                     {parsedResults.map((_, idx) => (
                       <View key={idx}
                         className="px-3 py-1 rounded-full"
-                        style={{ backgroundColor: editingIdx === idx ? '#2F7BFF' : '#F5F7FB' }}
+                        style={{ backgroundColor: editingIdx === idx ? '#2979FF' : '#F8F9FC' }}
                         onClick={() => setEditingIdx(idx)}
                       >
                         <Text className="block text-xs" style={{ color: editingIdx === idx ? '#fff' : '#86909C' }}>第{idx + 1}项</Text>
@@ -291,7 +291,7 @@ const SubscriptionsPage = () => {
                     <View className="flex flex-row items-center gap-3 mb-3">
                       <View className="flex-1">
                         <Text className="block text-xs text-[#86909C] mb-1">名称</Text>
-                        <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                        <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                           <Input className="bg-transparent text-sm"
                             value={currentParsed.name}
                             onInput={(e) => { const idx = editingIdx!; const updated = [...parsedResults]; updated[idx] = { ...updated[idx], name: e.detail.value, _edited: true }; setParsedResults(updated) }}
@@ -300,7 +300,7 @@ const SubscriptionsPage = () => {
                       </View>
                       <View style={{ width: '100px' }}>
                         <Text className="block text-xs text-[#86909C] mb-1">金额</Text>
-                        <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                        <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                           <Input className="bg-transparent text-sm" type="digit"
                             value={currentParsed.amount != null ? String(currentParsed.amount) : ''}
                             onInput={(e) => { const idx = editingIdx!; const updated = [...parsedResults]; updated[idx] = { ...updated[idx], amount: Number(e.detail.value) || null, _edited: true }; setParsedResults(updated) }}
@@ -314,7 +314,7 @@ const SubscriptionsPage = () => {
                         {(['monthly', 'quarterly', 'yearly'] as const).map(c => (
                           <View key={c}
                             className="px-3 py-2 rounded-xl"
-                            style={{ backgroundColor: currentParsed.cycle === c ? '#2F7BFF' : '#F5F7FB' }}
+                            style={{ backgroundColor: currentParsed.cycle === c ? '#2979FF' : '#F8F9FC' }}
                             onClick={() => { const idx = editingIdx!; const updated = [...parsedResults]; updated[idx] = { ...updated[idx], cycle: c, _edited: true }; setParsedResults(updated) }}
                           >
                             <Text className="block text-xs" style={{ color: currentParsed.cycle === c ? '#fff' : '#86909C' }}>{CYCLE_LABELS[c]}</Text>
@@ -331,7 +331,7 @@ const SubscriptionsPage = () => {
                         ]).map(opt => (
                           <View key={opt.key}
                             className="flex-1 px-3 py-2 rounded-xl flex flex-row items-center justify-center gap-1"
-                            style={{ backgroundColor: currentParsed.billing_type === opt.key ? '#2F7BFF' : '#F5F7FB' }}
+                            style={{ backgroundColor: currentParsed.billing_type === opt.key ? '#2979FF' : '#F8F9FC' }}
                             onClick={() => { const idx = editingIdx!; const updated = [...parsedResults]; updated[idx] = { ...updated[idx], billing_type: opt.key, _edited: true }; setParsedResults(updated) }}
                           >
                             {opt.icon === 'zap' ? <Zap size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#86909C'} /> : <Hand size={12} color={currentParsed.billing_type === opt.key ? '#fff' : '#86909C'} />}
@@ -346,23 +346,23 @@ const SubscriptionsPage = () => {
                         mode="date" value={currentParsed.start_date || new Date().toISOString().slice(0, 10)}
                         onChange={(e) => { const idx = editingIdx!; const updated = [...parsedResults]; updated[idx] = { ...updated[idx], start_date: e.detail.value, _edited: true }; setParsedResults(updated) }}
                       >
-                        <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F5F7FB' }}>
-                          <Calendar size={14} color="#2F7BFF" />
-                          <Text className="text-sm text-[#2F7BFF]">{currentParsed.start_date || new Date().toISOString().slice(0, 10)}</Text>
+                        <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F8F9FC' }}>
+                          <Calendar size={14} color="#2979FF" />
+                          <Text className="text-sm text-[#2979FF]">{currentParsed.start_date || new Date().toISOString().slice(0, 10)}</Text>
                         </View>
                       </Picker>
                     </View>
                     {currentParsed.amount != null && (
                       <View className="rounded-xl p-3 mb-3" style={{ backgroundColor: '#F0F5FF' }}>
                         <View className="flex flex-row items-center justify-between">
-                          <Text className="block text-xs text-[#2F7BFF]">年费预估</Text>
-                          <Text className="block text-base font-bold text-[#2F7BFF]">¥{calcCosts(currentParsed.amount, currentParsed.cycle).yearly.toFixed(2)}/年</Text>
+                          <Text className="block text-xs text-[#2979FF]">年费预估</Text>
+                          <Text className="block text-base font-bold text-[#2979FF]">¥{calcCosts(currentParsed.amount, currentParsed.cycle).yearly.toFixed(2)}/年</Text>
                         </View>
                       </View>
                     )}
                   </View>
                 )}
-                <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }} onClick={handleSave} disabled={isSaving}>
+                <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }} onClick={handleSave} disabled={isSaving}>
                   <Text className="text-white">{isSaving ? '保存中...' : `保存${parsedResults.length}项订阅`}</Text>
                 </Button>
               </View>
@@ -373,7 +373,7 @@ const SubscriptionsPage = () => {
           {subscriptions.length === 0 && parsedResults.length === 0 && (
             <View className="flex flex-col items-center justify-center mt-16">
               <View className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F0F5FF' }}>
-                <CreditCard size={28} color="#2F7BFF" />
+                <CreditCard size={28} color="#2979FF" />
               </View>
               <Text className="block text-[#86909C] mt-4 text-sm">还没有订阅记录</Text>
               <Text className="block text-[#C9CDD4] text-xs mt-1">说出你的订阅服务，如「每月订阅了腾讯视频25元」</Text>
@@ -396,14 +396,14 @@ const SubscriptionsPage = () => {
                 </View>
                 <View className="mb-3">
                   <Text className="block text-sm text-[#86909C] mb-1">名称</Text>
-                  <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                  <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                     <Input className="bg-transparent text-sm" value={editName} onInput={(e) => setEditName(e.detail.value)} />
                   </View>
                 </View>
                 <View className="flex flex-row items-center gap-3 mb-3">
                   <View className="flex-1">
                     <Text className="block text-sm text-[#86909C] mb-1">金额</Text>
-                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                       <Input className="bg-transparent text-sm" type="digit" value={editAmount} onInput={(e) => setEditAmount(e.detail.value)} />
                     </View>
                   </View>
@@ -413,8 +413,8 @@ const SubscriptionsPage = () => {
                       mode="selector" range={['每月', '每季度', '每年']} value={['monthly', 'quarterly', 'yearly'].indexOf(editCycle)}
                       onChange={(e) => setEditCycle(['monthly', 'quarterly', 'yearly'][Number(e.detail.value)])}
                     >
-                      <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F5F7FB' }}>
-                        <Text className="text-sm text-[#2F7BFF]">{CYCLE_LABELS[editCycle]}</Text>
+                      <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F8F9FC' }}>
+                        <Text className="text-sm text-[#2979FF]">{CYCLE_LABELS[editCycle]}</Text>
                       </View>
                     </Picker>
                   </View>
@@ -428,7 +428,7 @@ const SubscriptionsPage = () => {
                     ]).map(opt => (
                       <View key={opt.key}
                         className="flex-1 px-3 py-2 rounded-xl flex flex-row items-center justify-center gap-1"
-                        style={{ backgroundColor: editBillingType === opt.key ? '#2F7BFF' : '#F5F7FB' }}
+                        style={{ backgroundColor: editBillingType === opt.key ? '#2979FF' : '#F8F9FC' }}
                         onClick={() => setEditBillingType(opt.key)}
                       >
                         {opt.icon === 'zap' ? <Zap size={12} color={editBillingType === opt.key ? '#fff' : '#86909C'} /> : <Hand size={12} color={editBillingType === opt.key ? '#fff' : '#86909C'} />}
@@ -440,30 +440,30 @@ const SubscriptionsPage = () => {
                 <View className="mb-3">
                   <Text className="block text-sm text-[#86909C] mb-1">起始日期</Text>
                   <Picker mode="date" value={editStartDate} onChange={(e) => setEditStartDate(e.detail.value)}>
-                    <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F5F7FB' }}>
-                      <Calendar size={14} color="#2F7BFF" />
-                      <Text className="text-sm text-[#2F7BFF]">{editStartDate}</Text>
+                    <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F8F9FC' }}>
+                      <Calendar size={14} color="#2979FF" />
+                      <Text className="text-sm text-[#2979FF]">{editStartDate}</Text>
                     </View>
                   </Picker>
                 </View>
                 <View className="mb-2">
                   <Text className="block text-sm text-[#86909C] mb-1">下次扣费日期</Text>
                   <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                    <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F5F7FB' }}>
-                      <Calendar size={14} color="#2F7BFF" />
-                      <Text className="text-sm text-[#2F7BFF]">{editDate}</Text>
+                    <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F8F9FC' }}>
+                      <Calendar size={14} color="#2979FF" />
+                      <Text className="text-sm text-[#2979FF]">{editDate}</Text>
                     </View>
                   </Picker>
                 </View>
                 {editAmount && (
                   <View className="rounded-xl p-3 mb-2" style={{ backgroundColor: '#F0F5FF' }}>
-                    <Text className="block text-xs text-[#2F7BFF]">年费 ≈ ¥{calcCosts(Number(editAmount) || 0, editCycle).yearly.toFixed(2)}</Text>
+                    <Text className="block text-xs text-[#2979FF]">年费 ≈ ¥{calcCosts(Number(editAmount) || 0, editCycle).yearly.toFixed(2)}</Text>
                   </View>
                 )}
               </View>
             </ScrollView>
             <View className="p-4 pt-2" style={{ borderTop: '1px solid #E5E6EB' }}>
-              <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }} onClick={handleSaveEdit} disabled={isUpdating}>
+              <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }} onClick={handleSaveEdit} disabled={isUpdating}>
                 {isUpdating ? '保存中...' : '保存修改'}
               </Button>
             </View>

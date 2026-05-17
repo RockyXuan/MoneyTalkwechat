@@ -18,7 +18,7 @@ interface TrendItem {
   total: number
 }
 
-const PALETTE = ['#2F7BFF', '#5B9BFF', '#FF7D00', '#00B42A', '#F53F3F', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16']
+const PALETTE = ['#2979FF', '#5B8FFF', '#FF7D00', '#00B42A', '#F53F3F', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16']
 const getColor = (_category: string, index: number) => PALETTE[index % PALETTE.length]
 
 const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
@@ -34,8 +34,8 @@ const TrendChart = ({ trends }: { trends: TrendItem[] }) => {
         const height = Math.max((t.total / maxVal) * 100, 4)
         return (
           <View key={t.label} className="flex flex-col items-center flex-1">
-            <Text className="block text-xs text-[#2F7BFF] mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
-            <View className="w-full rounded-t" style={{ height: `${height}px`, background: 'linear-gradient(180deg, #2F7BFF, #5B9BFF)' }} />
+            <Text className="block text-xs text-[#2979FF] mb-1">{t.total > 0 ? t.total.toFixed(0) : ''}</Text>
+            <View className="w-full rounded-t" style={{ height: `${height}px`, background: 'linear-gradient(180deg, #2979FF, #5B8FFF)' }} />
             <Text className="block text-xs text-[#86909C] mt-1">{t.label}</Text>
           </View>
         )
@@ -59,11 +59,11 @@ const PeriodPicker = ({
       <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <View className="flex flex-row items-center justify-between mb-4">
           <View onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#2F7BFF" />
+            <ChevronLeft size={20} color="#2979FF" />
           </View>
           <Text className="block text-base font-semibold text-[#1D2129]">{pickerYear}年</Text>
           <View onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#2F7BFF" />
+            <ChevronRight size={20} color="#2979FF" />
           </View>
         </View>
         <View className="flex flex-row flex-wrap">
@@ -77,9 +77,9 @@ const PeriodPicker = ({
                 onClick={() => { onSelect(`${pickerYear}-${String(m).padStart(2, '0')}`); onClose() }}
               >
                 <View className="mx-1 py-3 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+                  style={{ backgroundColor: isActive ? '#2979FF' : isCurrent ? '#F0F5FF' : '#F8F9FC' }}
                 >
-                  <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{label}</Text>
+                  <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2979FF' : '#1D2129' }}>{label}</Text>
                 </View>
               </View>
             )
@@ -94,11 +94,11 @@ const PeriodPicker = ({
       <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <View className="flex flex-row items-center justify-between mb-4">
           <View onClick={() => onChangePickerYear(pickerYear - 1)}>
-            <ChevronLeft size={20} color="#2F7BFF" />
+            <ChevronLeft size={20} color="#2979FF" />
           </View>
           <Text className="block text-base font-semibold text-[#1D2129]">{pickerYear}年</Text>
           <View onClick={() => onChangePickerYear(pickerYear + 1)}>
-            <ChevronRight size={20} color="#2F7BFF" />
+            <ChevronRight size={20} color="#2979FF" />
           </View>
         </View>
         <View className="flex flex-row flex-wrap">
@@ -109,9 +109,9 @@ const PeriodPicker = ({
             return (
               <View key={q} className="w-1/2 mb-3" onClick={() => { onSelect(q); onClose() }}>
                 <View className="mx-1 py-4 rounded-xl flex flex-col items-center justify-center"
-                  style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+                  style={{ backgroundColor: isActive ? '#2979FF' : isCurrent ? '#F0F5FF' : '#F8F9FC' }}
                 >
-                  <Text className="block text-lg font-bold" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{label}</Text>
+                  <Text className="block text-lg font-bold" style={{ color: isActive ? '#fff' : isCurrent ? '#2979FF' : '#1D2129' }}>{label}</Text>
                   <Text className="block text-xs mt-1" style={{ color: isActive ? 'rgba(255,255,255,0.7)' : '#86909C' }}>{QUARTER_SUBS[i]}</Text>
                 </View>
               </View>
@@ -131,11 +131,11 @@ const PeriodPicker = ({
     <View className="bg-white rounded-2xl p-4 mx-4" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
       <View className="flex flex-row items-center justify-between mb-4">
         <View onClick={() => onChangePickerYear(pickerYear - 12)}>
-          <ChevronLeft size={20} color="#2F7BFF" />
+          <ChevronLeft size={20} color="#2979FF" />
         </View>
         <Text className="block text-base font-semibold text-[#1D2129]">{startYear} - {startYear + 11}</Text>
         <View onClick={() => onChangePickerYear(pickerYear + 12)}>
-          <ChevronRight size={20} color="#2F7BFF" />
+          <ChevronRight size={20} color="#2979FF" />
         </View>
       </View>
       <View className="flex flex-row flex-wrap">
@@ -145,9 +145,9 @@ const PeriodPicker = ({
           return (
             <View key={y} className="w-1/4 mb-3" onClick={() => { onSelect(y); onClose() }}>
               <View className="mx-1 py-3 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: isActive ? '#2F7BFF' : isCurrent ? '#F0F5FF' : '#F5F7FB' }}
+                style={{ backgroundColor: isActive ? '#2979FF' : isCurrent ? '#F0F5FF' : '#F8F9FC' }}
               >
-                <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2F7BFF' : '#1D2129' }}>{y}</Text>
+                <Text className="block text-sm font-medium" style={{ color: isActive ? '#fff' : isCurrent ? '#2979FF' : '#1D2129' }}>{y}</Text>
               </View>
             </View>
           )
@@ -216,7 +216,7 @@ const StatsPage = () => {
   }
 
   return (
-    <View className="min-h-full" style={{ backgroundColor: '#F5F7FB' }}>
+    <View className="min-h-full" style={{ backgroundColor: '#F8F9FC' }}>
       {showPicker && <View className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }} onClick={() => setShowPicker(false)} />}
 
       <ScrollView scrollY className="min-h-full">
@@ -231,13 +231,13 @@ const StatsPage = () => {
                   style={period === opt.key ? { backgroundColor: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' } : {}}
                   onClick={() => handlePeriodChange(opt.key)}
                 >
-                  <Text className="block text-center text-sm font-medium" style={{ color: period === opt.key ? '#2F7BFF' : '#86909C' }}>{opt.label}</Text>
+                  <Text className="block text-center text-sm font-medium" style={{ color: period === opt.key ? '#2979FF' : '#86909C' }}>{opt.label}</Text>
                 </View>
               ))}
             </View>
             <View className="flex flex-row items-center justify-center py-2" onClick={openPicker}>
               <Text className="block text-lg font-semibold text-[#1D2129]">{periodLabel}</Text>
-              <ChevronDown size={18} color="#2F7BFF" className="ml-1" />
+              <ChevronDown size={18} color="#2979FF" className="ml-1" />
             </View>
           </View>
 
@@ -251,7 +251,7 @@ const StatsPage = () => {
           )}
 
           {/* Total Expense - Gradient Card */}
-          <View className="mx-4 mb-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}>
+          <View className="mx-4 mb-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }}>
             <View className="flex flex-row items-center justify-between">
               <View>
                 <Text className="block text-white text-sm opacity-80">
@@ -283,13 +283,13 @@ const StatsPage = () => {
                         </View>
                         <View className="flex flex-row items-center gap-2">
                           <Text className="block text-base font-bold text-[#1D2129]">¥{cat.total.toFixed(2)}</Text>
-                          <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F5F7FB' }}>
+                          <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F8F9FC' }}>
                             <Text className="text-xs text-[#86909C]">{cat.percent}%</Text>
                           </View>
                           <ChevronRightIcon size={14} color="#C9CDD4" />
                         </View>
                       </View>
-                      <View className="w-full h-2 rounded-full" style={{ backgroundColor: '#F5F7FB' }}>
+                      <View className="w-full h-2 rounded-full" style={{ backgroundColor: '#F8F9FC' }}>
                         <View className="h-2 rounded-full" style={{ width: `${cat.percent}%`, backgroundColor: color }} />
                       </View>
                     </View>
@@ -316,8 +316,8 @@ const StatsPage = () => {
             <View className="mx-4 mb-4">
               <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                 <View className="flex flex-row items-center gap-2 mb-2">
-                  <Sparkles size={16} color="#2F7BFF" />
-                  <Text className="block text-sm font-semibold text-[#2F7BFF]">AI 财务洞察</Text>
+                  <Sparkles size={16} color="#2979FF" />
+                  <Text className="block text-sm font-semibold text-[#2979FF]">AI 财务洞察</Text>
                 </View>
                 <Text className="block text-xs text-[#86909C] leading-5">
                   {categoryStats.length > 0
@@ -334,7 +334,7 @@ const StatsPage = () => {
             <View className="mx-4 mb-4">
               <Text className="block text-base font-semibold text-[#1D2129] mb-2">
                 <View className="inline-flex flex-row items-center gap-1">
-                  <CreditCard size={16} color="#2F7BFF" />
+                  <CreditCard size={16} color="#2979FF" />
                 </View>
                 订阅支出
               </Text>
@@ -342,7 +342,7 @@ const StatsPage = () => {
                 <View className="flex flex-row items-center justify-between mb-3 pb-3" style={{ borderBottom: '1px solid #E5E6EB' }}>
                   <View className="flex flex-col">
                     <Text className="block text-xs text-[#86909C]">活跃订阅</Text>
-                    <Text className="block text-lg font-bold text-[#2F7BFF]">{subStats.subscription_count} 项</Text>
+                    <Text className="block text-lg font-bold text-[#2979FF]">{subStats.subscription_count} 项</Text>
                   </View>
                   <View className="flex flex-col items-end">
                     <View className="flex flex-row items-center gap-3">
@@ -364,11 +364,11 @@ const StatsPage = () => {
                 {Object.entries(subStats.by_category).map(([cat, info]) => (
                   <View key={cat} className="mb-2">
                     {info.items.map((item, i) => (
-                      <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F5F7FB' } : {}}>
+                      <View key={i} className="flex flex-row items-center justify-between py-2" style={i < info.items.length - 1 ? { borderBottom: '1px solid #F8F9FC' } : {}}>
                         <View className="flex flex-row items-center gap-2">
                           <Text className="block text-sm text-[#1D2129]">{item.name}</Text>
                           <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F0F5FF' }}>
-                            <Text className="text-xs text-[#2F7BFF]">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Text>
+                            <Text className="text-xs text-[#2979FF]">{item.cycle === 'monthly' ? '月付' : item.cycle === 'quarterly' ? '季付' : item.cycle === 'yearly' ? '年付' : item.cycle}</Text>
                           </View>
                         </View>
                         <View className="flex flex-row items-center gap-3">
@@ -387,7 +387,7 @@ const StatsPage = () => {
           {categoryStats.length === 0 && (
             <View className="flex flex-col items-center justify-center mt-24">
               <View className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F0F5FF' }}>
-                <ChartNoAxesColumn size={28} color="#2F7BFF" />
+                <ChartNoAxesColumn size={28} color="#2979FF" />
               </View>
               <Text className="block text-[#86909C] mt-4 text-sm">该时段暂无数据</Text>
             </View>

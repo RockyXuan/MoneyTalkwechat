@@ -178,20 +178,20 @@ const BillsPage = () => {
   const monthExpense = monthTotal
 
   return (
-    <View className="min-h-full" style={{ backgroundColor: '#F5F7FB' }}>
+    <View className="min-h-full" style={{ backgroundColor: '#F8F9FC' }}>
       {/* Month Selector */}
       <View className="px-4 pt-4 pb-2 flex flex-row items-center justify-between">
         <View onClick={prevMonth}>
-          <ChevronLeft size={24} color="#2F7BFF" />
+          <ChevronLeft size={24} color="#2979FF" />
         </View>
         <Text className="block text-lg font-semibold text-[#1D2129]">{currentMonth}</Text>
         <View onClick={nextMonth}>
-          <ChevronRight size={24} color="#2F7BFF" />
+          <ChevronRight size={24} color="#2979FF" />
         </View>
       </View>
 
       {/* Month Total - Gradient Card */}
-      <View className="mx-4 mb-3 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}>
+      <View className="mx-4 mb-3 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }}>
         <View className="flex flex-row items-center justify-between">
           <View>
             <Text className="block text-white text-sm opacity-80">本月支出</Text>
@@ -231,23 +231,23 @@ const BillsPage = () => {
                   <View className="flex flex-row items-center gap-3 flex-1 min-w-0">
                     <View className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: item.is_subscription ? '#F0F5FF' : '#F0F5FF' }}>
                       {item.is_subscription
-                        ? (item.billing_type === 'manual' ? <Hand size={18} color="#2F7BFF" /> : <Zap size={18} color="#2F7BFF" />)
-                        : <Receipt size={18} color="#2F7BFF" />
+                        ? (item.billing_type === 'manual' ? <Hand size={18} color="#2979FF" /> : <Zap size={18} color="#2979FF" />)
+                        : <Receipt size={18} color="#2979FF" />
                       }
                     </View>
                     <View className="flex flex-col flex-1 min-w-0">
                       <Text className="block text-base font-medium text-[#1D2129] truncate">{item.note || item.raw_text || '未命名'}</Text>
                       <View className="flex flex-row items-center gap-1 mt-1">
-                        <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F5F7FB' }}>
+                        <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F8F9FC' }}>
                           <Text className="text-xs text-[#86909C]">{item.category}</Text>
                         </View>
                         {item.is_subscription && (
                           <>
                             <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F0F5FF' }}>
-                              <Text className="text-xs text-[#2F7BFF]">{item.cycle === 'monthly' ? '月' : item.cycle === 'quarterly' ? '季' : item.cycle === 'yearly' ? '年' : ''}订阅</Text>
+                              <Text className="text-xs text-[#2979FF]">{item.cycle === 'monthly' ? '月' : item.cycle === 'quarterly' ? '季' : item.cycle === 'yearly' ? '年' : ''}订阅</Text>
                             </View>
                             <View className="rounded-full px-2 py-1" style={{ backgroundColor: item.billing_type === 'manual' ? '#FFF7E8' : '#F0F5FF' }}>
-                              <Text className="text-xs" style={{ color: item.billing_type === 'manual' ? '#FF7D00' : '#2F7BFF' }}>{item.billing_type === 'manual' ? '手动' : '自动'}</Text>
+                              <Text className="text-xs" style={{ color: item.billing_type === 'manual' ? '#FF7D00' : '#2979FF' }}>{item.billing_type === 'manual' ? '手动' : '自动'}</Text>
                             </View>
                           </>
                         )}
@@ -273,7 +273,7 @@ const BillsPage = () => {
       {sortedDates.length === 0 && (
         <View className="flex flex-col items-center justify-center mt-24">
           <View className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F0F5FF' }}>
-            <Receipt size={28} color="#2F7BFF" />
+            <Receipt size={28} color="#2979FF" />
           </View>
           <Text className="block text-[#86909C] mt-4 text-sm">本月暂无记录</Text>
         </View>
@@ -294,25 +294,25 @@ const BillsPage = () => {
                 <View className="flex flex-row items-center gap-3 mb-3">
                   <View className="flex-1">
                     <Text className="block text-sm text-[#86909C] mb-1">名称</Text>
-                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                       <Input className="bg-transparent text-sm" value={editNote} onInput={(e) => setEditNote(e.detail.value)} placeholder="消费名称" />
                     </View>
                   </View>
                   <View style={{ width: '100px' }}>
                     <Text className="block text-sm text-[#86909C] mb-1">金额</Text>
-                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F5F7FB' }}>
+                    <View className="rounded-xl px-3 py-2" style={{ backgroundColor: '#F8F9FC' }}>
                       <Input className="bg-transparent text-sm" type="digit" value={editAmount} onInput={(e) => setEditAmount(e.detail.value)} placeholder="金额" />
                     </View>
                   </View>
                 </View>
                 <View className="mb-3">
                   <Text className="block text-sm text-[#86909C] mb-1">分类</Text>
-                  <ScrollView scrollY className="w-full rounded-xl" style={{ maxHeight: '130px', backgroundColor: '#F5F7FB' }}>
+                  <ScrollView scrollY className="w-full rounded-xl" style={{ maxHeight: '130px', backgroundColor: '#F8F9FC' }}>
                     <View className="flex flex-row flex-wrap gap-2 p-3">
                       {filteredCategories.map(cat => (
                         <View key={cat.id} onClick={() => { setEditCategory(cat.name); setCatSearch('') }}>
                           <View className="rounded-full px-3 py-1"
-                            style={{ backgroundColor: editCategory === cat.name ? '#2F7BFF' : '#fff' }}
+                            style={{ backgroundColor: editCategory === cat.name ? '#2979FF' : '#fff' }}
                           >
                             <Text className="text-xs" style={{ color: editCategory === cat.name ? '#fff' : '#86909C' }}>{cat.name}</Text>
                           </View>
@@ -321,21 +321,21 @@ const BillsPage = () => {
                     </View>
                   </ScrollView>
                   <View className="flex flex-row items-center gap-2 mt-2">
-                    <View className="flex-1 rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px', backgroundColor: '#F5F7FB' }}>
+                    <View className="flex-1 rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ minHeight: '36px', backgroundColor: '#F8F9FC' }}>
                       <Search size={12} color="#86909C" />
                       <Input className="bg-transparent text-xs flex-1" placeholder="搜索..." value={catSearch} onInput={(e) => setCatSearch(e.detail.value)} />
                     </View>
                     {showCatInput ? (
-                      <View className="flex-1 rounded-xl px-3 py-2 flex flex-row items-center gap-1" style={{ backgroundColor: '#F5F7FB' }}>
+                      <View className="flex-1 rounded-xl px-3 py-2 flex flex-row items-center gap-1" style={{ backgroundColor: '#F8F9FC' }}>
                         <Input className="bg-transparent text-xs flex-1" placeholder="新分类名" value={newCatName} onInput={(e) => setNewCatName(e.detail.value)} onConfirm={() => handleCreateCategory()} />
-                        <View className="px-2 py-1 rounded" style={{ backgroundColor: '#2F7BFF' }} onClick={handleCreateCategory}>
+                        <View className="px-2 py-1 rounded" style={{ backgroundColor: '#2979FF' }} onClick={handleCreateCategory}>
                           <Text className="text-white text-xs">加</Text>
                         </View>
                       </View>
                     ) : (
                       <View className="flex-1 rounded-xl flex flex-row items-center justify-center gap-1 py-2" style={{ backgroundColor: '#F0F5FF' }} onClick={() => setShowCatInput(true)}>
-                        <Plus size={14} color="#2F7BFF" />
-                        <Text className="text-xs text-[#2F7BFF] font-medium">自定义分类</Text>
+                        <Plus size={14} color="#2979FF" />
+                        <Text className="text-xs text-[#2979FF] font-medium">自定义分类</Text>
                       </View>
                     )}
                   </View>
@@ -344,14 +344,14 @@ const BillsPage = () => {
                   <View className="flex-1">
                     <Text className="block text-sm text-[#86909C] mb-1">日期</Text>
                     <Picker mode="date" value={editDate} onChange={(e) => setEditDate(e.detail.value)}>
-                      <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F5F7FB' }}>
-                        <Calendar size={14} color="#2F7BFF" />
-                        <Text className="text-sm text-[#2F7BFF]">{editDate}</Text>
+                      <View className="rounded-xl px-3 py-2 flex flex-row items-center gap-2" style={{ backgroundColor: '#F8F9FC' }}>
+                        <Calendar size={14} color="#2979FF" />
+                        <Text className="text-sm text-[#2979FF]">{editDate}</Text>
                       </View>
                     </Picker>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Button className="w-full text-white rounded-xl py-2" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }} onClick={handleSaveEdit} disabled={isUpdating}>
+                    <Button className="w-full text-white rounded-xl py-2" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }} onClick={handleSaveEdit} disabled={isUpdating}>
                       <Text className="text-white text-sm font-medium">{isUpdating ? '保存中...' : '完成编辑'}</Text>
                     </Button>
                   </View>

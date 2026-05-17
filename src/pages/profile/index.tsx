@@ -98,9 +98,9 @@ const ProfilePage = () => {
   }
 
   return (
-    <View className="min-h-full pb-20" style={{ backgroundColor: '#F5F7FB' }}>
+    <View className="min-h-full pb-20" style={{ backgroundColor: '#F8F9FC' }}>
       {/* User Header - Gradient Card */}
-      <View className="mx-4 mt-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }}>
+      <View className="mx-4 mt-4 rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }}>
         <View className="flex flex-row items-center gap-4">
           <View className="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
             <User size={30} color="#fff" />
@@ -116,7 +116,7 @@ const ProfilePage = () => {
       <View className="flex flex-row gap-3 mx-4 mt-4">
         <View className="flex-1 bg-white rounded-2xl p-3 flex flex-col items-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <View className="w-8 h-8 rounded-full flex items-center justify-center mb-1" style={{ backgroundColor: '#F0F5FF' }}>
-            <Receipt size={16} color="#2F7BFF" />
+            <Receipt size={16} color="#2979FF" />
           </View>
           <Text className="block text-lg font-bold text-[#1D2129]">0</Text>
           <Text className="block text-xs text-[#86909C]">本月笔数</Text>
@@ -142,12 +142,12 @@ const ProfilePage = () => {
         <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <View className="flex flex-row items-center justify-between">
             <View className="flex flex-row items-center gap-2">
-              <Brain size={18} color="#2F7BFF" />
+              <Brain size={18} color="#2979FF" />
               <Text className="block text-sm font-medium text-[#1D2129]">AI 偏好记忆</Text>
             </View>
             <View
               className="px-4 py-1 rounded-full"
-              style={{ backgroundColor: aiPreferenceEnabled ? '#2F7BFF' : '#C9CDD4' }}
+              style={{ backgroundColor: aiPreferenceEnabled ? '#2979FF' : '#C9CDD4' }}
               onClick={() => setAiPreferenceEnabled(!aiPreferenceEnabled)}
             >
               <Text className="block text-xs text-white">{aiPreferenceEnabled ? '开启' : '关闭'}</Text>
@@ -168,7 +168,7 @@ const ProfilePage = () => {
                     <Text className="block text-sm font-medium text-[#1D2129]">{pref.key_word}</Text>
                     <Text className="block text-xs text-[#86909C]">→</Text>
                     <View className="rounded-full px-2 py-1" style={{ backgroundColor: '#F0F5FF' }}>
-                      <Text className="text-xs text-[#2F7BFF]">{pref.mapped_value}</Text>
+                      <Text className="text-xs text-[#2979FF]">{pref.mapped_value}</Text>
                     </View>
                   </View>
                   <Text className="block text-xs text-[#C9CDD4] mt-1">
@@ -210,15 +210,15 @@ const ProfilePage = () => {
           <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <View className="flex flex-col items-center mb-3">
               <Text className="block text-xs text-[#86909C] mb-2">您的绑定码</Text>
-              <Text className="block text-3xl font-bold text-[#2F7BFF] tracking-widest">{bindingCode}</Text>
+              <Text className="block text-3xl font-bold text-[#2979FF] tracking-widest">{bindingCode}</Text>
             </View>
-            <View className="rounded-xl p-3 mb-3" style={{ backgroundColor: '#F5F7FB' }}>
+            <View className="rounded-xl p-3 mb-3" style={{ backgroundColor: '#F8F9FC' }}>
               <Text className="block text-xs text-[#1D2129] mb-1">使用步骤：</Text>
               <Text className="block text-xs text-[#86909C]">1. 在微信搜索关注记账服务公众号</Text>
               <Text className="block text-xs text-[#86909C]">2. 对公众号发送「绑定 {bindingCode}」</Text>
               <Text className="block text-xs text-[#86909C]">3. 绑定成功后直接发消息即可记账</Text>
             </View>
-            <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }} onClick={handleCopyCode}>
+            <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }} onClick={handleCopyCode}>
               <View className="flex flex-row items-center justify-center gap-2">
                 <Copy size={14} color="#fff" />
                 <Text className="text-white text-sm">复制绑定码</Text>
@@ -228,7 +228,7 @@ const ProfilePage = () => {
         ) : (
           <View className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <Text className="block text-sm text-[#1D2129] mb-3">绑定微信公众号后，可直接在微信聊天中记账，无需打开小程序。</Text>
-            <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2F7BFF, #5B9BFF)' }} onClick={handleGenerateCode} disabled={isGenerating}>
+            <Button className="w-full text-white rounded-xl" style={{ background: 'linear-gradient(135deg, #2979FF, #5B8FFF)' }} onClick={handleGenerateCode} disabled={isGenerating}>
               <View className="flex flex-row items-center justify-center gap-2">
                 <MessageCircle size={14} color="#fff" />
                 <Text className="text-white text-sm">{isGenerating ? '生成中...' : '获取绑定码'}</Text>
@@ -242,13 +242,13 @@ const ProfilePage = () => {
       <View className="mx-4 mt-4">
         <View className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <View className="flex flex-row">
-            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F5F7FB', borderBottom: '1px solid #F5F7FB' }}>
+            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F8F9FC', borderBottom: '1px solid #F8F9FC' }}>
               <View className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#F0F5FF' }}>
-                <Settings size={20} color="#2F7BFF" />
+                <Settings size={20} color="#2979FF" />
               </View>
               <Text className="block text-xs text-[#1D2129]">设置</Text>
             </View>
-            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderBottom: '1px solid #F5F7FB' }}>
+            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderBottom: '1px solid #F8F9FC' }}>
               <View className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#FFF7E8' }}>
                 <Star size={20} color="#FF7D00" />
               </View>
@@ -256,13 +256,13 @@ const ProfilePage = () => {
             </View>
           </View>
           <View className="flex flex-row">
-            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F5F7FB', borderBottom: '1px solid #F5F7FB' }}>
+            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F8F9FC', borderBottom: '1px solid #F8F9FC' }}>
               <View className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#E8FFEA' }}>
                 <LifeBuoy size={20} color="#00B42A" />
               </View>
               <Text className="block text-xs text-[#1D2129]">帮助反馈</Text>
             </View>
-            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderBottom: '1px solid #F5F7FB' }}>
+            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderBottom: '1px solid #F8F9FC' }}>
               <View className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#F5F0FF' }}>
                 <Shield size={20} color="#8B5CF6" />
               </View>
@@ -270,9 +270,9 @@ const ProfilePage = () => {
             </View>
           </View>
           <View className="flex flex-row">
-            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F5F7FB' }}>
+            <View className="flex-1 p-4 flex flex-col items-center" style={{ borderRight: '1px solid #F8F9FC' }}>
               <View className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: '#F0F5FF' }}>
-                <BookOpen size={20} color="#2F7BFF" />
+                <BookOpen size={20} color="#2979FF" />
               </View>
               <Text className="block text-xs text-[#1D2129]">使用技巧</Text>
             </View>
