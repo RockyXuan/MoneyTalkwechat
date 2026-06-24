@@ -1,0 +1,44 @@
+{
+  "elements": [
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/home.html"
+      },
+      "title": "记一笔",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/subscriptions.html"
+      },
+      "title": "订阅管理",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/bills.html"
+      },
+      "title": "账单",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/stats.html"
+      },
+      "title": "统计",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/profile.html"
+      },
+      "title": "我的",
+      "size": "mobile"
+    }
+  ]
+}
