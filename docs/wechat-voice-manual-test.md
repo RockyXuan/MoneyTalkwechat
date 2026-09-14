@@ -1,3 +1,5 @@
+> 历史归档，2026-09-14 起不再作为当前需求或执行规范。旧 iOS/微信路线与 GLM5.2 微信同步任务已作废。本文仅供理解旧代码/设计，不自动恢复其中的命令、部署步骤或 UI 要求。当前方向见 [Mac HTML/Cloudflare 交接](mac-html-cloudflare-handoff.md)。
+
 # WeChat Voice Inbox Manual Test Fixtures
 
 Use these XML bodies against `POST /api/wechat/webhook` after creating a row in `wechat_bindings` for `wechat_openid = test-openid`.
