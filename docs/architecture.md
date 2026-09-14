@@ -1,45 +1,57 @@
-# HTML / Cloudflare 架构建议
+# MoneyTalk 网页架构与数据边界
 
-状态：2026-09-14 交接草案，等待 Mac 详细设计；不是已部署架构。产品边界见 [PROJECT_BRIEF](../PROJECT_BRIEF.md)，代码问题见 [交接](mac-html-cloudflare-handoff.md)。
+更新：2026-09-14。以下描述 `web-cloudflare/` 的实际实现；云端资源尚未创建或部署。
 
-## 最小架构
+## 最小运行路径
 
-电脑/手机浏览器 -> 同一响应式 HTML/CSS/JS -> 同域 /api -> Cloudflare Worker -> D1。
+浏览器 → 同源 `/api` → Worker → D1。静态文件由 Workers Static Assets 托管。前端为原生 HTML/CSS/JavaScript，经 Vite 构建；不依赖 Taro、React、NestJS、Coze 或 Supabase。Chart.js 只加载柱状、折线和饼图需要的模块，图表代码在统计页按需加载；Lucide 仅打包使用的 SVG。字体使用系统字体，资源随应用提供。
 
-推荐 Workers Static Assets 托管静态页面，Worker 处理鉴权、校验和 API，D1 保存账本及分类。无需为了桌面和手机分别做后端。Cloudflare 官方支持同一 Worker 提供静态文件与 API；D1 使用 SQLite 语义：[Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[D1](https://developers.cloudflare.com/d1/)。
+本地 `pnpm dev` 先构建、应用本地迁移，再启动 5173 页面和 8787 接口。D1 在 `.wrangler/` 持久化。测试另外使用 Miniflare 临时 D1，不复用本地演示数据库。
 
-R2 只在需要保留音频、附件或私有导出备份时加入；普通静态资源可随应用托管。KV 不作为账本数据库，首轮不引入 Durable Objects、Queues 或 Vectorize。
+## 身份与权限
 
-## 身份与数据边界
+生产请求由 `jose` 验证 Cloudflare Access 的 RS256 JWT：签名、issuer、audience、exp、iat、sub 和邮箱。配置包含团队域名、应用受众及唯一拥有者邮箱。缺配置或无有效身份时拒绝 API；不信任裸邮箱头、user_id 或客户端传来的账本归属。
 
-建议个人/少量家人用 Cloudflare Access 的邮箱白名单和一次性验证码，避免自建短信或微信登录：[Access OTP](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/)。
+用户 ID 来自经验证的签发者及 subject。每个查询和写入都检查 ledger_id 的拥有者。`X-Ledger-Id` 只用于选择账本，不能绕过服务器权限。首版没有共享成员模型。写入需要同源 Origin 和 JSON；API 返回 no-store。静态响应提供 CSP、禁止嵌入和类型嗅探等头。
 
-API 仍需验证 Access JWT 的签名、issuer、audience、有效期；由验证后的身份映射用户和账本，不能信任客户端 user_id 或裸邮箱头。覆盖自定义域名及 API 路径，关闭或同样保护 workers.dev/预览旁路。参考 [JWT 校验](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)。
+本地免登录需要三个条件同时成立：`ENVIRONMENT=local`、显式开启 `LOCAL_DEV_MODE`、请求位于回环地址。仅绑定 127.0.0.1，显示“本地预览”。这不代表真实登录已接通。生产关闭 workers.dev 和预览 URL；整个自定义域名及 `/api/*` 必须由 Access 覆盖。
 
-Access 负责谁能进入；谁能看哪个账本由应用负责。第一版建议单个拥有者，未来邀请家人再落地最小成员权限，不默认所有人共用 default_user。
+## 账本模型
 
-## 数据草案
+- users、ledgers：身份、拥有者、当前账本；账本有 importing/ready 状态。
+- categories：稳定 ID、收支类型、名称、色板标识、图标、排序、停用状态、版本。
+- entries：稳定 ID、ledger_id、正整数金额分、收支方向、分类、YYYY-MM-DD 记账日、备注、版本、UTC 创建/更新时间、删除时间。
+- operations：同一用户、账本、提交标识的请求摘要和结果，用于重试去重。
+- restores：备份内容摘要、预期条数、恢复进度、完成状态及是否可复用。
 
-- entries：稳定 ID、ledger_id、amount_minor 整数分、currency、方向、category_id、发生日期、备注、状态、版本、创建/修改时间。
-- categories：稳定 ID、账本归属、名称、排序、归档状态；改名不应割裂历史统计。
-- drafts：来源文本和解析候选，与正式入账分开；缺金额/日期非法不能计入报表。
-- 可选 preferences：可解释的分类纠错规则，先不做向量记忆。
-- 可选 subscriptions / subscription_events：订阅计划、预计发生与已确认扣费要区分；不能每次打开报表重复入账。
+金额入口使用十进制字符串解析为整数分，支持合法千位分隔符，拒绝空、0、负号、超过两位小数和超限金额。单笔范围 0.01–99,999,999.99 元。前后端各自校验。日期由上海时区确定“今天”；记账日期不通过 UTC 截取推断。月切换从每月 1 日计算，避免月末溢出。手动记账不接受未来日期。
 
-金额转换、Asia/Shanghai 日期边界、重试幂等和编辑版本冲突应统一在服务端。小规模在线应用可先保存后重新查询；离线先支持草稿，暂不做离线自动合并。
+统计由 D1 对完整范围聚合，与分页账单独立。所有类别和时间桶使用整数分；前端只格式化。月按日、季/年按月；当前期间截至今天，历史无消费日期补零。错误状态与无消费状态分开。图表共用同一统计结果，折线不累计、不平滑；饼图以期间分类合计计算，百分比独立四舍五入。
 
-## 从旧栈迁移
+## 可靠写入与并发
 
-Taro 的 H5 输出是可参考的旧 Web 版本，不是原生 HTML 源码；DOM、输入框、导航和网络适配需要另行实现。建议新建独立 Web/Worker 目录，小步提取验证过的规则，目录名字由 Mac 决定。
+一次保存生成稳定提交标识。写入日志与账目变更在 D1 batch 事务中一起提交。同一标识及内容重试返回同一结果；改变内容而复用标识返回冲突。前端保存中禁用输入和重复提交；响应丢失、截断或网关异常时查询原提交结果，未确认时保留原输入及标识。
 
-NestJS 入口、Express 中间件和 Coze SDK 不应直接当作 Worker 可运行代码。将业务规则提取为普通函数，以 Worker 请求处理与 D1 查询替换旧适配层。Supabase 的 PostgreSQL schema、JSONB、默认 UUID、权限规则等需显式转换为 SQLite/D1 schema。
+编辑和删除使用记录版本作为条件；并发修改只有一个成功，另一个提示载入最新记录。删除只是设置删除时间，统计排除已删除记录；撤销和回收站恢复采用同样的版本条件。分类改名保留关联和颜色；有历史记录的分类不能改变收支类型。
 
-如果有真实旧账本，先导出和验证，再在测试 D1 导入；对照条数、金额、日期、分类和订阅，保留旧 ID 映射，禁止把订阅推算事件当作已支付记录直接导入。本次没访问旧数据库，不能假定数据为空或迁移已完成。
+草稿保存在 sessionStorage，按用户与账本隔离；刷新可恢复，退出或切换身份/账本清除。localStorage 仅保存图表和密度偏好。页面返回前台时刷新数据，正在编辑时避免覆盖输入。
 
-## AI 和可用性
+## 导出、备份及恢复
 
-优先在 Workers AI 试验中文文本解析；若恢复语音，可评估 [Whisper](https://developers.cloudflare.com/workers-ai/models/whisper/)。准确率、格式兼容、延迟、额度与费用需实测，不固定当前聊天模型为产品模型。若效果不足，先保留手动入口，外部模型作为后续需明确的例外。
+CSV 可导出当前筛选或全部有效账目；不受账单分页限制，文本字段处理电子表格公式注入。JSON 备份包含分类、有效账目、回收站、记录 ID、版本和时间；没有身份凭据。
 
-浏览器录音需 HTTPS、权限处理和格式探测，Safari 与桌面浏览器不能假设使用同一编码；参见 [MediaRecorder.isTypeSupported](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static)。
+恢复前校验格式、金额、日期、重复 ID、分类引用及条数，展示范围与汇总。随后创建独立 importing 账本，分批写入，通过完整内容摘要核对才变为 ready。当前账本不会自动切换。上传重复批次不重复写入；恢复中断可以用同一文件继续。已完成且未变化的候选账本可复用；若后来发生修改，再导入原备份会创建新的候选账本，保留已有记录。
 
-大陆实际网络应先测试站点、登录验证码、API 和 AI 的完整链路。普通 Cloudflare 部署不等于大陆节点服务；[China Network](https://developers.cloudflare.com/china-network/) 是独立的 Enterprise 订阅。这里不作连通性或永久免费保证。
+当前恢复入口上限为 20 MB、50,000 条记录、100 个分类。551 条完整统计和 61 条端到端恢复已经本地验证；接近上限的内存、延迟及导出往返未验证，应在长期导入大量真实数据前压测。D1 平台备份/Time Travel 不替代用户自己下载的备份；生产启用后另做恢复演练。
+
+## 旧代码如何处理
+
+复用原蓝白色视觉、四页导航、胶囊分类表达、分类名称与可用文案；核对旧 expenses 的字段，保留源 ID 映射。原 Taro 页面容器、平台输入/登录、NestJS 服务、Supabase 查询、AI 自动兜底入账均不直接移植。
+
+离线转换脚本只接受用户明确提供的 expenses JSON 和指定旧 user_id，原始文件完整另存；空金额、坏日期、候选记录、未知类型进入异常清单，不自动变成 0。仅生成候选备份与核对报告，不访问数据库。真实旧数据转换、人工核对和迁移均未执行。
+
+## 云端尚待验证
+
+需要后续明确授权后配置测试 D1、自定义域名及 Access，测试真实登录、另一身份越权、保存读回、删除恢复、两设备冲突、国内普通网络和 iPhone。没有引入 R2、KV、队列或 AI；这些不属于首版必需项。普通 Cloudflare 不代表大陆节点服务或永久免费承诺。
+
+官方依据：[Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[D1 batch 事务](https://developers.cloudflare.com/d1/worker-api/d1-database/)、[Access JWT 校验](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)、[China Network](https://developers.cloudflare.com/china-network/)。

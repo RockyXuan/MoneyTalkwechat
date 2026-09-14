@@ -1,0 +1,82 @@
+# MoneyTalk Web · 本地首版
+
+普通 HTML/CSS/JavaScript 页面 + Cloudflare Worker + D1。当前可运行的版本在此目录，与旧 Taro/NestJS 源码分开。
+
+**已实现与本地验证不等于云端上线。** 当前只使用虚构账目；Cloudflare Access 真实登录、域名、大陆网络和真机尚未验收。进度见 [验收记录](docs/acceptance.md)。
+
+## 本地启动
+
+固定 Node 22.23.2（`.nvmrc`）、pnpm 11.19.0（`packageManager`）。在当前目录执行：
+
+```sh
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm dev
+```
+
+页面 http://127.0.0.1:5173 ，Worker 与构建后页面 http://127.0.0.1:8787 。`dev` 会先构建和应用本地迁移，再同时启动页面与 Worker；停止时只关闭自己启动的子进程。没有生产部署步骤。
+
+在第二个终端、同一目录中可执行：
+
+```sh
+pnpm demo:seed
+pnpm verify
+```
+
+演示脚本仅允许 127.0.0.1 的本地预览身份，通过恢复接口创建并切换虚构账本。基准为 2026 年 9 月的 61 笔记录、支出 3,248.00 元、收入 18,000.00 元。重复执行复用未变化的演示账本；演示账本被修改后重新创建候选账本，保留旧版本。初始空个人账本仍可在“我的”切换。
+
+本机本轮使用 `/Users/rockyx/.nvm/versions/node/v22.23.2/bin` 和 Codex 已有的 pnpm 11.19.0。没有安装或改变全局工具。其他机器按项目版本准备工具即可。
+
+## 脚本及数据位置
+
+| 命令 | 做什么 |
+|---|---|
+| `pnpm dev` | 构建 → 本地数据库迁移 → Vite 与 Worker |
+| `pnpm preview` | 仅启动本地 Worker，提供已构建页面 |
+| `pnpm build` | 构建静态文件到 dist |
+| `pnpm check` | JavaScript 语法与项目配置检查；不等同完整静态类型验证 |
+| `pnpm test` | 单元测试与隔离 Miniflare D1 集成测试 |
+| `pnpm verify` | check、test、build |
+| `pnpm db:local` | 只应用本地 D1 迁移 |
+| `pnpm demo:seed` | 仅本地的虚构演示账本 |
+| `pnpm deploy:check` | Wrangler dry-run，仅检查打包，不发布 |
+| `pnpm legacy:convert` | 离线旧 expenses JSON 转换，不连接旧数据库 |
+
+`.wrangler/` 为本机开发数据库。`dist/`、`node_modules/`、`.wrangler/`、`.dev.vars*` 和日志不进入 Git。`.dev.vars.example` 仅有占位符。不要删除 `.wrangler/` 来修复页面错误，以免丢失本地账目；先从页面下载备份。
+
+## 页面与数据行为
+
+`/record` 记一笔，`/bills` 完整账单，`/stats` 统计，`/settings` 数据管理。根路径首次访问按屏幕选择默认页，明确链接不因断点变化跳页。
+
+服务器确认前不显示保存成功。金额以整数分保存，范围 0.01–99,999,999.99 元。日期使用上海时区的日历日，非 UTC 日期截断。笔数和金额汇总来自完整数据库查询。结余只表示期间收入减支出。
+
+删除进入回收站；10 秒内可在提示中撤销，之后可在回收站恢复。修改冲突显示明确提示，不静默覆盖。分类可改名、换预设颜色、排序、停用；有历史记录时不改变类型。
+
+浏览器会话保存未提交草稿；退出和切换账本会清除草稿。显示偏好保存在当前设备。未实现离线自动记账、后台同步或家庭共享。
+
+## 备份与旧数据
+
+“我的 → 备份与恢复”可下载完整 JSON，包括回收站；CSV 仅包含有效账目。桌面账单页可导出当前筛选结果。备份校验展示日期、条数、收支、分类和异常，再写入独立候选账本；未校验完成不允许切换。
+
+旧数据转换必须明确指定文件、全新输出目录和原 user_id：
+
+```sh
+pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_USER_ID
+```
+
+输出原文件副本、`candidate-backup.json` 和 `review-report.json`，不覆盖已有目录，不上传或写入账本。异常行保留在原文件，报告标注原因。旧 expenses 被明确解释为支出，不处理订阅推算事件、音频或微信身份绑定。新分类默认灰色，之后可以手动调整。真实数据必须保存在 Git 外，核对完成前不宣布迁移成功。
+
+## 云端接入前的工作
+
+仓库未包含生产数据库 ID、账号 ID、域名、邮箱或密钥，生产 API 会因未配置而拒绝提供账目。只有后续得到测试部署授权，才执行下列步骤：
+
+1. 为测试环境创建 D1 并绑定 `DB`，按顺序应用 migrations，使用虚构数据。
+2. 绑定专门测试域名，Access 保护整个站点及 API；使用拥有者邮箱白名单或合适的身份提供者。
+3. 服务端配置 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD`、`OWNER_EMAIL`，保持生产 `ENVIRONMENT=production`，不设置本地绕过开关。
+4. 确认 workers.dev 和 preview_urls 均关闭，检查域名及 API 没有可绕过入口。
+5. 验证真实登录、错误身份、保存读回、重试去重、双设备冲突、导出恢复及国内普通网络。通过后再讨论真实数据和正式使用。
+
+不默认创建 R2、KV、队列或 AI 服务。详细身份及数据模型见 [架构说明](../docs/architecture.md)。
+
+## 设计与复用
+
+[设计规范](docs/design.md)、[设计基准](docs/design-reference/)、[接口契约](docs/api.md)、[依赖说明](docs/reuse.md)。许可证全文随静态资源提供在 `/licenses.txt`。

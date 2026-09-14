@@ -1,0 +1,37 @@
+{
+  "name": "moneytalk-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "check": "tsc --noEmit",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "verify": "pnpm check && pnpm test && pnpm build",
+    "db:local": "wrangler d1 migrations apply moneytalk-local --local --env local",
+    "demo:seed": "node scripts/seed.mjs",
+    "preview": "wrangler dev --env local --ip 127.0.0.1 --port 8787",
+    "deploy:check": "wrangler deploy --dry-run --env=\"\"",
+    "legacy:convert": "node scripts/convert-legacy.mjs"
+  },
+  "dependencies": {
+    "chart.js": "4.5.1",
+    "hono": "4.13.7",
+    "jose": "6.2.12",
+    "lucide": "1.45.0",
+    "zod": "4.6.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260911.1",
+    "@playwright/test": "1.63.0",
+    "miniflare": "5.20260911.0-alpha",
+    "typescript": "7.0.2",
+    "vite": "8.3.0",
+    "wrangler": "4.131.1"
+  }
+}

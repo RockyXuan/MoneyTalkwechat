@@ -1,0 +1,5 @@
+# Production must use a real Access application and allowlist.
+# These are placeholders, not credentials. Local dev needs no secrets.
+ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com
+ACCESS_AUD=replace-with-your-access-application-audience
+OWNER_EMAIL=replace-with-your-email

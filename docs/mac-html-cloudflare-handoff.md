@@ -1,3 +1,5 @@
+> **Mac 接手执行更新 · 2026-09-14**：已克隆准确仓库和分支，起点 f2ad8a70cbb2b5cfa2968f282988e0d37a716e72，克隆时远端没有后续提交。新实现位于 [web-cloudflare](../web-cloudflare/README.md)，包含本地响应式页面、Worker/D1、导出恢复及自动测试。旧 src/server 未覆盖。当前只完成本地虚构数据验收，未配置真实 Access、未部署、未迁移旧生产数据。最新事实见 [验收记录](../web-cloudflare/docs/acceptance.md)。下文保留 Windows 交接原文，文中的“尚未实现”指交接当时状态。
+
 # Mac Codex 交接：MoneyTalk HTML / Cloudflare 重启
 
 交接日期：2026-09-14。范围：梳理、初步方案、代码风险和接手入口；具体开发计划、实现及部署由 Mac Codex 继续。
