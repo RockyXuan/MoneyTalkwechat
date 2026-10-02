@@ -2,7 +2,7 @@
 
 2026-10-02 当前状态：原生响应式网页、Worker 接口和 D1 数据结构已在独立的 [web-cloudflare](web-cloudflare/README.md) 目录实现，受保护的免费网址为 https://moneytalk-web.550754381zzx.workers.dev 。桌面真实登录、保存刷新、修改、删除和回收站恢复已验证；真实 iPhone 和国内普通网络仍待验证，没有迁移真实历史账本。详见 [云端记录](web-cloudflare/docs/cloudflare-deployment.md)。
 
-历史账单方向：白条、美团月付、抖音月付都纳入，优先历史自动收集／批量处理、近期手录、每月核对。只读 CSV／ZIP 核对工具已发布，可从“我的 → 历史账单核对”使用；线上虚构 ZIP 与报告下载通过，真实格式和安全入账另验收。详见 [接入进度](web-cloudflare/docs/history-import-progress.md)。能自行完成的工作持续推进，只在不可替代的本人操作或真实数据门槛处暂停，规则已写入 AGENTS.md。
+用户最新决定：各平台自动采集、历史导入、分类／对账同步暂时封存；网页收起历史核对入口，保留代码与调研，不再索要样本或自行继续。当前聚焦手动记账及基础账本体验。详见 [封存记录](web-cloudflare/docs/history-import-progress.md)。其他已授权工作仍按 AGENTS.md 的持续推进规则执行。
 
 桌面使用 C1 深蓝工作台，手机使用 M1 四页结构与 M2 胶囊分类；统计提供分类堆叠柱状图、分类折线图和饼图。设计基准及校正规则见 [设计说明](web-cloudflare/docs/design.md)。
 

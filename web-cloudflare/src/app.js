@@ -103,16 +103,6 @@ function closeDialog(force = false) {
   s.modal?.dispose?.();
   if (dialog.open) dialog.close(); s.modal = null; dialog.dataset.locked = 'false'; return true;
 }
-async function openBillReview() {
-  const modal = { type: 'bill-review', dispose: null };
-  s.modal = modal;
-  openDialog('历史账单核对', '<div id="bill-review-container">正在打开文件核对…</div>', { wide: true });
-  try {
-    const module = await import('./bill-review-ui.js');
-    if (s.modal !== modal || !dialog.open) return;
-    modal.dispose = module.mountBillReview(dialog.querySelector('#bill-review-container'));
-  } catch (error) { if (s.modal === modal) dialog.querySelector('#bill-review-container').textContent = `暂时无法打开核对工具：${error.message}`; }
-}
 function updateForm(context) {
   if (context === 'dialog' && s.modal?.type === 'entry') {
     const { draft } = s.modal;
@@ -337,7 +327,6 @@ document.addEventListener('click', async event => {
     else if (action === 'export-all') await exportCsv(false);
     else if (action === 'export-filter') await exportCsv(true);
     else if (action === 'backup') openBackup();
-    else if (action === 'bill-review') await openBillReview();
     else if (action === 'download-backup') await downloadBackup();
     else if (action === 'start-restore') await startRestore();
     else if (action === 'activate-ledger') await activateLedger(id);

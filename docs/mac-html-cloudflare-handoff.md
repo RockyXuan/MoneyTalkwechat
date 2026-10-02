@@ -1,3 +1,5 @@
+> **封存状态 · 2026-10-02（用户最新决定）**：各平台消费记录自动采集、历史批量导入、分类／对账同步及其只读核对工具暂时搁置，移出当前开发与验收范围。已有代码、测试和资料保留；网页入口收起，不再索要样本、启动采集或自动恢复开发。只有用户明确要求重启后再评估。以下内容保留为封存前的历史记录，不是待执行任务。
+
 > **Mac 接手执行更新 · 2026-10-02**：准确仓库与指定分支不变，接手起点 f2ad8a70cbb2b5cfa2968f282988e0d37a716e72。新网页位于 [web-cloudflare](../web-cloudflare/README.md)，旧 src/server 未覆盖。受保护的免费网址已启用，桌面正常记账闭环通过，见 [云端记录](../web-cloudflare/docs/cloudflare-deployment.md)。历史 CSV／ZIP 只读核对已模拟验证；用户确认白条、美团月付、抖音月付均常用，历史批量处理、近期手录、定期核对，见 [接入进度](../web-cloudflare/docs/history-import-progress.md)。真实历史迁移、真机与国内普通网络未验证。能独立完成的工作持续推进，阻塞边界见 AGENTS.md。下文保留 Windows 原文，其“尚未实现”指交接当时状态。
 
 # Mac Codex 交接：MoneyTalk HTML / Cloudflare 重启
