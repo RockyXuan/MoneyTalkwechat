@@ -1,0 +1,10 @@
+import { z } from 'zod';
+import { MAX_AMOUNT, validDate } from './format.js';
+import { validMonth } from './text-records.js';
+const id=z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
+const nullableDate=z.string().refine(validDate).nullable();
+const month=z.string().refine(validMonth).nullable();
+export const textItemSchema=z.object({id,raw:z.string().max(10000),title:z.string().trim().min(1).max(80),type:z.enum(['expense','income']),amount_minor:z.number().int().min(1).max(MAX_AMOUNT).nullable(),category_id:id.nullable(),cycle:z.enum(['single','monthly','quarterly','yearly','unknown']),occurred_on:nullableDate,start_month:month,through_month:month,charge_day:z.number().int().min(1).max(31).nullable(),short_month:z.enum(['pending','last_day']),ongoing:z.boolean(),questions:z.array(z.string().max(200)).max(20),selected:z.boolean()}).strict();
+export const textItemsSchema=z.array(textItemSchema).min(1).max(40).refine(items=>new Set(items.map(i=>i.id)).size===items.length,'项目标识重复');
+export const textBatchSchema=z.object({id,original_text:z.string().min(1).max(10000),items:textItemsSchema,status:z.enum(['pending','active','paused']),version:z.number().int().min(1),created_at:z.iso.datetime(),updated_at:z.iso.datetime()}).strict();
+export const textSlotSchema=z.object({batch_id:id,item_id:id,occurred_on:z.string().refine(validDate),entry_id:id}).strict();

@@ -72,7 +72,7 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 
 ## 云端部署与剩余验收
 
-2026-10-02 已在独立生产 D1 应用两次迁移，为完整 workers.dev 主机名创建 Access 应用与精确拥有者邮箱规则。服务端通过 Cloudflare secret 配置 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD`、`OWNER_EMAIL`；这些值不放入源码。`workers_dev=true`，`preview_urls=false`，生产未设置本地绕过开关。没有导入本地演示或真实账目。当前版本与验证证据见 [部署记录](docs/cloudflare-deployment.md)。
+2026-10-02 已在独立生产 D1 应用前三份迁移（第三份新增文字与循环表），为完整 workers.dev 主机名创建 Access 应用与精确拥有者邮箱规则。服务端通过 Cloudflare secret 配置 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD`、`OWNER_EMAIL`；这些值不放入源码。`workers_dev=true`，`preview_urls=false`，生产未设置本地绕过开关。没有导入本地演示或真实账目。当前版本与验证证据见 [部署记录](docs/cloudflare-deployment.md)。
 
 后续完成步骤：
 
@@ -86,3 +86,7 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 ## 设计与复用
 
 [设计规范](docs/design.md)、[设计基准](docs/design-reference/)、[接口契约](docs/api.md)、[依赖说明](docs/reuse.md)。许可证全文随静态资源提供在 `/licenses.txt`。
+
+## 文字录入与循环记录
+
+从“记一笔 → 文字录入 · 多笔与循环”或“我的 → 文字与循环记录”进入。先解析和编辑，保存云端候选不计入收支；逐笔预览确认才入账。未知起始月、扣款日保留疑问，未来不提前记账，打开网页显示待处理提醒。备份 v2 同时保存规则与已记周期，兼容旧 v1。见 [详细说明](docs/text-recurring-records.md)。

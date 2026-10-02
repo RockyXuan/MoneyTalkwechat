@@ -83,9 +83,14 @@ export async function exportBackup(db, ledger) {
   const result = await db.batch([
     statement(db, 'SELECT id,name,type,color_key,icon,sort_order,archived FROM categories WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? ORDER BY id', [ledger.id]),
+    statement(db, 'SELECT id,original_text,items_json,status,version,created_at,updated_at FROM text_batches WHERE ledger_id=? ORDER BY id', [ledger.id]),
+    statement(db, 'SELECT batch_id,item_id,occurred_on,entry_id FROM text_slots WHERE ledger_id=? ORDER BY batch_id,item_id,occurred_on', [ledger.id]),
   ]);
   const categories = result[0].results, entries = result[1].results;
-  return backupSchema.parse({ format: 'moneytalk-backup', version: 1, exported_at: stamp(), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
+  const rows=result[2].results;
+  const text_batches=rows.map(({items_json,...b})=>({...b,items:JSON.parse(items_json)}));
+  const text_slots=result[3].results;
+  return backupSchema.parse({ format: 'moneytalk-backup', version: text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
 }
 export function exportCsv(rows) {
   const header = ['日期', '类型', '分类', '金额（元）', '备注', '记录ID'];

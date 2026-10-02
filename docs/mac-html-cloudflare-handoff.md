@@ -131,3 +131,5 @@ git merge-base --is-ancestor 41712cded4aa09ef44b9ca67c784ebb8765aa8e9 HEAD
 ## 10. 给 Mac Codex 的起始任务
 
 请以本分支最新文档为需求基线，先复核旧代码和环境，制定详细实施计划，再按用户后续指令实施。目标为个人/少量家人使用的响应式 HTML 记账应用，Cloudflare 托管全栈。优先做可靠存账、身份验证和导出恢复，旧微信同步、CloudKit、iOS 上架及 WorkBuddy 交接均已作废；不要从旧截图或历史文档恢复任务。
+
+> **新的有效范围 · 2026-10-02**：用户主动文字录入与循环记录现已授权，不属于平台自动采集封存。未知日期先保存待核对，逐笔预览确认后入账；实施与证据见 [文字与循环记录](../web-cloudflare/docs/text-recurring-records.md)。

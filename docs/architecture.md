@@ -63,3 +63,7 @@ CSV 可导出当前筛选或全部有效账目；不受账单分页限制，文�
 当前 Worker/D1、Access 及免费网址已配置，真实桌面登录、保存读回、删除恢复通过；仍需验证另一身份实际登录、两设备冲突、国内普通网络、iPhone 与生产导出恢复。测试记账授权已取得，同类测试不重复询问；真实历史数据写入需要具体候选预览。没有引入 R2、KV、队列或 AI；这些不属于首版必需项。普通 Cloudflare 不代表大陆节点服务或永久免费承诺。
 
 官方依据：[Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[D1 batch 事务](https://developers.cloudflare.com/d1/worker-api/d1-database/)、[Access JWT 校验](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)、[China Network](https://developers.cloudflare.com/china-network/)。
+
+## 文字与循环数据（2026-10-02）
+
+复用整数分、上海日期、权限、版本检查和提交幂等。新增 text_batches 存本人文字候选与规则，text_slots 保存批次／项目／日期到正式账目的唯一对应；规则确认原子写入，不提前生成未来消费，软删除仍保留周期标识。已有记录的规则字段锁定，未生成的项目可补全。原文不发第三方 AI、不记日志。备份有文字批次时升级 v2，保留周期标识；v1 可继续恢复，恢复到独立候选账本。见 [边界与复用评估](../web-cloudflare/docs/text-recurring-records.md)。

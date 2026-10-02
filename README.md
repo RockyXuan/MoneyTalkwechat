@@ -24,4 +24,6 @@
 
 [产品主旨](PROJECT_BRIEF.md) · [架构与边界](docs/architecture.md) · [阶段进度](DEVELOPMENT_PLAN.md) · [Mac 交接及历史来源](docs/mac-html-cloudflare-handoff.md) · [本地验收记录](web-cloudflare/docs/acceptance.md) · [协作规则](AGENTS.md)
 
-首版聚焦可靠收入/支出、修改删除、分类、基础统计、导出恢复。语音、AI、订阅和家庭共享仍待评估，没有放入无法使用的首版入口。iOS-first、App Store、CloudKit、微信公众号/小程序同步、GLM5.2/WorkBuddy 旧任务均已作废。
+首版聚焦可靠收入/支出、修改删除、分类、基础统计、导出恢复。语音、通用 AI 和家庭共享仍待评估，没有放入无法使用的首版入口。iOS-first、App Store、CloudKit、微信公众号/小程序同步、GLM5.2/WorkBuddy 旧任务均已作废。
+
+2026-10-02 新增有效范围：文字录入可拆分单笔与月／季／年循环，未知日期留待确认，逐笔预览确认后入账，网页显示待核对及到期提醒。不是第三方 AI 或后台自动扣费。见 [实现与边界](web-cloudflare/docs/text-recurring-records.md)。

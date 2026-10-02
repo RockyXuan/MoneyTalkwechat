@@ -9,7 +9,7 @@ const root = document.querySelector('#app'), dialog = document.querySelector('#d
 const storage = { get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }, set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Display preferences are optional. */ } } };
 const knownPages = ['record', 'bills', 'stats', 'settings'];
 const firstPage = () => knownPages.includes(location.pathname.slice(1)) ? location.pathname.slice(1) : matchMedia('(max-width: 767px)').matches ? 'record' : 'stats';
-const s = { page: firstPage(), month: today().slice(0, 7), period: 'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, filters: { type: '', category_id: '', q: '' }, billRange: null, offset: 0, error: '', draft: null, modal: null };
+const s = { page: firstPage(), month: today().slice(0, 7), period: 'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: { type: '', category_id: '', q: '' }, billRange: null, offset: 0, error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: s.session?.today || today(), note: '', expanded: false, error: '', pending: null });
@@ -69,12 +69,13 @@ async function load({ quiet = false } = {}) {
   s.error = '';
   if (!quiet) { if (page === 'bills') s.bills = null; if (page === 'stats') s.stats = null; render(); }
   try {
-    const [categories, recent, current] = await Promise.all([
+    const [categories, recent, current, textSummary] = await Promise.all([
       request('/categories'), request('/entries?limit=6'),
       page === 'stats' ? request(`/stats?${queryString(periodRange(s.month, s.period, s.session.today))}`) : page === 'bills' ? request(`/entries?${queryString(billQuery())}`) : Promise.resolve(null),
+      request('/text-batches'),
     ]);
     if (ticket !== epoch) return;
-    s.categories = categories.categories; s.recent = recent;
+    s.categories = categories.categories; s.recent = recent; s.textSummary=textSummary;
     if (page === 'stats') s.stats = current; if (page === 'bills') s.bills = current;
     render();
   } catch (error) {
@@ -102,6 +103,13 @@ function closeDialog(force = false) {
   if (!force && s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty && !window.confirm('当前修改尚未保存，确定放弃这些修改？')) return false;
   s.modal?.dispose?.();
   if (dialog.open) dialog.close(); s.modal = null; dialog.dataset.locked = 'false'; return true;
+}
+async function openTextRecords() {
+  const modal={type:'text-records',dispose:null};s.modal=modal;
+  openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
+  try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
+    modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{categories:s.categories,currentDay:s.session.today,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true})});
+  }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
   if (context === 'dialog' && s.modal?.type === 'entry') {
@@ -207,7 +215,7 @@ async function exportCsv(filtered) {
 }
 function openBackup() {
   s.modal = { type: 'backup', file: null, preview: null, job: null, busy: false };
-  openDialog('备份与恢复', `<p class="dialog-intro">完整备份包含分类、有效账目与回收站。恢复时创建独立候选账本，当前账本会保留。</p><div class="backup-actions"><button class="button secondary" data-action="download-backup">${icon('file')}下载完整 JSON 备份</button><button class="button secondary" data-action="export-all">${icon('download')}导出全部有效账目 CSV</button></div><label class="upload-area">${icon('upload', 29)}<strong>选择备份文件进行检查</strong><span class="muted">MoneyTalk JSON 备份 · 最大 20 MB</span><input type="file" accept="application/json,.json" id="backup-file" /></label><div id="backup-preview"></div>`);
+  openDialog('备份与恢复', `<p class="dialog-intro">完整备份包含分类、有效账目、回收站、文字草稿与循环规则。恢复时创建独立候选账本，当前账本会保留。</p><div class="backup-actions"><button class="button secondary" data-action="download-backup">${icon('file')}下载完整 JSON 备份</button><button class="button secondary" data-action="export-all">${icon('download')}导出全部有效账目 CSV</button></div><label class="upload-area">${icon('upload', 29)}<strong>选择备份文件进行检查</strong><span class="muted">MoneyTalk JSON 备份 · 最大 20 MB</span><input type="file" accept="application/json,.json" id="backup-file" /></label><div id="backup-preview"></div>`);
 }
 async function downloadBackup() {
   try { const data = await request('/backup'); download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `MoneyTalk-完整备份-${today()}.json`); toast('备份文件已准备，请确认下载完成并妥善保存'); }
@@ -215,7 +223,7 @@ async function downloadBackup() {
 }
 function backupSummary(preview) {
   const v = preview.summary;
-  return `<div class="backup-summary"><h3>${e(preview.ledger?.name || '备份校验结果')}</h3><dl><dt>有效账目</dt><dd>${v.active} 笔</dd><dt>回收站</dt><dd>${v.deleted} 笔</dd><dt>分类</dt><dd>${v.categories} 个</dd><dt>支出合计</dt><dd>${money(v.expense_minor)}</dd><dt>收入合计</dt><dd>${money(v.income_minor)}</dd><dt>日期范围</dt><dd>${v.from ? `${e(v.from)}<br>至 ${e(v.to)}` : '空账本'}</dd></dl></div>`;
+  return `<div class="backup-summary"><h3>${e(preview.ledger?.name || '备份校验结果')}</h3><dl><dt>有效账目</dt><dd>${v.active} 笔</dd><dt>回收站</dt><dd>${v.deleted} 笔</dd><dt>分类</dt><dd>${v.categories} 个</dd><dt>文字与循环规则</dt><dd>${v.text_batches || 0} 批</dd><dt>支出合计</dt><dd>${money(v.expense_minor)}</dd><dt>收入合计</dt><dd>${money(v.income_minor)}</dd><dt>日期范围</dt><dd>${v.from ? `${e(v.from)}<br>至 ${e(v.to)}` : '空账本'}</dd></dl></div>`;
 }
 async function previewBackup(file) {
   const modal = s.modal, area = document.querySelector('#backup-preview');
@@ -242,7 +250,7 @@ async function startRestore() {
   const progress = document.querySelector('#restore-progress'), data = modal.file;
   try {
     progress.innerHTML = '<p>正在准备候选账本…</p>';
-    const job = await request('/restores', { method: 'POST', body: { fingerprint: modal.preview.fingerprint, ledger: data.ledger, categories: data.categories, entry_count: data.entries.length } });
+    const job = await request('/restores', { method: 'POST', body: { fingerprint: modal.preview.fingerprint, ledger: data.ledger, categories: data.categories, entry_count: data.entries.length, ...(data.text_batches?{text_batches:data.text_batches,text_slots:data.text_slots||[]}:{} ) } });
     modal.job = job;
     if (!job.complete) {
       for (let i = 0; i < data.entries.length; i += 50) {
@@ -327,6 +335,7 @@ document.addEventListener('click', async event => {
     else if (action === 'export-all') await exportCsv(false);
     else if (action === 'export-filter') await exportCsv(true);
     else if (action === 'backup') openBackup();
+    else if (action === 'text-records') await openTextRecords();
     else if (action === 'download-backup') await downloadBackup();
     else if (action === 'start-restore') await startRestore();
     else if (action === 'activate-ledger') await activateLedger(id);

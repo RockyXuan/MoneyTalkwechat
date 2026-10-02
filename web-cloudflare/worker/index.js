@@ -5,6 +5,7 @@ import { ApiError, authenticate, requireSameOrigin } from './auth.js';
 import { all, first, statement, stamp, initUser, ownedLedger, validateCategory, operation, entryInsert, filters, categoryRow, exportBackup, exportCsv } from './store.js';
 import { entryInput, categoryInput, validDate, today, periodRange, buckets } from '../shared/domain.js';
 import { registerRestores } from './restores.js';
+import { registerTextRecords } from './text-records.js';
 
 const entryColumns = 'e.id,e.type,e.amount_minor,e.category_id,e.occurred_on,e.note,e.version,e.created_at,e.updated_at,e.deleted_at,c.name AS category_name,c.color_key,c.icon';
 const joined = 'entries e JOIN categories c ON c.ledger_id=e.ledger_id AND c.id=e.category_id';
@@ -144,6 +145,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
   });
   app.get('/api/backup', async c => c.json(await exportBackup(c.env.DB, c.get('ledger'))));
   registerRestores(app);
+  registerTextRecords(app);
   app.all('/api/*', c => c.json({ error: { code: 'NOT_FOUND', message: '接口不存在' } }, 404));
   app.get('*', c => c.env.ASSETS ? c.env.ASSETS.fetch(c.req.raw) : c.text('MoneyTalk API', 200));
   app.onError((error, c) => {

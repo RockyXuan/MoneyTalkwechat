@@ -164,3 +164,73 @@ test('empty backup restores safely and malformed preview performs no ledger writ
   assert.equal((await req(`/api/restores/${job.id}/finish`, { user, method: 'POST', body: {} })).status, 200);
   assert.equal((await req('/api/session', { user })).data.ledger.id, s.ledger.id);
 });
+
+async function textFixture(items,original='虚构循环测试'){return (await req('/api/text-batches',{method:'POST',body:{original_text:original,items}})).data.batch;}
+const textItem=(extra={})=>({id:'item-1',raw:'虚构测试',title:'虚构循环服务',type:'expense',amount_minor:1800,category_id:'other',cycle:'monthly',occurred_on:null,start_month:'2026-01',through_month:'2026-03',charge_day:15,short_month:'pending',ongoing:false,questions:[],selected:true,...extra});
+test('text candidates persist without expenses; permission and version boundary are enforced',async()=>{
+ const count=(await req('/api/entries')).data.totals.count;
+ const batch=await textFixture([textItem({start_month:null,charge_day:null,questions:['起始月未知']})],'虚构待核对');
+ assert.ok((await req('/api/text-batches')).data.batches.some(b=>b.id===batch.id));assert.equal((await req('/api/entries')).data.totals.count,count);
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',user:'bob',body:{}})).status,404);
+ const preview=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;assert.equal(preview.count,0);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:preview.preview_hash}})).status,400);
+});
+test('text batch confirmation is atomic, idempotent, conflict-safe and never resurrects deleted slots',async()=>{
+ const batch=await textFixture([textItem()],'虚构确认');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;assert.equal(plan.count,3);assert.equal(plan.expense_minor,5400);
+ const body={version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true},key=crypto.randomUUID();
+ const [a,b]=await Promise.all([req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body,key}),req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body,key:crypto.randomUUID()})]);
+ assert.equal([a.status,b.status].filter(s=>s===200).length,1);
+ const result=a.status===200?a:b;assert.equal(result.data.entry_ids.length,3);
+ const duplicateKey=a.status===200?key:null;if(duplicateKey)assert.deepEqual((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body,key})).data,result.data);
+ const saved=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;assert.equal(saved.count,0);
+ const id=result.data.entry_ids[0];await req(`/api/entries/${id}/delete`,{method:'POST',body:{version:1}});
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data.count,0);
+ const slots=await db.prepare('SELECT COUNT(*) AS n FROM text_slots WHERE batch_id=?').bind(batch.id).first();assert.equal(slots.n,3);
+});
+test('text confirmations require refreshed preview and explicit same-date amount acknowledgement',async()=>{
+ const batch=await textFixture([textItem({cycle:'single',occurred_on:'2026-01-15',amount_minor:999,title:'虚构单笔冲突'})],'虚构同额');
+ let plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ await req('/api/entries',{method:'POST',body:expense({occurred_on:'2026-01-15',amount_minor:999,note:'另一笔测试'})});
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash}})).status,409);
+ plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;assert.equal(plan.duplicates.length,1);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash}})).status,409);
+});
+test('mixed text batches allow unresolved fields to be completed while confirmed rules stay locked; pause suppresses reminders',async()=>{
+ const items=[textItem({start_month:'2025-08',through_month:'2025-08',amount_minor:127}),textItem({id:'item-2',title:'虚构待补全',start_month:null,charge_day:null})];
+ let batch=await textFixture(items,'虚构部分确认');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ assert.equal(plan.count,1);assert.equal(plan.pending_count,1);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true}})).status,200);
+ const value={original_text:batch.original_text,items:structuredClone(items),version:2};value.items[1].start_month='2025-07';value.items[1].through_month='2025-07';value.items[1].charge_day=20;
+ const patched=await req(`/api/text-batches/${batch.id}`,{method:'PATCH',body:value});assert.equal(patched.status,200);batch=patched.data.batch;
+ const locked=structuredClone(value);locked.version=3;locked.items[0].amount_minor=200;
+ assert.equal((await req(`/api/text-batches/${batch.id}`,{method:'PATCH',body:locked})).status,409);
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data.count,1);
+ assert.equal((await req(`/api/text-batches/${batch.id}/status`,{method:'POST',body:{version:3,status:'paused'}})).status,200);
+ const current=(await req('/api/text-batches')).data.batches.find(b=>b.id===batch.id);assert.equal(current.status,'paused');assert.equal(current.due_count,0);
+ const after=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:4,preview_hash:after.preview_hash}})).status,409);
+});
+test('editing a generated expense date preserves the original cycle marker and produces a valid backup',async()=>{
+ const batch=await textFixture([textItem({start_month:'2025-06',through_month:'2025-06',amount_minor:131})],'虚构日期修正');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ const confirmed=await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true}});
+ const id=confirmed.data.entry_ids[0];
+ assert.equal((await req(`/api/entries/${id}`,{method:'PATCH',body:{...expense({amount_minor:131,category_id:'other',occurred_on:'2025-06-16',note:'虚构日期修正'}),version:1}})).status,200);
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data.count,0);
+ const backup=(await req('/api/backup')).data;
+ assert.equal((await req('/api/restores/preview',{method:'POST',body:backup})).data.valid,true);
+ assert.equal(backup.text_slots.find(s=>s.entry_id===id).occurred_on,'2025-06-15');
+});
+test('new backup round trip keeps pending text, generated cycles and prevents repeated entries; old backups stay valid',async()=>{
+ const backup=(await req('/api/backup')).data;assert.equal(backup.version,2);assert.ok(backup.text_batches.length);assert.ok(backup.text_slots.length);
+ const preview=(await req('/api/restores/preview',{method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:backup.entries.length,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ for(let i=0;i<backup.entries.length;i+=50)assert.equal((await req(`/api/restores/${job.id}/entries`,{method:'POST',body:{entries:backup.entries.slice(i,i+50)}})).status,200);
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{method:'POST',body:{}})).status,200);
+ const restored=(await req('/api/backup',{ledger:job.id})).data;assert.deepEqual(backupContent(restored),backupContent(backup));
+ const done=restored.text_batches.find(b=>b.status==='active');assert.equal((await req(`/api/text-batches/${done.id}/preview`,{method:'POST',body:{},ledger:job.id})).data.count,0);
+ const bad=structuredClone(backup);bad.text_slots[0].entry_id='missing';assert.equal((await req('/api/restores/preview',{method:'POST',body:bad})).data.valid,false);
+ assert.equal((await req('/api/restores/preview',{method:'POST',body:demoBackup()})).data.valid,true);
+});
