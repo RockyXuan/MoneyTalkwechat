@@ -17,10 +17,13 @@
     "demo:seed": "node scripts/seed.mjs",
     "preview": "wrangler dev --env local --ip 127.0.0.1 --port 8787",
     "deploy:check": "wrangler deploy --dry-run --env=\"\"",
-    "legacy:convert": "node scripts/convert-legacy.mjs"
+    "legacy:convert": "node scripts/convert-legacy.mjs",
+    "bills:review": "node scripts/review-bills.mjs"
   },
   "dependencies": {
+    "@zip.js/zip.js": "2.22.0",
     "chart.js": "4.5.1",
+    "csv-parse": "7.0.3",
     "hono": "4.13.7",
     "jose": "6.2.12",
     "lucide": "1.45.0",

@@ -3,10 +3,11 @@
   "name": "moneytalk-web",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-14",
-  "workers_dev": false,
+  "workers_dev": true,
   "preview_urls": false,
   "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
   "vars": { "ENVIRONMENT": "production" },
+  "d1_databases": [{ "binding": "DB", "database_name": "moneytalk-web-production", "database_id": "91436c72-99e9-4ef7-9160-37249d546eef", "migrations_dir": "migrations" }],
   "env": {
     "local": {
       "name": "moneytalk-local",

@@ -11,4 +11,7 @@ ALTER TABLE restores_next RENAME TO restores;
 CREATE UNIQUE INDEX restores_reusable ON restores(owner_id,fingerprint) WHERE reusable=1;
 CREATE TRIGGER category_type_locked BEFORE UPDATE OF type ON categories
 WHEN OLD.type != NEW.type
-BEGIN SELECT CASE WHEN EXISTS(SELECT 1 FROM entries WHERE ledger_id=OLD.ledger_id AND category_id=OLD.id) THEN RAISE(ABORT,'category_type_mismatch') END; END;
+BEGIN
+  SELECT RAISE(ABORT,'category_type_mismatch')
+  WHERE EXISTS(SELECT 1 FROM entries WHERE ledger_id=OLD.ledger_id AND category_id=OLD.id);
+END;

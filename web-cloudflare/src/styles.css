@@ -13,3 +13,25 @@ dialog{border:0;border-radius:20px;padding:0;width:min(520px,calc(100vw - 32px))
 @keyframes shimmer{to{background-position:-200%}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 [hidden]{display:none!important}
+/* Read-only historical evidence review, scoped to the settings dialog. */
+.review-account { display: grid; gap: 8px; margin: 20px 0; }
+.review-account input { padding: 12px; border: 1px solid #d8e0eb; border-radius: 10px; font: inherit; font-size: 16px; width: 100%; }
+.review-account small { color: #65748b; }
+#review-file-details { margin-bottom: 16px; }
+#review-file-details summary { min-height: 44px; padding: 12px 0; font-weight: 600; cursor: pointer; }
+.review-notice { background: #eef4ff; padding: 15px; border-radius: 12px; line-height: 1.7; color: #244573; }
+.review-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.review-metrics > div { background: #f6f8fb; border-radius: 12px; padding: 14px; min-width: 0; }
+.review-metrics span { display: block; font-size: 12px; color: #65748b; margin-bottom: 8px; }
+.review-metrics strong { font-size: 21px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.review-sources { display: grid; gap: 8px; margin: 14px 0 22px; }
+.review-sources > div { display: grid; gap: 5px; padding: 12px 0; border-bottom: 1px solid #e8edf4; }
+.review-sources span, .review-sources small { color: #65748b; overflow-wrap: anywhere; }
+.review-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; margin: 14px 0; }
+.review-toolbar label { display: flex; align-items: center; min-height: 44px; gap: 8px; }
+.review-event { border: 1px solid #e1e7ef; border-radius: 12px; padding: 14px; margin-bottom: 10px; overflow-wrap: anywhere; }
+.review-event > div { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.review-event .money { white-space: nowrap; }
+.review-event p, .review-event small { color: #65748b; font-size: 12px; line-height: 1.65; }
+.review-event ul { padding-left: 20px; color: #915716; font-size: 13px; line-height: 1.65; }
+@media (max-width: 767px) { .review-metrics strong { font-size: 18px; } .review-event > div { flex-wrap: wrap; } }

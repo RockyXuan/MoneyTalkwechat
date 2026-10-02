@@ -30,9 +30,15 @@ CREATE TABLE entries (
 CREATE INDEX entries_period ON entries(ledger_id,deleted_at,occurred_on DESC,id DESC);
 CREATE INDEX entries_category ON entries(ledger_id,category_id,occurred_on);
 CREATE TRIGGER entry_type_insert BEFORE INSERT ON entries
-BEGIN SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM categories WHERE ledger_id=NEW.ledger_id AND id=NEW.category_id AND type=NEW.type) THEN RAISE(ABORT,'category_type_mismatch') END; END;
+BEGIN
+  SELECT RAISE(ABORT,'category_type_mismatch')
+  WHERE NOT EXISTS(SELECT 1 FROM categories WHERE ledger_id=NEW.ledger_id AND id=NEW.category_id AND type=NEW.type);
+END;
 CREATE TRIGGER entry_type_update BEFORE UPDATE OF category_id,type ON entries
-BEGIN SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM categories WHERE ledger_id=NEW.ledger_id AND id=NEW.category_id AND type=NEW.type) THEN RAISE(ABORT,'category_type_mismatch') END; END;
+BEGIN
+  SELECT RAISE(ABORT,'category_type_mismatch')
+  WHERE NOT EXISTS(SELECT 1 FROM categories WHERE ledger_id=NEW.ledger_id AND id=NEW.category_id AND type=NEW.type);
+END;
 CREATE TABLE operations (
   user_id TEXT NOT NULL REFERENCES users(id), ledger_id TEXT NOT NULL REFERENCES ledgers(id), key TEXT NOT NULL,
   request_hash TEXT NOT NULL, response_json TEXT NOT NULL, created_at TEXT NOT NULL,

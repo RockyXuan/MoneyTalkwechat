@@ -1,6 +1,6 @@
 # MoneyTalk 网页架构与数据边界
 
-更新：2026-09-14。以下描述 `web-cloudflare/` 的实际实现；云端资源尚未创建或部署。
+更新：2026-10-02。以下描述 `web-cloudflare/` 的实际实现；受保护的 Worker/D1 已上线，桌面正常记账闭环验证见 [云端记录](../web-cloudflare/docs/cloudflare-deployment.md)。真实历史导入和真机另行验收。
 
 ## 最小运行路径
 
@@ -14,7 +14,7 @@
 
 用户 ID 来自经验证的签发者及 subject。每个查询和写入都检查 ledger_id 的拥有者。`X-Ledger-Id` 只用于选择账本，不能绕过服务器权限。首版没有共享成员模型。写入需要同源 Origin 和 JSON；API 返回 no-store。静态响应提供 CSP、禁止嵌入和类型嗅探等头。
 
-本地免登录需要三个条件同时成立：`ENVIRONMENT=local`、显式开启 `LOCAL_DEV_MODE`、请求位于回环地址。仅绑定 127.0.0.1，显示“本地预览”。这不代表真实登录已接通。生产关闭 workers.dev 和预览 URL；整个自定义域名及 `/api/*` 必须由 Access 覆盖。
+本地免登录需要三个条件同时成立：`ENVIRONMENT=local`、显式开启 `LOCAL_DEV_MODE`、请求位于回环地址。仅绑定 127.0.0.1，显示“本地预览”。生产已开启 workers.dev，整个主机名和 `/api/*` 受 Access 精确拥有者规则保护，预览 URL 关闭；未启用生产本地绕过。
 
 ## 账本模型
 
@@ -44,14 +44,20 @@ CSV 可导出当前筛选或全部有效账目；不受账单分页限制，文�
 
 当前恢复入口上限为 20 MB、50,000 条记录、100 个分类。551 条完整统计和 61 条端到端恢复已经本地验证；接近上限的内存、延迟及导出往返未验证，应在长期导入大量真实数据前压测。D1 平台备份/Time Travel 不替代用户自己下载的备份；生产启用后另做恢复演练。
 
-## 旧代码如何处理
+## 历史消费的只读核对阶段
+
+原始 CSV／ZIP → 浏览器内存中的来源证据 → 去重／冲突／异常候选报告。当前不调用入账接口，也不将文件送进 Worker 或第三方 AI。本机脚本复用同一解析器，在 Git 外或已忽略的 local-data 目录生成原件副本、报告和完成标记。csv-parse 处理 CSV 结构，zip.js 原生入口处理加密包；大小／数量限制和整数分／日期规则复用并补充。
+
+现有 entries、restores 结构没有来源关联及退款模型，不把只读候选报告伪装成 MoneyTalk 备份。白条与两种月付原始格式需取得样本后定稿；未来来源证据、正式账目、批次撤销与手录关联模型按 [计划](../web-cloudflare/docs/bill-sync-research-plan.md) 推进，不为一次核对先创建长期采集密钥。
+
+## 旧代码如何处理（保留来源）
 
 复用原蓝白色视觉、四页导航、胶囊分类表达、分类名称与可用文案；核对旧 expenses 的字段，保留源 ID 映射。原 Taro 页面容器、平台输入/登录、NestJS 服务、Supabase 查询、AI 自动兜底入账均不直接移植。
 
 离线转换脚本只接受用户明确提供的 expenses JSON 和指定旧 user_id，原始文件完整另存；空金额、坏日期、候选记录、未知类型进入异常清单，不自动变成 0。仅生成候选备份与核对报告，不访问数据库。真实旧数据转换、人工核对和迁移均未执行。
 
-## 云端尚待验证
+## 云端剩余验证
 
-需要后续明确授权后配置测试 D1、自定义域名及 Access，测试真实登录、另一身份越权、保存读回、删除恢复、两设备冲突、国内普通网络和 iPhone。没有引入 R2、KV、队列或 AI；这些不属于首版必需项。普通 Cloudflare 不代表大陆节点服务或永久免费承诺。
+当前 Worker/D1、Access 及免费网址已配置，真实桌面登录、保存读回、删除恢复通过；仍需验证另一身份实际登录、两设备冲突、国内普通网络、iPhone 与生产导出恢复。测试记账授权已取得，同类测试不重复询问；真实历史数据写入需要具体候选预览。没有引入 R2、KV、队列或 AI；这些不属于首版必需项。普通 Cloudflare 不代表大陆节点服务或永久免费承诺。
 
 官方依据：[Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[D1 batch 事务](https://developers.cloudflare.com/d1/worker-api/d1-database/)、[Access JWT 校验](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)、[China Network](https://developers.cloudflare.com/china-network/)。

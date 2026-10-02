@@ -1,4 +1,4 @@
-> **Mac 接手执行更新 · 2026-09-14**：已克隆准确仓库和分支，起点 f2ad8a70cbb2b5cfa2968f282988e0d37a716e72，克隆时远端没有后续提交。新实现位于 [web-cloudflare](../web-cloudflare/README.md)，包含本地响应式页面、Worker/D1、导出恢复及自动测试。旧 src/server 未覆盖。当前只完成本地虚构数据验收，未配置真实 Access、未部署、未迁移旧生产数据。最新事实见 [验收记录](../web-cloudflare/docs/acceptance.md)。下文保留 Windows 交接原文，文中的“尚未实现”指交接当时状态。
+> **Mac 接手执行更新 · 2026-10-02**：准确仓库与指定分支不变，接手起点 f2ad8a70cbb2b5cfa2968f282988e0d37a716e72。新网页位于 [web-cloudflare](../web-cloudflare/README.md)，旧 src/server 未覆盖。受保护的免费网址已启用，桌面正常记账闭环通过，见 [云端记录](../web-cloudflare/docs/cloudflare-deployment.md)。历史 CSV／ZIP 只读核对已模拟验证；用户确认白条、美团月付、抖音月付均常用，历史批量处理、近期手录、定期核对，见 [接入进度](../web-cloudflare/docs/history-import-progress.md)。真实历史迁移、真机与国内普通网络未验证。能独立完成的工作持续推进，阻塞边界见 AGENTS.md。下文保留 Windows 原文，其“尚未实现”指交接当时状态。
 
 # Mac Codex 交接：MoneyTalk HTML / Cloudflare 重启
 

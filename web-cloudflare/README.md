@@ -1,8 +1,8 @@
-# MoneyTalk Web · 本地首版
+# MoneyTalk Web
 
 普通 HTML/CSS/JavaScript 页面 + Cloudflare Worker + D1。当前可运行的版本在此目录，与旧 Taro/NestJS 源码分开。
 
-**已实现与本地验证不等于云端上线。** 当前只使用虚构账目；Cloudflare Access 真实登录、域名、大陆网络和真机尚未验收。进度见 [验收记录](docs/acceptance.md)。
+**2026-10-02：云端网址已启用，桌面真实登录、保存、刷新读回、修改、删除与回收站恢复已验证。** 入口为 https://moneytalk-web.550754381zzx.workers.dev ，由 Cloudflare Access 保护，仅允许拥有者身份。唯一测试记录已移入回收站，不计入有效账目和统计；真机和大陆普通网络尚未验收。进度见 [部署记录](docs/cloudflare-deployment.md) 与 [本地验收记录](docs/acceptance.md)。
 
 ## 本地启动
 
@@ -40,6 +40,7 @@ pnpm verify
 | `pnpm demo:seed` | 仅本地的虚构演示账本 |
 | `pnpm deploy:check` | Wrangler dry-run，仅检查打包，不发布 |
 | `pnpm legacy:convert` | 离线旧 expenses JSON 转换，不连接旧数据库 |
+| `pnpm bills:review` | 原始 CSV／ZIP 批量离线核对，输出原件副本和候选报告，不写入账本 |
 
 `.wrangler/` 为本机开发数据库。`dist/`、`node_modules/`、`.wrangler/`、`.dev.vars*` 和日志不进入 Git。`.dev.vars.example` 仅有占位符。不要删除 `.wrangler/` 来修复页面错误，以免丢失本地账目；先从页面下载备份。
 
@@ -55,6 +56,8 @@ pnpm verify
 
 ## 备份与旧数据
 
+“我的 → 历史账单核对”提供支付宝手机 CSV、微信 CSV 及包含 CSV 的加密 ZIP 核对、重复证据检测、退款／还款提示和报告下载。所有文件处理在浏览器内存进行，关闭后清除；没有写入账本入口。白条、美团月付、抖音月付消费明细、邮件自动采集、已有手录匹配均未接通。不要把候选金额或观察日期当完整账单。详见 [接入进度与样本步骤](docs/history-import-progress.md) 和 [调研计划](docs/bill-sync-research-plan.md)。
+
 “我的 → 备份与恢复”可下载完整 JSON，包括回收站；CSV 仅包含有效账目。桌面账单页可导出当前筛选结果。备份校验展示日期、条数、收支、分类和异常，再写入独立候选账本；未校验完成不允许切换。
 
 旧数据转换必须明确指定文件、全新输出目录和原 user_id：
@@ -65,15 +68,16 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 
 输出原文件副本、`candidate-backup.json` 和 `review-report.json`，不覆盖已有目录，不上传或写入账本。异常行保留在原文件，报告标注原因。旧 expenses 被明确解释为支出，不处理订阅推算事件、音频或微信身份绑定。新分类默认灰色，之后可以手动调整。真实数据必须保存在 Git 外，核对完成前不宣布迁移成功。
 
-## 云端接入前的工作
+## 云端部署与剩余验收
 
-仓库未包含生产数据库 ID、账号 ID、域名、邮箱或密钥，生产 API 会因未配置而拒绝提供账目。只有后续得到测试部署授权，才执行下列步骤：
+2026-10-02 已在独立生产 D1 应用两次迁移，为完整 workers.dev 主机名创建 Access 应用与精确拥有者邮箱规则。服务端通过 Cloudflare secret 配置 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD`、`OWNER_EMAIL`；这些值不放入源码。`workers_dev=true`，`preview_urls=false`，生产未设置本地绕过开关。没有导入本地演示或真实账目。当前版本与验证证据见 [部署记录](docs/cloudflare-deployment.md)。
 
-1. 为测试环境创建 D1 并绑定 `DB`，按顺序应用 migrations，使用虚构数据。
-2. 绑定专门测试域名，Access 保护整个站点及 API；使用拥有者邮箱白名单或合适的身份提供者。
-3. 服务端配置 `ACCESS_TEAM_DOMAIN`、`ACCESS_AUD`、`OWNER_EMAIL`，保持生产 `ENVIRONMENT=production`，不设置本地绕过开关。
-4. 确认 workers.dev 和 preview_urls 均关闭，检查域名及 API 没有可绕过入口。
-5. 验证真实登录、错误身份、保存读回、重试去重、双设备冲突、导出恢复及国内普通网络。通过后再讨论真实数据和正式使用。
+后续完成步骤：
+
+1. 已获测试写入授权，生产保存、刷新读回、修改、删除与回收站恢复通过；唯一测试账目保留在回收站。
+2. 在真实手机验证登录及四页操作，在国内普通网络下验证加载和保存。
+3. 验证错误身份、重试去重、双设备冲突和真实服务导出恢复。不要用本地通过代替生产结果。
+4. 如增加域名或预览入口，先为新增入口配置同等保护并检查 API；不得直接开放无保护入口。
 
 不默认创建 R2、KV、队列或 AI 服务。详细身份及数据模型见 [架构说明](../docs/architecture.md)。
 
