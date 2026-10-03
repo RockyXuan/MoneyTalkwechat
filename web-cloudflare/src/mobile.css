@@ -36,3 +36,6 @@ button,a{transition:background-color .16s,color .16s,box-shadow .16s}button:acti
 @media(max-width:767px){.page-settings .setting-row[data-action=export-all],.page-settings .setting-row[data-action=backup]{display:none}.text-flow #text-work:has(.input-zone){margin-top:auto}.text-flow .flow-success .preview-total{line-height:1.4}.text-flow .dialog-intro{font-size:13px}}
 
 @media(max-width:767px){.text-button,.icon-button{min-height:44px}.icon-button{min-width:44px}.dialog-bottom-close:has([data-action=close-dialog]){flex-shrink:0}dialog[data-type=discard] .dialog-bottom-close{display:none}.record-layout .card-heading{margin-bottom:4px}}
+
+.filtered-download{width:100%;min-height:48px;margin-top:14px}
+@media(max-width:767px){.record-layout{align-items:stretch}}

@@ -12,6 +12,8 @@
     "build": "vite build",
     "check": "tsc --noEmit",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:ui": "playwright test",
+    "test:ui:coverage": "node scripts/ui-coverage.mjs",
     "verify": "pnpm check && pnpm test && pnpm build",
     "db:local": "wrangler d1 migrations apply moneytalk-local --local --env local",
     "demo:seed": "node scripts/seed.mjs",

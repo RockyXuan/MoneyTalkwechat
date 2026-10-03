@@ -11,11 +11,13 @@ const storage = { get(key, fallback) { try { return JSON.parse(localStorage.getI
 const knownPages = ['record', 'bills', 'stats', 'settings'];
 const firstPage = () => knownPages.includes(location.pathname.slice(1)) ? location.pathname.slice(1) : matchMedia('(max-width: 767px)').matches ? 'record' : 'stats';
 const initialParams=new URLSearchParams(location.search);
+const routeFilters = params => ({ type: ['expense', 'income'].includes(params.get('type')) ? params.get('type') : '', category_id: /^[A-Za-z0-9_-]{1,100}$/.test(params.get('category_id') || '') ? params.get('category_id') : '', q: (params.get('q') || '').slice(0, 200) });
+const routeOffset = params => { const value = Number(params.get('offset')); return Number.isSafeInteger(value) && value >= 0 && value <= 10000000 ? Math.floor(value / 50) * 50 : 0; };
 const initialRange=validDate(initialParams.get('from'))&&validDate(initialParams.get('to'))&&initialParams.get('from')<=initialParams.get('to')?{from:initialParams.get('from'),to:initialParams.get('to')}:null;
 const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
-const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: { type: '', category_id: '', q: '' }, billRange: initialRange, offset: 0, error: '', draft: null, modal: null };
+const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
-let closeTimer, dialogReturnFocus;
+let closeTimer, dialogReturnFocus, dialogTrigger;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: s.session?.today || today(), note: '', expanded: false, error: '', pending: null });
 const draftKey = () => `moneytalk:draft:${s.session.user.id}:${s.session.ledger.id}`;
@@ -71,6 +73,7 @@ function billQuery() { return { ...(s.billRange || periodRange(s.month, 'month',
 async function load({ quiet = false } = {}) {
   if (!s.session) return;
   const routeParams=new URLSearchParams();if(['bills','stats'].includes(s.page)){routeParams.set('month',s.month);if(s.page==='stats')routeParams.set('period',s.period);if(s.page==='bills'&&s.billRange){routeParams.set('from',s.billRange.from);routeParams.set('to',s.billRange.to);}}
+  if (s.page === 'bills') { for (const [key, value] of Object.entries(s.filters)) if (value) routeParams.set(key, value); if (s.offset) routeParams.set('offset', String(s.offset)); }
   history.replaceState(null,'',`/${s.page}${routeParams.size?'?'+routeParams:''}`);
   const ticket = ++epoch, page = s.page;
   s.error = '';
@@ -99,7 +102,9 @@ function navigate(page, replace = false) {
 }
 function openDialog(title, body, { type = '', wide = false } = {}) {
   clearTimeout(closeTimer);dialog.classList.remove('closing');
-  if(!dialog.open)dialogReturnFocus=document.activeElement;
+  // WebKit does not focus buttons on pointer activation. Capture the explicit
+  // opener so dismissing a sheet returns keyboard users to the same control.
+  if(!dialog.open){dialogReturnFocus=dialogTrigger?.isConnected?dialogTrigger:document.activeElement;dialogTrigger=null;}
   dialog.className = wide ? 'entry-dialog' : '';
   dialog.dataset.locked = 'false';
   dialog.dataset.type = type || s.modal?.type || 'general';
@@ -170,7 +175,7 @@ async function saveEntry(form) {
     draft.saving = false;
     if (context === 'dialog') closeDialog(true);
     s.receipt={count:1,expense_minor:draft.type==='expense'?result.entry.amount_minor:0,income_minor:draft.type==='income'?result.entry.amount_minor:0,from:result.entry.occurred_on,to:result.entry.occurred_on};
-    toast(wasEdit ? '修改已保存到云端' : `${money(result.entry.amount_minor)} 已入账 · ${result.entry.occurred_on}`);
+    toast(wasEdit ? `修改已保存到${s.session.local ? '本地' : '云端'}` : `${money(result.entry.amount_minor)} 已入账 · ${result.entry.occurred_on}`);
     await load({ quiet: true });
     return result;
   } catch (error) {
@@ -209,7 +214,7 @@ function refreshStatsOptions(){if(s.modal?.type!=='stats-options')return;for(con
 function openFilters() {
   const range = s.billRange || periodRange(s.month, 'month', s.session.today);
   s.modal = { type: 'filters' };
-  openDialog('筛选账单', `<form class="standard-form" data-form="filters"><label>搜索<input name="q" placeholder="备注、分类或金额" maxlength="200" value="${e(s.filters.q)}" /></label><label>收支<select name="type"><option value="">全部</option><option value="expense" ${s.filters.type==='expense'?'selected':''}>支出</option><option value="income" ${s.filters.type==='income'?'selected':''}>收入</option></select></label><label>开始日期<input type="date" name="from" required value="${e(range.from)}" /></label><label>结束日期<input type="date" name="to" required value="${e(range.to)}" /></label><label>分类<select name="category_id"><option value="">全部分类</option>${s.categories.map(c => `<option value="${e(c.id)}" ${s.filters.category_id === c.id ? 'selected' : ''}>${e(c.name)}${c.archived ? '（已停用）' : ''}</option>`).join('')}</select></label><p class="field-error" id="filters-error" role="alert"></p><div class="dialog-footer"><button class="button secondary" type="button" data-action="close-dialog">取消</button><button class="button primary" type="submit">应用筛选</button></div></form>`);
+  openDialog('筛选账单', `<form class="standard-form" data-form="filters"><label>搜索<input name="q" placeholder="备注、分类或金额" maxlength="200" value="${e(s.filters.q)}" /></label><label>收支<select name="type"><option value="">全部</option><option value="expense" ${s.filters.type==='expense'?'selected':''}>支出</option><option value="income" ${s.filters.type==='income'?'selected':''}>收入</option></select></label><label>开始日期<input type="date" name="from" required value="${e(range.from)}" /></label><label>结束日期<input type="date" name="to" required value="${e(range.to)}" /></label><label>分类<select name="category_id"><option value="">全部分类</option>${s.categories.map(c => `<option value="${e(c.id)}" ${s.filters.category_id === c.id ? 'selected' : ''}>${e(c.name)}${c.archived ? '（已停用）' : ''}</option>`).join('')}</select></label><p class="field-error" id="filters-error" role="alert"></p><div class="dialog-footer"><button class="button secondary" type="button" data-action="close-dialog">取消</button><button class="button primary" type="submit">应用筛选</button></div></form><button class="button secondary filtered-download" data-action="export-filter">${icon('download', 16)}导出当前显示的 ${s.bills?.totals.count || 0} 笔账单</button>`);
 }
 function openCategories() { s.modal = { type: 'categories' }; openDialog('分类管理', categoryManager(s)); }
 function editCategory(id) { s.modal = { type: 'category', category: s.categories.find(c => c.id === id) || null, key: crypto.randomUUID() }; openDialog(id ? '编辑分类' : '添加分类', categoryEditor(s.modal.category || {})); }
@@ -321,6 +326,7 @@ document.addEventListener('click', async event => {
   const route = event.target.closest('[data-route]');
   if (route && !event.metaKey && !event.ctrlKey && !event.shiftKey) { event.preventDefault(); navigate(route.dataset.route); return; }
   const target = event.target.closest('[data-action]'); if (!target || target.disabled) return;
+  if (!dialog.open) dialogTrigger = target;
   const { action, value, id, context } = target.dataset;
   try {
     if (action === 'login') { sessionStorage.removeItem('moneytalk:local-logged-out'); location.reload(); }
@@ -399,7 +405,7 @@ document.addEventListener('submit', async event => {
   } catch (error) { toast(error.message); }
 });
 dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
-window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
+window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);s.filters=routeFilters(p);s.offset=routeOffset(p);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
 window.addEventListener('beforeunload', event => { if (s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && s.session && !dialog.open && !s.draft?.saving && !document.activeElement?.matches('input,textarea')) { s.session.today = today(); load({ quiet: true }); } });
 window.addEventListener('online', () => { if (s.error) load(); });

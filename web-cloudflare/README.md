@@ -6,6 +6,8 @@
 
 **2026-10-03：手机优先界面已发布到原云端网址。** 入口为 https://moneytalk-web.550754381zzx.workers.dev ，由 Cloudflare Access 保护，仅允许拥有者身份。用户已确认真实手机可打开；四页主要操作移到底部，文字草稿与正式入账明确区分，跨月结果可直接查看并刷新保留范围。实现、调研与剩余验收见 [手机打磨记录](docs/mobile-polish-plan.md)、[部署记录](docs/cloudflare-deployment.md)。真实 iPhone 键盘、操作手感和国内普通网络的完整流程仍待验收。
 
+本轮全功能回归：Chromium/WebKit **70/70**、原有测试 **52/52** 通过，修复筛选刷新、手机筛选导出、日期清除与 WebKit 弹窗返回焦点。两引擎均覆盖现有 45 类页面操作和 15 类文字流程操作；详见 [验收计划](docs/ui-test-plan.md)、[结果与复测方式](docs/ui-test-results-2026-10-03.md)。工程和线上验证通过后交由用户做真实手机最终验收。
+
 ## 本地启动
 
 固定 Node 22.23.2（`.nvmrc`）、pnpm 11.19.0（`packageManager`）。在当前目录执行：
@@ -37,6 +39,8 @@ pnpm verify
 | `pnpm build` | 构建静态文件到 dist |
 | `pnpm check` | JavaScript 语法与项目配置检查；不等同完整静态类型验证 |
 | `pnpm test` | 单元测试与隔离 Miniflare D1 集成测试 |
+| `pnpm test:ui` | Chromium/WebKit 全功能界面验收，自动使用独立本地测试账本 |
+| `pnpm test:ui:coverage` | 对照页面事件检查按钮操作覆盖，两种引擎均须无遗漏 |
 | `pnpm verify` | check、test、build |
 | `pnpm db:local` | 只应用本地 D1 迁移 |
 | `pnpm demo:seed` | 仅本地的虚构演示账本 |
