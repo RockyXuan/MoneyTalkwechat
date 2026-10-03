@@ -42,6 +42,7 @@ pnpm verify
 | `pnpm test:ui` | Chromium/WebKit 全功能界面验收，自动使用独立本地测试账本 |
 | `pnpm test:ui:coverage` | 对照页面事件检查按钮操作覆盖，两种引擎均须无遗漏 |
 | `pnpm verify` | check、test、build |
+| `pnpm verify:release` | 上线前完整门禁：verify → Chromium/WebKit 端到端测试 → 页面操作覆盖检查；失败即停止 |
 | `pnpm db:local` | 只应用本地 D1 迁移 |
 | `pnpm demo:seed` | 仅本地的虚构演示账本 |
 | `pnpm deploy:check` | Wrangler dry-run，仅检查打包，不发布 |

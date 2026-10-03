@@ -15,6 +15,7 @@
     "test:ui": "playwright test",
     "test:ui:coverage": "node scripts/ui-coverage.mjs",
     "verify": "pnpm check && pnpm test && pnpm build",
+    "verify:release": "pnpm verify && pnpm test:ui && pnpm test:ui:coverage",
     "db:local": "wrangler d1 migrations apply moneytalk-local --local --env local",
     "demo:seed": "node scripts/seed.mjs",
     "preview": "wrangler dev --env local --ip 127.0.0.1 --port 8787",
