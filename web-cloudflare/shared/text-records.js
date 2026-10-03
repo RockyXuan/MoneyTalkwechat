@@ -22,10 +22,12 @@ export function parseTextRecords(raw, currentDay = today()) {
       masked=masked.replace(/\d{2,4}\s*年|(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
       const priced=/[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
       if(at===0&&!priced&&/^(?:从|今天|昨日|昨天|前天|截至|截止)/.test(chunk)&&chunks.length>1){prefix=chunk;continue;}
+      if(prefix&&!priced){prefix+='，'+chunk;continue;}
       if(prefix){chunk=prefix+'，'+chunk;prefix='';}
       if(clauses.length&&(!priced||/^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(chunk)))clauses[clauses.length-1]+='，'+chunk;
       else clauses.push(chunk);
     }
+    if(prefix)clauses.push(prefix);
   }
   if (clauses.length > 40) throw new Error('一次最多 40 项，请分批核对');
   return clauses.map((raw, index) => {
@@ -88,6 +90,7 @@ export function compileTextItems(items, currentDay=today(), slots=[]) {
       if (!missing.length && !done.has(`${item.id}|${item.occurred_on}`)) entries.push({item_id:item.id, occurred_on:item.occurred_on});
     } else if (['monthly','quarterly','yearly'].includes(item.cycle)) {
       const end=item.ongoing ? currentDay.slice(0,7):item.through_month;
+      if (item.ongoing && item.through_month) missing.push('请选择补记截止月，或持续到今天；两种范围不能同时使用');
       if (!validMonth(item.start_month)) missing.push('起始月待确认');
       if (!validMonth(end)) missing.push('截止月待确认');
       if (!Number.isInteger(item.charge_day) || item.charge_day<1 || item.charge_day>31) missing.push('扣款日待确认');

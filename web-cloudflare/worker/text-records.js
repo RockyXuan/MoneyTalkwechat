@@ -52,6 +52,15 @@ export function registerTextRecords(app) {
   const result=await operation(db,c.get('user'),ledger,c.req.header('Idempotency-Key'),{route:'edit-text',id:batch.id,value},{batch:{...batch,...value,version:value.version+1,updated_at:now}},[statement(db,'UPDATE text_batches SET original_text=?,items_json=?,version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=?',[value.original_text,JSON.stringify(value.items),now,ledger,batch.id,value.version])],{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',values:[ledger,batch.id,value.version]});
   return c.json(result);
  });
+ app.delete('/api/text-batches/:id',async c=>{
+  const value=z.object({version}).strict().parse(await c.req.json()),db=c.env.DB,ledger=c.get('ledger').id,id=c.req.param('id'),key=c.req.header('Idempotency-Key'),requestValue={route:'delete-text',id,value};
+  const prior=await first(db,'SELECT request_hash,response_json FROM operations WHERE user_id=? AND ledger_id=? AND key=?',[c.get('user').id,ledger,key||'']);
+  if(prior){if(prior.request_hash!==await digest(requestValue))throw new ApiError(409,'KEY_REUSED','同一次提交内容已变化');return c.json(JSON.parse(prior.response_json));}
+  await getBatch(c);
+  const slot=await first(db,'SELECT 1 AS found FROM text_slots WHERE ledger_id=? AND batch_id=? LIMIT 1',[ledger,id]);
+  if(slot)throw new ApiError(409,'TEXT_HAS_ENTRIES','此规则已生成账目，只能暂停；已有账目可在账单中修改或删除');
+  return c.json(await operation(db,c.get('user'),ledger,key,requestValue,{id,deleted:true},[statement(db,'DELETE FROM text_batches WHERE ledger_id=? AND id=? AND version=? AND NOT EXISTS(SELECT 1 FROM text_slots WHERE ledger_id=? AND batch_id=?)',[ledger,id,value.version,ledger,id])],{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?) AND NOT EXISTS(SELECT 1 FROM text_slots WHERE ledger_id=? AND batch_id=?)',values:[ledger,id,value.version,ledger,id]}));
+ });
  app.post('/api/text-batches/:id/preview',async c=>c.json(await preview(c,await getBatch(c))));
  app.post('/api/text-batches/:id/confirm',async c=>{
   const body=z.object({version,preview_hash:z.string().regex(/^[0-9a-f]{64}$/),acknowledge_duplicates:z.boolean().default(false)}).strict().parse(await c.req.json());
@@ -68,7 +77,7 @@ export function registerTextRecords(app) {
   const now=stamp(),writes=[],ids=[];
   for(const candidate of plan.entries){const entry={...candidate,id:await digest(`${ledger}|${batch.id}|${candidate.item_id}|${candidate.occurred_on}`),version:1,created_at:now,updated_at:now,deleted_at:null};ids.push(entry.id);writes.push(statement(db,'INSERT INTO entries(ledger_id,id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',[ledger,entry.id,entry.type,entry.amount_minor,entry.category_id,entry.occurred_on,entry.note,entry.version,entry.created_at,entry.updated_at,null,ledger,batch.id,body.version]),statement(db,'INSERT INTO text_slots(ledger_id,batch_id,item_id,occurred_on,entry_id) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',[ledger,batch.id,candidate.item_id,candidate.occurred_on,entry.id,ledger,batch.id,body.version]));}
   writes.push(statement(db,"UPDATE text_batches SET status='active',version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=?",[now,ledger,batch.id,body.version]));
-  const result=await operation(db,c.get('user'),ledger,key,requestValue,{id:batch.id,count:plan.count,expense_minor:plan.expense_minor,income_minor:plan.income_minor,entry_ids:ids,version:body.version+1},writes,{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',values:[ledger,batch.id,body.version]});
+  const result=await operation(db,c.get('user'),ledger,key,requestValue,{id:batch.id,count:plan.count,expense_minor:plan.expense_minor,income_minor:plan.income_minor,entry_ids:ids,from:plan.entries.map(e=>e.occurred_on).sort()[0],to:plan.entries.map(e=>e.occurred_on).sort().at(-1),version:body.version+1},writes,{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',values:[ledger,batch.id,body.version]});
   return c.json(result);
  });
  app.post('/api/text-batches/:id/status',async c=>{

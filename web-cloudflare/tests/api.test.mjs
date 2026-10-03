@@ -234,3 +234,37 @@ test('new backup round trip keeps pending text, generated cycles and prevents re
  const bad=structuredClone(backup);bad.text_slots[0].entry_id='missing';assert.equal((await req('/api/restores/preview',{method:'POST',body:bad})).data.valid,false);
  assert.equal((await req('/api/restores/preview',{method:'POST',body:demoBackup()})).data.valid,true);
 });
+test('mobile confirmation returns exact persisted range and two-month statistics',async()=>{
+ const batch=await textFixture([textItem({start_month:'2026-08',through_month:'2026-09',amount_minor:6800,title:'合成手机验收'})],'合成两月回执');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ const key=crypto.randomUUID(),body={version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true};
+ const saved=await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body,key});
+ assert.equal(saved.status,200);assert.equal(saved.data.count,2);assert.equal(saved.data.expense_minor,13600);assert.equal(saved.data.from,'2026-08-15');assert.equal(saved.data.to,'2026-09-15');
+ assert.deepEqual((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body,key})).data,saved.data);
+ for(const [id,month] of saved.data.entry_ids.map((id,n)=>[id,n?'2026-09':'2026-08'])){
+  const entry=(await req(`/api/entries/${id}`)).data.entry;assert.equal(entry.amount_minor,6800);assert.equal(entry.occurred_on.slice(0,7),month);
+  // September has 30 days; use a valid period for the exact series check.
+  const validStats=(await req(`/api/stats?from=${month}-01&to=${month}-${month==='2026-09'?'30':'31'}`)).data;
+  assert.ok(validStats.series.some(s=>s.bucket===entry.occurred_on&&s.amount_minor>=6800));
+ }
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data.count,0);
+});
+test('draft removal is permission-scoped, versioned and replayable, and cannot erase generated rules',async()=>{
+ const batch=await textFixture([textItem({start_month:null,charge_day:null})],'合成待删除草稿');
+ const before=(await req('/api/entries')).data.totals.count;
+ assert.equal((await req(`/api/text-batches/${batch.id}`,{method:'DELETE',body:{version:1},user:'bob'})).status,404);
+ assert.equal((await req(`/api/text-batches/${batch.id}`,{method:'DELETE',body:{version:2}})).status,409);
+ const key=crypto.randomUUID(),body={version:1};const removed=await req(`/api/text-batches/${batch.id}`,{method:'DELETE',body,key});assert.equal(removed.status,200);
+ assert.deepEqual((await req(`/api/text-batches/${batch.id}`,{method:'DELETE',body,key})).data,removed.data);
+ assert.equal((await req('/api/text-batches')).data.batches.some(b=>b.id===batch.id),false);assert.equal((await req('/api/entries')).data.totals.count,before);
+ const generated=await textFixture([textItem({start_month:'2026-07',through_month:'2026-07',amount_minor:137})],'合成规则不可删除');
+ const plan=(await req(`/api/text-batches/${generated.id}/preview`,{method:'POST',body:{}})).data;
+ assert.equal((await req(`/api/text-batches/${generated.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true}})).status,200);
+ assert.equal((await req(`/api/text-batches/${generated.id}`,{method:'DELETE',body:{version:2}})).data.error.code,'TEXT_HAS_ENTRIES');
+});
+test('ambiguous existing recurrence remains a draft at the server even with questions acknowledged',async()=>{
+ const batch=await textFixture([textItem({start_month:null,charge_day:null,through_month:'2026-01',ongoing:true,questions:[]})],'合成旧草稿状态');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{method:'POST',body:{}})).data;
+ assert.equal(plan.count,0);assert.match(plan.rows[0].missing.join(' '),/两种范围/);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash}})).status,400);
+});

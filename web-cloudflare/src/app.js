@@ -1,22 +1,27 @@
 import './styles.css';
 import './responsive.css';
+import './mobile.css';
 import { request, mutate, queryString, setLedger, download } from './api.js';
 import { shell, recordPage, statsPage, billsPage, settingsPage, loading, entryForm, categoryManager, categoryEditor } from './views.js';
 import { escape as e, icon, iconButton, empty, recordRow, categoryIcon } from './ui.js';
-import { today, periodRange, shiftMonth, parseAmount, decimal, money, canonical } from '../shared/format.js';
+import { today, periodRange, shiftMonth, parseAmount, decimal, money, canonical, validDate } from '../shared/format.js';
 
 const root = document.querySelector('#app'), dialog = document.querySelector('#dialog'), toastElement = document.querySelector('#toast');
 const storage = { get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }, set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Display preferences are optional. */ } } };
 const knownPages = ['record', 'bills', 'stats', 'settings'];
 const firstPage = () => knownPages.includes(location.pathname.slice(1)) ? location.pathname.slice(1) : matchMedia('(max-width: 767px)').matches ? 'record' : 'stats';
-const s = { page: firstPage(), month: today().slice(0, 7), period: 'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: { type: '', category_id: '', q: '' }, billRange: null, offset: 0, error: '', draft: null, modal: null };
+const initialParams=new URLSearchParams(location.search);
+const initialRange=validDate(initialParams.get('from'))&&validDate(initialParams.get('to'))&&initialParams.get('from')<=initialParams.get('to')?{from:initialParams.get('from'),to:initialParams.get('to')}:null;
+const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
+const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: { type: '', category_id: '', q: '' }, billRange: initialRange, offset: 0, error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
+let closeTimer, dialogReturnFocus;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: s.session?.today || today(), note: '', expanded: false, error: '', pending: null });
 const draftKey = () => `moneytalk:draft:${s.session.user.id}:${s.session.ledger.id}`;
 function saveDraft() { if (!s.session || !s.draft) return; try { const { saving, error, ...draft } = s.draft; sessionStorage.setItem(draftKey(), JSON.stringify(draft)); } catch { toast('当前浏览器不能保留草稿，请在离开前保存'); } }
 function readDraft() { try { s.draft = { ...baseDraft(), ...JSON.parse(sessionStorage.getItem(draftKey()) || '{}'), saving: false, error: '' }; } catch { s.draft = baseDraft(); } }
-function clearDrafts() { for (let i = sessionStorage.length - 1; i >= 0; i--) { const key = sessionStorage.key(i); if (key?.startsWith('moneytalk:draft:')) sessionStorage.removeItem(key); } }
+function clearDrafts() { s.receipt=null; for (let i = sessionStorage.length - 1; i >= 0; i--) { const key = sessionStorage.key(i); if (key?.startsWith('moneytalk:draft:')) sessionStorage.removeItem(key); } }
 function currentDraft(context) { return context === 'dialog' ? s.modal?.draft : s.draft; }
 function toast(message, undo = null) {
   clearTimeout(toastTimer); undoAction = undo;
@@ -65,6 +70,8 @@ function showLoggedOut() { root.innerHTML = '<main class="boot-state"><h1>已退
 function billQuery() { return { ...(s.billRange || periodRange(s.month, 'month', s.session.today)), ...s.filters, limit: 50, offset: s.offset }; }
 async function load({ quiet = false } = {}) {
   if (!s.session) return;
+  const routeParams=new URLSearchParams();if(['bills','stats'].includes(s.page)){routeParams.set('month',s.month);if(s.page==='stats')routeParams.set('period',s.period);if(s.page==='bills'&&s.billRange){routeParams.set('from',s.billRange.from);routeParams.set('to',s.billRange.to);}}
+  history.replaceState(null,'',`/${s.page}${routeParams.size?'?'+routeParams:''}`);
   const ticket = ++epoch, page = s.page;
   s.error = '';
   if (!quiet) { if (page === 'bills') s.bills = null; if (page === 'stats') s.stats = null; render(); }
@@ -91,24 +98,30 @@ function navigate(page, replace = false) {
   window.scrollTo({ top: 0 }); render(); load();
 }
 function openDialog(title, body, { type = '', wide = false } = {}) {
+  clearTimeout(closeTimer);dialog.classList.remove('closing');
+  if(!dialog.open)dialogReturnFocus=document.activeElement;
   dialog.className = wide ? 'entry-dialog' : '';
   dialog.dataset.locked = 'false';
-  dialog.innerHTML = `<header class="dialog-header"><h2 id="dialog-title">${e(title)}</h2>${iconButton('close', '关闭', 'data-action="close-dialog"')}</header><div class="dialog-body">${body}</div>`;
+  dialog.dataset.type = type || s.modal?.type || 'general';
+  dialog.innerHTML = `<header class="dialog-header"><h2 id="dialog-title">${e(title)}</h2>${iconButton('close', '关闭', 'data-action="close-dialog"')}</header><div class="dialog-body">${body}</div><div class="dialog-bottom-close" ${/data-action="close-dialog"/.test(body)?'hidden':''}><button class="button secondary" data-action="close-dialog">${s.modal?.type==='stats-options'?'完成':s.modal?.type==='discard'?'返回编辑':'关闭'}</button></div>`;
   if (!dialog.open) dialog.showModal();
   dialog.scrollTop = 0;
-  if (type) dialog.dataset.type = type;
+  document.body.classList.add('dialog-open');
 }
 function closeDialog(force = false) {
   if (dialog.dataset.locked === 'true' && !force) { toast('正在处理，请稍候'); return false; }
-  if (!force && s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty && !window.confirm('当前修改尚未保存，确定放弃这些修改？')) return false;
-  s.modal?.dispose?.();
-  if (dialog.open) dialog.close(); s.modal = null; dialog.dataset.locked = 'false'; return true;
+  if(!force&&s.modal?.type==='discard'){s.modal=s.modal.previous;updateForm('dialog');return false;}
+  if(!force&&s.modal?.type==='entry'&&s.modal.draft.id&&s.modal.dirty){const previous=s.modal;s.modal={type:'discard',previous};openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;}
+  const finish=()=>{s.modal?.dispose?.();if(dialog.open)dialog.close();document.body.classList.remove('dialog-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
+  clearTimeout(closeTimer);
+  if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
+  return true;
 }
 async function openTextRecords() {
   const modal={type:'text-records',dispose:null};s.modal=modal;
   openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{categories:s.categories,currentDay:s.session.today,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true})});
+    modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onViewBills:range=>{s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
@@ -156,7 +169,8 @@ async function saveEntry(form) {
     else draft.pending = null;
     draft.saving = false;
     if (context === 'dialog') closeDialog(true);
-    toast(wasEdit ? '修改已保存，统计已更新' : '记录已保存');
+    s.receipt={count:1,expense_minor:draft.type==='expense'?result.entry.amount_minor:0,income_minor:draft.type==='income'?result.entry.amount_minor:0,from:result.entry.occurred_on,to:result.entry.occurred_on};
+    toast(wasEdit ? '修改已保存到云端' : `${money(result.entry.amount_minor)} 已入账 · ${result.entry.occurred_on}`);
     await load({ quiet: true });
     return result;
   } catch (error) {
@@ -180,6 +194,7 @@ async function performDelete() {
   const entry = modal.entry, ledger = s.session.ledger.id;
   try {
     const result = await mutate(`/entries/${entry.id}/delete`, { version: entry.version }, { key: modal.key });
+    s.receipt = null;
     closeDialog(true);
     toast('记录已移入回收站', async () => { if (s.session.ledger.id !== ledger) return toast('请先切回原账本，再恢复这条记录'); await restoreEntry(entry.id, result.version); });
     await load({ quiet: true });
@@ -190,10 +205,11 @@ async function restoreEntry(id, version) {
   catch (error) { toast(error.message); }
 }
 function categoryBills(id) { s.filters = { q: '', type: 'expense', category_id: id }; s.billRange = s.stats ? { from: s.stats.from, to: s.stats.to } : null; s.offset = 0; navigate('bills'); }
+function refreshStatsOptions(){if(s.modal?.type!=='stats-options')return;for(const b of dialog.querySelectorAll('[data-action=period],[data-action=chart]')){const active=b.dataset.value===(b.dataset.action==='period'?s.period:s.chart);b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}}
 function openFilters() {
   const range = s.billRange || periodRange(s.month, 'month', s.session.today);
   s.modal = { type: 'filters' };
-  openDialog('筛选账单', `<form class="standard-form" data-form="filters"><label>开始日期<input type="date" name="from" required value="${e(range.from)}" /></label><label>结束日期<input type="date" name="to" required value="${e(range.to)}" /></label><label>分类<select name="category_id"><option value="">全部分类</option>${s.categories.filter(c => !s.filters.type || c.type === s.filters.type).map(c => `<option value="${e(c.id)}" ${s.filters.category_id === c.id ? 'selected' : ''}>${e(c.name)}${c.archived ? '（已停用）' : ''}</option>`).join('')}</select></label><p class="field-error" id="filters-error" role="alert"></p><button class="button primary" type="submit">应用筛选</button></form>`);
+  openDialog('筛选账单', `<form class="standard-form" data-form="filters"><label>搜索<input name="q" placeholder="备注、分类或金额" maxlength="200" value="${e(s.filters.q)}" /></label><label>收支<select name="type"><option value="">全部</option><option value="expense" ${s.filters.type==='expense'?'selected':''}>支出</option><option value="income" ${s.filters.type==='income'?'selected':''}>收入</option></select></label><label>开始日期<input type="date" name="from" required value="${e(range.from)}" /></label><label>结束日期<input type="date" name="to" required value="${e(range.to)}" /></label><label>分类<select name="category_id"><option value="">全部分类</option>${s.categories.map(c => `<option value="${e(c.id)}" ${s.filters.category_id === c.id ? 'selected' : ''}>${e(c.name)}${c.archived ? '（已停用）' : ''}</option>`).join('')}</select></label><p class="field-error" id="filters-error" role="alert"></p><div class="dialog-footer"><button class="button secondary" type="button" data-action="close-dialog">取消</button><button class="button primary" type="submit">应用筛选</button></div></form>`);
 }
 function openCategories() { s.modal = { type: 'categories' }; openDialog('分类管理', categoryManager(s)); }
 function editCategory(id) { s.modal = { type: 'category', category: s.categories.find(c => c.id === id) || null, key: crypto.randomUUID() }; openDialog(id ? '编辑分类' : '添加分类', categoryEditor(s.modal.category || {})); }
@@ -312,6 +328,8 @@ document.addEventListener('click', async event => {
     else if (action === 'new-entry') newEntry();
     else if (action === 'entry') await openEntry(id);
     else if (action === 'close-dialog') closeDialog();
+    else if(action==='keep-editing'){s.modal=s.modal.previous;updateForm('dialog');}
+    else if(action==='discard-editing')closeDialog(true);
     else if (action === 'entry-type') { const d = currentDraft(context); if (!d || d.pending) return; d.type = value; d.category_id = s.categories.find(c => c.type === value && !c.archived)?.id || ''; d.expanded = false; d.error = ''; if (s.modal) s.modal.dirty = true; updateForm(context); }
     else if (action === 'entry-category') { const d = currentDraft(context); if (!d || d.pending) return; d.category_id = id; if (s.modal) s.modal.dirty = true; updateForm(context); }
     else if (action === 'expand-categories') { const d = currentDraft(context); d.expanded = !d.expanded; updateForm(context); }
@@ -321,10 +339,12 @@ document.addEventListener('click', async event => {
     else if (action === 'restore-entry') { target.disabled = true; await restoreEntry(id, target.dataset.version); target.disabled = false; }
     else if (action === 'undo-toast') { const undo = undoAction; undoAction = null; toastElement.classList.remove('show'); if (undo) await undo(); }
     else if (action === 'previous-month' || action === 'next-month') { s.month = shiftMonth(s.month, (action === 'previous-month' ? -1 : 1) * (s.page === 'stats' ? s.period === 'year' ? 12 : s.period === 'quarter' ? 3 : 1 : 1)); s.month = s.month < '1900-01' ? '1900-01' : s.month > '2100-12' ? '2100-12' : s.month; s.offset = 0; s.billRange = null; await load(); }
-    else if (action === 'period') { s.period = value; await load(); }
-    else if (action === 'chart') { s.chart = value; storage.set('moneytalk:chart', value); render(); }
+    else if (action === 'period') { s.period = value; await load(); refreshStatsOptions(); }
+    else if (action === 'chart') { s.chart = value; storage.set('moneytalk:chart', value); render(); refreshStatsOptions(); }
     else if (action === 'category-bills') categoryBills(id);
     else if (action === 'filters') openFilters();
+    else if (action === 'stats-options') {s.modal={type:'stats-options'};openDialog('统计视图',`<p class="dialog-intro">${e(s.month)} · 切换视图不改变金额</p><div class="view-options"><h3>统计周期</h3><div class="segmented">${[['month','月'],['quarter','季度'],['year','年']].map(([v,n])=>`<button data-action="period" data-value="${v}" aria-pressed="${s.period===v}" class="${s.period===v?'active':''}">${n}</button>`).join('')}</div><h3>图表</h3><div class="segmented">${[['bar','柱状'],['line','折线'],['pie','饼图']].map(([v,n])=>`<button data-action="chart" data-value="${v}" aria-pressed="${s.chart===v}" class="${s.chart===v?'active':''}">${icon(v,18)}${n}</button>`).join('')}</div></div>`);}
+    else if (action === 'view-receipt') {s.filters={q:'',type:'',category_id:''};s.billRange={from:s.receipt.from,to:s.receipt.to};s.offset=0;s.month=s.receipt.from.slice(0,7);navigate('bills');}
     else if (action === 'filter-type') { s.filters.type = value; s.offset = 0; if (s.categories.find(c => c.id === s.filters.category_id)?.type !== value) s.filters.category_id = ''; await load(); }
     else if (action === 'clear-filters') { s.filters = { q: '', type: '', category_id: '' }; s.billRange = null; s.offset = 0; await load(); }
     else if (action === 'page-prev' || action === 'page-next') { s.offset = Math.max(0, s.offset + (action === 'page-prev' ? -50 : 50)); await load(); window.scrollTo({ top: 0 }); }
@@ -373,14 +393,27 @@ document.addEventListener('submit', async event => {
     if (form.dataset.form === 'filters') {
       const f = new FormData(form), from = f.get('from'), to = f.get('to');
       if (!from || !to || from > to) { document.querySelector('#filters-error').textContent = '请填写有效日期范围，开始日期不能晚于结束日期'; return; }
-      s.billRange = { from, to }; s.filters.category_id = f.get('category_id'); s.offset = 0; closeDialog(true); await load();
+      s.billRange = { from, to }; s.filters.category_id = f.get('category_id'); s.filters.q=String(f.get('q')||'').trim();s.filters.type=String(f.get('type')||''); s.offset = 0; closeDialog(true); await load();
     }
     if (form.dataset.form === 'display') { const f = new FormData(form); s.chart = f.get('chart'); s.density = f.get('density'); storage.set('moneytalk:chart', s.chart); storage.set('moneytalk:density', s.density); closeDialog(true); render(); toast('显示设置已保存'); }
   } catch (error) { toast(error.message); }
 });
 dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
-window.addEventListener('popstate', () => { s.page = firstPage(); closeDialog(true); render(); load(); });
+window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
 window.addEventListener('beforeunload', event => { if (s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && s.session && !dialog.open && !s.draft?.saving && !document.activeElement?.matches('input,textarea')) { s.session.today = today(); load({ quiet: true }); } });
 window.addEventListener('online', () => { if (s.error) load(); });
+function updateViewport() {
+  const viewport=window.visualViewport;
+  const editing=document.activeElement?.matches('input,textarea,select');
+  const keyboard=Boolean(viewport && editing && viewport.scale===1 && window.innerHeight-viewport.height>140);
+  document.documentElement.classList.toggle('keyboard-open',keyboard);
+  document.documentElement.style.setProperty('--visible-height',`${viewport?.height||window.innerHeight}px`);
+  document.documentElement.style.setProperty('--keyboard-inset',`${keyboard?Math.max(0,window.innerHeight-viewport.height-viewport.offsetTop):0}px`);
+}
+window.visualViewport?.addEventListener('resize',updateViewport);
+window.visualViewport?.addEventListener('scroll',updateViewport);
+document.addEventListener('focusin',updateViewport);
+document.addEventListener('focusout',()=>requestAnimationFrame(updateViewport));
+updateViewport();
 init();

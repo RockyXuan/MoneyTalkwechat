@@ -17,7 +17,7 @@ export function renderChart(canvas, stats, mode, onCategory) {
   chart = new Chart(canvas, {
     type: mode === 'bar' ? 'bar' : mode === 'line' ? 'line' : 'pie', data: chartData(stats, mode),
     options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
+      responsive: true, maintainAspectRatio: false, animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : {duration:240},
       interaction: { mode: pie ? 'nearest' : 'index', intersect: false },
       layout: { padding: { top: 12, right: 8, bottom: 0 } },
       plugins: { tooltip: { backgroundColor: '#fff', titleColor: '#151b2d', bodyColor: '#35405a', borderColor: '#dbe5f4', borderWidth: 1, padding: 13, boxPadding: 5,

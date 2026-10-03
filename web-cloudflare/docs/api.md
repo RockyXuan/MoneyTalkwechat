@@ -14,6 +14,11 @@
 | PATCH /entries/:id | 以 version 修改 |
 | POST /entries/:id/delete、/restore | 以 version 软删除、恢复 |
 | GET /operations/:key | 查询同一次提交是否已完成及原结果 |
+| GET/POST /text-batches | 列出文字批次与提醒 / 保存未入账候选 |
+| PATCH /text-batches/:id | 以 version 更新未锁定候选字段 |
+| POST /text-batches/:id/preview、/confirm | 精确预览 / 以版本、预览摘要和提交标识确认入账 |
+| POST /text-batches/:id/status | 暂停 / 恢复规则提醒 |
+| DELETE /text-batches/:id | 以 version 删除无关联周期的草稿；不删除任何账目 |
 | GET /stats | 完整期间收支、分类合计、时间桶×分类金额 |
 | GET /export.csv | 当前筛选有效账目，忽略分页参数 |
 | GET /backup | 完整 JSON 备份，含回收站 |
@@ -28,4 +33,6 @@
 
 列表支持 `from/to/type/category_id/q/deleted/limit/offset`。limit 最大 100，页面每次 50。stats 支持 from/to 与 bucket=day/month，最长两年。statistics 汇总始终不受账单分页影响。
 
-备份格式 moneytalk-backup v1，人民币和上海时区；分类包含稳定颜色、图标与停用状态，记录包含 ID、版本、创建/修改/删除时间。恢复完整摘要忽略 exported_at 与数组排序，保留每一条记录的内容。上限 20 MB、50,000 条、100 分类；大规模边界尚需压测。
+文字确认返回 count、expense_minor、income_minor、entry_ids、from/to 和新 version；from/to 只包含这次实际新增账目的日期。存在已生成周期的批次不能直接删除（409 TEXT_HAS_ENTRIES），只能暂停；草稿删除同样校验身份、账本、版本及提交标识。
+
+备份格式 moneytalk-backup v1/v2（有文字批次时 v2），人民币和上海时区；分类包含稳定颜色、图标与停用状态，记录包含 ID、版本、创建/修改/删除时间。恢复完整摘要忽略 exported_at 与数组排序，保留每一条记录的内容。上限 20 MB、50,000 条、100 分类；大规模边界尚需压测。

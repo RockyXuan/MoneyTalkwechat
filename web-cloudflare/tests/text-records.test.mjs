@@ -16,6 +16,15 @@ test('multiple priced clauses split; date carry requires acknowledgement rather 
 test('calendar expansion shows three separate rows and exact cents',()=>{
  const plan=compileTextItems([rule()],now);assert.equal(plan.count,3);assert.equal(plan.expense_minor,20400);assert.deepEqual(plan.entries.map(e=>e.occurred_on),['2025-11-15','2025-12-15','2026-01-15']);
 });
+test('separate date and billing-day clauses stay with the following priced subscription',()=>{
+ const items=parseTextRecords('从2026年8月开始，每月15日，云服务0.01元，补记到2026年9月',now);
+ assert.equal(items.length,1);assert.equal(items[0].start_month,'2026-08');assert.equal(items[0].charge_day,15);
+ assert.equal(items[0].through_month,'2026-09');assert.equal(items[0].amount_minor,1);
+ const plan=compileTextItems(items,now);assert.equal(plan.count,2);assert.equal(plan.expense_minor,2);
+ assert.deepEqual(plan.entries.map(e=>e.occurred_on),['2026-08-15','2026-09-15']);
+ const missing=parseTextRecords('从2026年8月开始，每月15日',now);
+ assert.equal(missing.length,1);assert.equal(missing[0].amount_minor,null);assert.equal(compileTextItems(missing,now).count,0);
+});
 test('confirmed slots and deleted entries are never generated again',()=>{
  const slots=[{item_id:'item-1',occurred_on:'2025-11-15'}];assert.equal(compileTextItems([rule()],now,slots).count,2);
 });
@@ -37,4 +46,10 @@ test('unknown single dates, unsupported weekly cycles, excessive expansion and i
  assert.equal(compileTextItems(parseTextRecords('每周云服务18元',now),now).count,0);
  assert.ok(compileTextItems([rule({start_month:'1900-01',through_month:'2026-01'})],now).rows[0].missing.length);
  assert.throws(()=>parseTextRecords('x'.repeat(10001),now));assert.throws(()=>parseTextRecords('',now));
+});
+test('an ongoing toggle never silently ignores an explicit cutoff month',()=>{
+ const item=rule({start_month:'2025-08',through_month:'2026-01',ongoing:true});
+ const ambiguous=compileTextItems([item],now);assert.equal(ambiguous.count,0);assert.match(ambiguous.rows[0].missing.join(' '),/两种范围/);
+ assert.equal(compileTextItems([{...item,ongoing:false}],now).count,6);
+ assert.equal(compileTextItems([{...item,through_month:null}],now).entries.at(-1).occurred_on,'2026-09-15');
 });
