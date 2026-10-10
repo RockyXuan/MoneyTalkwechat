@@ -98,4 +98,4 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 
 从“记一笔 → 文字记账”或“我的 → 文字与循环记录”进入。先解析和编辑，保存云端候选不计入收支；逐笔预览确认才入账。未知起始月、扣款日保留疑问，未来不提前记账，打开网页显示待处理提醒。备份 v2 同时保存规则与已记周期，兼容旧 v1。见 [详细说明](docs/text-recurring-records.md)。
 
-本次新增逐条绿色确认、桌面右侧核对栏、购买顺序批次进度和月份日期精度，规则与用例见 [批次确认方案](docs/batch-confirm-ui-plan.md)。正式网址仍为 [MoneyTalk](https://moneytalk-web.550754381zzx.workers.dev/record)。本段说明功能范围，实际发布证据以验收报告为准。
+本次新增逐条绿色确认、桌面右侧核对栏、购买顺序批次进度和月份日期精度，规则与用例见 [批次确认方案](docs/batch-confirm-ui-plan.md)，发布版本、59 项单元/集成及 92 次端到端测试、云端清理与真机验收边界见 [本次验收记录](docs/batch-confirm-ui-acceptance-20261010.md)。正式网址仍为 [MoneyTalk](https://moneytalk-web.550754381zzx.workers.dev/record)。
