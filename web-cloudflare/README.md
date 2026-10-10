@@ -94,4 +94,6 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 
 ## 文字录入与循环记录
 
+2026-10-10 输入方向更新：先在聊天线程理解连续口述／转写文字，保存网站候选供用户核对，再确认入账；逐步积累经用户确认的个人分类规则。当前不重做主输入栏，不宣称网页已有通用长段模型解析或自动学习能力。见 [口述记账与规则计划](docs/conversational-input-plan.md)。
+
 从“记一笔 → 文字记账”或“我的 → 文字与循环记录”进入。先解析和编辑，保存云端候选不计入收支；逐笔预览确认才入账。未知起始月、扣款日保留疑问，未来不提前记账，打开网页显示待处理提醒。备份 v2 同时保存规则与已记周期，兼容旧 v1。见 [详细说明](docs/text-recurring-records.md)。
