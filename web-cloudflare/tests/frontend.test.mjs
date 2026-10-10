@@ -42,3 +42,10 @@ test('legacy conversion isolates owners and quarantines missing amounts and bad 
   assert.equal(result.report.issues.length, 2); assert.equal(result.report.other_owner_rows, 1);
   assert.equal(result.report.copied_creation_time, 1); assert.equal(JSON.stringify(rows), before);
 });
+
+test('unknown day is separate in daily charts while year/quarter lines retain monthly data',()=>{
+ const stats={bucket:'day',buckets:['2026-09-01','2026-09-02','2026-09'],categories:[{id:'food',name:'餐饮',color_key:'blue',amount_minor:300}],series:[{bucket:'2026-09-02',category_id:'food',amount_minor:100},{bucket:'2026-09',category_id:'food',amount_minor:200}]};
+ const bar=chartData(stats,'bar'),line=chartData(stats,'line'),pie=chartData(stats,'pie');
+ assert.deepEqual(bar.datasets[0].data,[0,100,200]);assert.deepEqual(line.datasets[0].data,[0,100,null]);assert.deepEqual(line.datasets[1].data,[null,null,200]);assert.equal(line.datasets[1].showLine,false);assert.match(line.labels[2],/日期未指定/);assert.equal(pie.datasets[0].data[0],300);
+ const year=chartData({...stats,bucket:'month',buckets:['2026-09'],series:[{bucket:'2026-09',category_id:'food',amount_minor:300}]},'line');assert.equal(year.datasets.length,1);assert.deepEqual(year.datasets[0].data,[300]);
+});

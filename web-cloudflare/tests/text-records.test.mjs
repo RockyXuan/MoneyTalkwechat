@@ -41,8 +41,8 @@ test('invalid amounts, ambiguous multiple prices, currencies and modification re
  for(const t of ['今天午餐-35元','今天午餐0元','今天午餐1.234元','今天收入20美元','今天退款35元','每月从68改为80元'])assert.equal(compileTextItems(parseTextRecords(t,now),now).count,0,t);
  const item=rule({amount_minor:1.2});assert.throws(()=>textItemsSchema.parse([item]));
 });
-test('unknown single dates, unsupported weekly cycles, excessive expansion and invalid input remain explicit',()=>{
- assert.equal(compileTextItems(parseTextRecords('午餐35元',now),now).count,0);
+test('month precision default, unsupported weekly cycles, excessive expansion and invalid input remain explicit',()=>{
+ assert.equal(compileTextItems(parseTextRecords('午餐35元',now),now).count,1);
  assert.equal(compileTextItems(parseTextRecords('每周云服务18元',now),now).count,0);
  assert.ok(compileTextItems([rule({start_month:'1900-01',through_month:'2026-01'})],now).rows[0].missing.length);
  assert.throws(()=>parseTextRecords('x'.repeat(10001),now));assert.throws(()=>parseTextRecords('',now));
@@ -52,4 +52,17 @@ test('an ongoing toggle never silently ignores an explicit cutoff month',()=>{
  const ambiguous=compileTextItems([item],now);assert.equal(ambiguous.count,0);assert.match(ambiguous.rows[0].missing.join(' '),/两种范围/);
  assert.equal(compileTextItems([{...item,ongoing:false}],now).count,6);
  assert.equal(compileTextItems([{...item,through_month:null}],now).entries.at(-1).occurred_on,'2026-09-15');
+});
+test('unspecified dates use months; explicit days, previous month and previous year retain precision',()=>{
+ for(const [text,date] of [['午餐35元','2026-10'],['上个月打车18元','2026-09'],['9月午餐35元','2026-09'],['去年9月午餐35元','2025-09'],['9月14日午餐35元','2026-09-14'],['昨天午餐35元','2026-10-01'],['2026年9月午餐35元','2026-09']]){
+  const item=parseTextRecords(text,now)[0];assert.equal(item.occurred_on,date,text);assert.equal(item.amount_minor,text.includes('18')?1800:3500,text);assert.equal(compileTextItems([item],now).count,1,text);
+ }
+ assert.equal(parseTextRecords('上个月午餐35元','2026-01-01')[0].occurred_on,'2025-12');
+ for(const text of ['去年午餐35元','上周午餐35元','13月午餐35元'])assert.equal(compileTextItems(parseTextRecords(text,now),now).count,0,text);
+});
+test('recurrence with no specific day expands into months, never invents a billing day',()=>{
+ const [item]=parseTextRecords('从2026年8月开始每月云服务18元，补记到2026年9月',now);
+ assert.equal(item.date_precision,'month');assert.equal(item.charge_day,null);
+ assert.deepEqual(compileTextItems([item],now).entries.map(e=>e.occurred_on),['2026-08','2026-09']);
+ assert.equal(compileTextItems([{...item,start_month:null}],now).count,0);
 });

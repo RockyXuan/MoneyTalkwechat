@@ -268,3 +268,58 @@ test('ambiguous existing recurrence remains a draft at the server even with ques
  assert.equal(plan.count,0);assert.match(plan.rows[0].missing.join(' '),/两种范围/);
  assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash}})).status,400);
 });
+
+test('one-item confirmation binds preview scope, preserves purchase gaps, locks saved rows and retries once',async()=>{
+ const user='per-item-test';await req('/api/session',{user});
+ const items=['第一件','第二件','第三件'].map((title,n)=>textItem({id:`item-${n+1}`,cycle:'single',occurred_on:'2026-09',amount_minor:n+1,title:`淘宝 · ${title}`}));
+ const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成淘宝逐条验收',items}})).data.batch;
+ const preview=ids=>req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{item_ids:ids}});
+ for(const ids of [[],['missing'],['item-1','item-1']])assert.equal((await preview(ids)).status,400);
+ const third=(await preview(['item-3'])).data;assert.equal(third.count,1);assert.equal(third.expense_minor,3);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:third.preview_hash,item_ids:['item-1']}})).data.error.code,'PREVIEW_CHANGED');
+ const body={version:1,preview_hash:third.preview_hash,item_ids:['item-3']},key=crypto.randomUUID();
+ const result=await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body,key});assert.equal(result.status,200);assert.equal(result.data.count,1);assert.ok(result.data.recorded_at);
+ assert.deepEqual((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body,key})).data,result.data);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user:'bob',method:'POST',body})).status,404);
+ let current=(await req('/api/text-batches',{user})).data.batches[0];
+ assert.equal(current.progress.first_title,'第一件');assert.equal(current.progress.last_title,'第三件');assert.equal(current.progress.next_title,'第一件');assert.equal(current.progress.has_gaps,true);assert.equal(current.progress.continuous_items,0);assert.equal(current.due_count,2);assert.equal(current.slots[0].amount_minor,3);assert.equal(current.slots[0].current_occurred_on,'2026-09');
+ const patch={version:2,original_text:batch.original_text,items:structuredClone(items)};patch.items[2].amount_minor=500;
+ assert.equal((await req(`/api/text-batches/${batch.id}`,{user,method:'PATCH',body:patch})).data.error.code,'TEXT_LOCKED');
+ const plans=await Promise.all([preview(['item-1']),preview(['item-2'])]);
+ const races=await Promise.all(plans.map((p,n)=>req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:2,preview_hash:p.data.preview_hash,item_ids:[`item-${n+1}`]}})));
+ assert.deepEqual(races.map(r=>r.status).sort(),[200,409]);assert.equal((await req('/api/entries',{user})).data.totals.count,2);
+ const id=result.data.entry_ids[0];assert.equal((await req(`/api/entries/${id}`,{user,method:'PATCH',body:{...expense({amount_minor:9,category_id:'other',occurred_on:'2026-08',note:'合成修改'}),version:1}})).status,200);
+ const edited=(await req('/api/text-batches',{user})).data.batches[0].slots.find(s=>s.entry_id===id);assert.equal(edited.amount_minor,9);assert.equal(edited.current_occurred_on,'2026-08');assert.equal(edited.occurred_on,'2026-09');
+ assert.equal((await req(`/api/entries/${id}/delete`,{user,method:'POST',body:{version:2}})).status,200);
+ current=(await req('/api/text-batches',{user})).data.batches[0];assert.equal(current.progress.deleted_entries,1);assert.equal((await preview(['item-3'])).data.count,0);
+});
+
+test('month dates survive filtering, daily/annual statistics, edit, trash, CSV and v3 restore',async()=>{
+ const user='month-precision';await req('/api/session',{user});
+ const month=(await req('/api/entries',{user,method:'POST',body:expense({amount_minor:101,occurred_on:'2026-09',note:'合成未指定日期'})})).data.entry;
+ const day=(await req('/api/entries',{user,method:'POST',body:expense({amount_minor:202,occurred_on:'2026-09-14'})})).data.entry;
+ assert.equal(month.occurred_on,'2026-09');
+ for(const date of ['2026-00','2026-13','2026-9','2100-01'])assert.equal((await req('/api/entries',{user,method:'POST',body:expense({occurred_on:date})})).status,400);
+ let entries=(await req('/api/entries?from=2026-09-15&to=2026-09-20',{user})).data;assert.equal(entries.totals.count,1);assert.equal(entries.totals.month_precision_count,1);assert.equal(entries.entries[0].occurred_on,'2026-09');
+ assert.equal((await req('/api/entries?from=2026-10-01&to=2026-10-10',{user})).data.totals.count,0);
+ const stats=(await req('/api/stats?from=2026-09-01&to=2026-09-30',{user})).data;
+ assert.equal(stats.totals.expense_minor,303);assert.ok(stats.buckets.includes('2026-09'));assert.equal(stats.series.find(s=>s.bucket==='2026-09').amount_minor,101);assert.ok(!stats.series.some(s=>s.bucket==='2026-09-01'));
+ assert.equal(stats.series.reduce((sum,s)=>sum+s.amount_minor,0),303);
+ const annual=(await req('/api/stats?from=2026-01-01&to=2026-12-31&bucket=month',{user})).data;assert.equal(annual.series[0].amount_minor,303);
+ const csv=(await req('/api/export.csv',{user})).data;assert.ok(csv.includes('"2026-09",'));assert.ok(csv.includes('"2026-09-14",'));
+ const changed=await req(`/api/entries/${day.id}`,{user,method:'PATCH',body:{...expense({amount_minor:202,occurred_on:'2026-09'}),version:1}});assert.equal(changed.status,200);assert.equal(changed.data.entry.occurred_on,'2026-09');
+ const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成月记账',items:[textItem({id:'month-1',cycle:'single',occurred_on:'2026-08',amount_minor:3})]}})).data.batch;
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{item_ids:['month-1']}})).data;
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:plan.preview_hash,item_ids:['month-1']}})).status,200);
+ await req(`/api/entries/${month.id}/delete`,{user,method:'POST',body:{version:1}});
+ assert.equal((await req('/api/entries?deleted=true',{user})).data.entries[0].occurred_on,'2026-09');
+ assert.equal((await req(`/api/entries/${month.id}/restore`,{user,method:'POST',body:{version:2}})).status,200);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,3);assert.equal(backup.text_slots[0].occurred_on,'2026-08');
+ const downgraded={...backup,version:2};assert.equal((await req('/api/restores/preview',{user,method:'POST',body:downgraded})).data.valid,false);
+ const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:backup.entries.length,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries}});
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ const restored=(await req('/api/backup',{user,ledger:job.id})).data;assert.deepEqual(backupContent(restored),backupContent(backup));
+ assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{user,ledger:job.id,method:'POST',body:{}})).data.count,0);
+});

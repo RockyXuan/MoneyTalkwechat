@@ -28,6 +28,15 @@ export function validDate(value) {
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
+export const validRecordDate = value => validDate(value) || (/^\d{4}-\d{2}$/.test(value || '') && validDate(`${value}-01`));
+export function recordDateLabel(value) {
+  if (!validRecordDate(value)) return '日期待确认';
+  const [year, month, day] = value.split('-').map(Number);
+  return `${year}年${month}月${day ? `${day}日` : ' · 日期未指定'}`;
+}
+export function recordRange(from, to = from) {
+  return { from: from.length === 7 ? `${from}-01` : from, to: to.length === 7 ? new Date(Date.UTC(Number(to.slice(0,4)), Number(to.slice(5)), 0)).toISOString().slice(0,10) : to };
+}
 export function parseAmount(text) {
   const value = String(text ?? '').trim();
   if (!/^(?:\d+|[1-9]\d{0,2}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(value)) throw new Error('请输入大于 0 的金额，最多保留两位小数');

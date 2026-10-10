@@ -4,8 +4,10 @@ import { compileTextItems } from '../shared/text-records.js';
 import { today, digest, canonical } from '../shared/format.js';
 import { all, first, statement, operation, validateCategory, stamp } from './store.js';
 import { ApiError } from './auth.js';
+import { batchProgress } from '../shared/batch-progress.js';
 const input=z.object({original_text:z.string().trim().min(1).max(10000),items:textItemsSchema}).strict();
 const version=z.number().int().min(1);
+const itemIds=z.array(z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)).min(1).max(40).refine(ids=>new Set(ids).size===ids.length).optional();
 export function textBatchRow(row) {const {ledger_id,fingerprint,items_json,...batch}=row;return {...batch,items:JSON.parse(items_json)};}
 export const batchInsert=(db,ledger,b,fingerprint)=>statement(db,'INSERT INTO text_batches(ledger_id,id,original_text,items_json,status,fingerprint,version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',[ledger,b.id,b.original_text,JSON.stringify(b.items),b.status,fingerprint,b.version,b.created_at,b.updated_at]);
 async function getBatch(c) {
@@ -13,16 +15,17 @@ async function getBatch(c) {
  if(!row)throw new ApiError(404,'TEXT_NOT_FOUND','文字记录不存在或无权访问');
  return textBatchRow(row);
 }
-async function preview(c,batch) {
+async function preview(c,batch,selectedIds=null) {
  const ledger=c.get('ledger').id,db=c.env.DB;
  const slots=await all(db,'SELECT item_id,occurred_on,entry_id FROM text_slots WHERE ledger_id=? AND batch_id=?',[ledger,batch.id]);
- const plan=compileTextItems(batch.items,today(),slots),duplicates=[];
+ if(selectedIds?.some(id=>!batch.items.some(i=>i.id===id&&i.selected)))throw new ApiError(400,'TEXT_ITEM_INVALID','所选项目不存在或未勾选');
+ const plan=compileTextItems(selectedIds?batch.items.filter(i=>selectedIds.includes(i.id)):batch.items,today(),slots),duplicates=[];
  for(const e of plan.entries){
   await validateCategory(db,ledger,e);
   const matches=await all(db,'SELECT id,note,version FROM entries WHERE ledger_id=? AND occurred_on=? AND amount_minor=? AND type=? AND deleted_at IS NULL',[ledger,e.occurred_on,e.amount_minor,e.type]);
   if(matches.length)duplicates.push({item_id:e.item_id,occurred_on:e.occurred_on,matches});
  }
- const hash=await digest({id:batch.id,version:batch.version,items:batch.items,entries:plan.entries,duplicates,slots});
+ const hash=await digest({id:batch.id,version:batch.version,items:batch.items,selectedIds,entries:plan.entries,duplicates,slots});
  return {...plan,duplicates,preview_hash:hash};
 }
 export function registerTextRecords(app) {
@@ -30,7 +33,7 @@ export function registerTextRecords(app) {
   const rows=await all(c.env.DB,'SELECT * FROM text_batches WHERE ledger_id=? ORDER BY updated_at DESC,id LIMIT 101',[c.get('ledger').id]);
   if(rows.length>100)throw new ApiError(400,'TEXT_LIMIT','当前文字批次超过上限，请导出备份后整理');
   const batches=[];
-  for(const row of rows){const batch=textBatchRow(row);const slots=await all(c.env.DB,'SELECT item_id,occurred_on,entry_id FROM text_slots WHERE ledger_id=? AND batch_id=?',[c.get('ledger').id,batch.id]);const plan=compileTextItems(batch.items,today(),slots);batches.push({...batch,slots,pending_count:plan.pending_count,due_count:batch.status==='active'?plan.count:0});}
+  for(const row of rows){const batch=textBatchRow(row);const slots=await all(c.env.DB,'SELECT s.item_id,s.occurred_on,s.entry_id,e.created_at,e.deleted_at,e.amount_minor,e.type,e.occurred_on AS current_occurred_on FROM text_slots s JOIN entries e ON e.ledger_id=s.ledger_id AND e.id=s.entry_id WHERE s.ledger_id=? AND s.batch_id=?',[c.get('ledger').id,batch.id]);const plan=compileTextItems(batch.items,today(),slots);batches.push({...batch,slots,progress:batchProgress(batch,slots),pending_count:plan.pending_count,due_count:batch.status==='paused'?0:plan.count});}
   return c.json({batches,reminder_count:batches.filter(b=>b.status!=='paused'&&(b.pending_count||b.due_count||b.status==='pending')).length});
  });
  app.post('/api/text-batches',async c=>{
@@ -61,23 +64,26 @@ export function registerTextRecords(app) {
   if(slot)throw new ApiError(409,'TEXT_HAS_ENTRIES','此规则已生成账目，只能暂停；已有账目可在账单中修改或删除');
   return c.json(await operation(db,c.get('user'),ledger,key,requestValue,{id,deleted:true},[statement(db,'DELETE FROM text_batches WHERE ledger_id=? AND id=? AND version=? AND NOT EXISTS(SELECT 1 FROM text_slots WHERE ledger_id=? AND batch_id=?)',[ledger,id,value.version,ledger,id])],{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?) AND NOT EXISTS(SELECT 1 FROM text_slots WHERE ledger_id=? AND batch_id=?)',values:[ledger,id,value.version,ledger,id]}));
  });
- app.post('/api/text-batches/:id/preview',async c=>c.json(await preview(c,await getBatch(c))));
+ app.post('/api/text-batches/:id/preview',async c=>{
+  const body=z.object({item_ids:itemIds}).strict().parse(await c.req.json());
+  return c.json(await preview(c,await getBatch(c),body.item_ids||null));
+ });
  app.post('/api/text-batches/:id/confirm',async c=>{
-  const body=z.object({version,preview_hash:z.string().regex(/^[0-9a-f]{64}$/),acknowledge_duplicates:z.boolean().default(false)}).strict().parse(await c.req.json());
+  const body=z.object({version,preview_hash:z.string().regex(/^[0-9a-f]{64}$/),acknowledge_duplicates:z.boolean().default(false),item_ids:itemIds}).strict().parse(await c.req.json());
   const db=c.env.DB,ledger=c.get('ledger').id,id=c.req.param('id'),key=c.req.header('Idempotency-Key'),requestValue={route:'confirm-text',id,body};
   const prior=await first(db,'SELECT request_hash,response_json FROM operations WHERE user_id=? AND ledger_id=? AND key=?',[c.get('user').id,ledger,key||'']);
   if(prior){if(prior.request_hash!==await digest(requestValue))throw new ApiError(409,'KEY_REUSED','同一次提交内容已变化');return c.json(JSON.parse(prior.response_json));}
   const batch=await getBatch(c);
   if(batch.status==='paused')throw new ApiError(409,'TEXT_PAUSED','此批次已暂停，请先恢复');
   if(batch.version!==body.version)throw new ApiError(409,'VERSION_CONFLICT','此批次已在其他页面修改，请重新载入');
-  const plan=await preview(c,batch);
+  const plan=await preview(c,batch,body.item_ids||null);
   if(plan.preview_hash!==body.preview_hash)throw new ApiError(409,'PREVIEW_CHANGED','候选内容或账本已变化，请重新查看条数和金额后确认');
   if(plan.duplicates.length&&!body.acknowledge_duplicates)throw new ApiError(409,'POSSIBLE_DUPLICATES','同日同额已有账目，请核对后明确确认这些是另一笔');
   if(!plan.count)throw new ApiError(400,'TEXT_INCOMPLETE','没有可确认的新账目；请补齐疑问，或继续保留待核对');
   const now=stamp(),writes=[],ids=[];
   for(const candidate of plan.entries){const entry={...candidate,id:await digest(`${ledger}|${batch.id}|${candidate.item_id}|${candidate.occurred_on}`),version:1,created_at:now,updated_at:now,deleted_at:null};ids.push(entry.id);writes.push(statement(db,'INSERT INTO entries(ledger_id,id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',[ledger,entry.id,entry.type,entry.amount_minor,entry.category_id,entry.occurred_on,entry.note,entry.version,entry.created_at,entry.updated_at,null,ledger,batch.id,body.version]),statement(db,'INSERT INTO text_slots(ledger_id,batch_id,item_id,occurred_on,entry_id) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',[ledger,batch.id,candidate.item_id,candidate.occurred_on,entry.id,ledger,batch.id,body.version]));}
   writes.push(statement(db,"UPDATE text_batches SET status='active',version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=?",[now,ledger,batch.id,body.version]));
-  const result=await operation(db,c.get('user'),ledger,key,requestValue,{id:batch.id,count:plan.count,expense_minor:plan.expense_minor,income_minor:plan.income_minor,entry_ids:ids,from:plan.entries.map(e=>e.occurred_on).sort()[0],to:plan.entries.map(e=>e.occurred_on).sort().at(-1),version:body.version+1},writes,{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',values:[ledger,batch.id,body.version]});
+  const result=await operation(db,c.get('user'),ledger,key,requestValue,{id:batch.id,count:plan.count,expense_minor:plan.expense_minor,income_minor:plan.income_minor,entry_ids:ids,recorded_at:now,from:plan.entries.map(e=>e.occurred_on).sort()[0],to:plan.entries.map(e=>e.occurred_on).sort().at(-1),version:body.version+1},writes,{sql:'EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=?)',values:[ledger,batch.id,body.version]});
   return c.json(result);
  });
  app.post('/api/text-batches/:id/status',async c=>{

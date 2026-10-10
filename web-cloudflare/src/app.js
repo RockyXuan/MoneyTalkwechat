@@ -4,7 +4,7 @@ import './mobile.css';
 import { request, mutate, queryString, setLedger, download } from './api.js';
 import { shell, recordPage, statsPage, billsPage, settingsPage, loading, entryForm, categoryManager, categoryEditor } from './views.js';
 import { escape as e, icon, iconButton, empty, recordRow, categoryIcon } from './ui.js';
-import { today, periodRange, shiftMonth, parseAmount, decimal, money, canonical, validDate } from '../shared/format.js';
+import { today, periodRange, shiftMonth, parseAmount, decimal, money, canonical, validDate, validRecordDate, recordDateLabel, recordRange } from '../shared/format.js';
 
 const root = document.querySelector('#app'), dialog = document.querySelector('#dialog'), toastElement = document.querySelector('#toast');
 const storage = { get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }, set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Display preferences are optional. */ } } };
@@ -17,9 +17,9 @@ const initialRange=validDate(initialParams.get('from'))&&validDate(initialParams
 const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
 const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
-let closeTimer, dialogReturnFocus, dialogTrigger;
+let closeTimer, dialogReturnFocus, dialogTrigger, dialogDisposer;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
-const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: s.session?.today || today(), note: '', expanded: false, error: '', pending: null });
+const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: (s.session?.today || today()).slice(0,7), note: '', expanded: false, error: '', pending: null });
 const draftKey = () => `moneytalk:draft:${s.session.user.id}:${s.session.ledger.id}`;
 function saveDraft() { if (!s.session || !s.draft) return; try { const { saving, error, ...draft } = s.draft; sessionStorage.setItem(draftKey(), JSON.stringify(draft)); } catch { toast('当前浏览器不能保留草稿，请在离开前保存'); } }
 function readDraft() { try { s.draft = { ...baseDraft(), ...JSON.parse(sessionStorage.getItem(draftKey()) || '{}'), saving: false, error: '' }; } catch { s.draft = baseDraft(); } }
@@ -102,6 +102,7 @@ function navigate(page, replace = false) {
 }
 function openDialog(title, body, { type = '', wide = false } = {}) {
   clearTimeout(closeTimer);dialog.classList.remove('closing');
+  if(dialogDisposer && s.modal?.type!=='text-records'){dialogDisposer();dialogDisposer=null;}
   // WebKit does not focus buttons on pointer activation. Capture the explicit
   // opener so dismissing a sheet returns keyboard users to the same control.
   if(!dialog.open){dialogReturnFocus=dialogTrigger?.isConnected?dialogTrigger:document.activeElement;dialogTrigger=null;}
@@ -109,24 +110,28 @@ function openDialog(title, body, { type = '', wide = false } = {}) {
   dialog.dataset.locked = 'false';
   dialog.dataset.type = type || s.modal?.type || 'general';
   dialog.innerHTML = `<header class="dialog-header"><h2 id="dialog-title">${e(title)}</h2>${iconButton('close', '关闭', 'data-action="close-dialog"')}</header><div class="dialog-body">${body}</div><div class="dialog-bottom-close" ${/data-action="close-dialog"/.test(body)?'hidden':''}><button class="button secondary" data-action="close-dialog">${s.modal?.type==='stats-options'?'完成':s.modal?.type==='discard'?'返回编辑':'关闭'}</button></div>`;
-  if (!dialog.open) dialog.showModal();
+  if (dialog.open && dialog.dataset.nonmodal === 'true') dialog.close();
+  const docked=dialog.dataset.type==='text-records'&&matchMedia('(min-width:1100px)').matches;
+  dialog.dataset.nonmodal=String(docked);dialog.setAttribute('aria-modal',String(!docked));
+  if (!dialog.open) {if(docked)dialog.show();else dialog.showModal();}
   dialog.scrollTop = 0;
-  document.body.classList.add('dialog-open');
+  document.body.classList.toggle('dialog-open',!docked);document.body.classList.toggle('text-dock-open',docked);
 }
 function closeDialog(force = false) {
   if (dialog.dataset.locked === 'true' && !force) { toast('正在处理，请稍候'); return false; }
   if(!force&&s.modal?.type==='discard'){s.modal=s.modal.previous;updateForm('dialog');return false;}
   if(!force&&s.modal?.type==='entry'&&s.modal.draft.id&&s.modal.dirty){const previous=s.modal;s.modal={type:'discard',previous};openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;}
-  const finish=()=>{s.modal?.dispose?.();if(dialog.open)dialog.close();document.body.classList.remove('dialog-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
+  const finish=()=>{dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
   clearTimeout(closeTimer);
   if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
   return true;
 }
-async function openTextRecords() {
+async function openTextRecords(initialBatchId=null) {
+  if(dialog.open)closeDialog(true);
   const modal={type:'text-records',dispose:null};s.modal=modal;
   openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onViewBills:range=>{s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
@@ -148,7 +153,7 @@ async function openEntry(id) {
   } catch (error) { toast(error.message); }
 }
 function newEntry(date) {
-  if (date) { s.draft.occurred_on = date; saveDraft(); }
+  if (date) { s.draft.date_precision=date.length===7?'month':'day';s.draft.occurred_on = date; saveDraft(); }
   if (matchMedia('(max-width: 767px)').matches) {
     if (s.page !== 'record') navigate('record'); else render();
     document.querySelector('#amount-main')?.focus();
@@ -163,7 +168,7 @@ async function saveEntry(form) {
     if (!draft.pending) {
       const fields = new FormData(form);
       const body = { type: draft.type, amount_minor: parseAmount(fields.get('amount')), category_id: draft.category_id, occurred_on: fields.get('occurred_on'), note: String(fields.get('note') || '').trim() };
-      if (!body.occurred_on || body.occurred_on > s.session.today) throw new Error('请选择今天或之前的有效记账日期');
+      if (!validRecordDate(body.occurred_on) || body.occurred_on > s.session.today) throw new Error('请选择今天或之前的有效记账日期');
       if (draft.id) body.version = draft.version;
       draft.pending = { key: crypto.randomUUID(), body };
     }
@@ -350,7 +355,7 @@ document.addEventListener('click', async event => {
     else if (action === 'category-bills') categoryBills(id);
     else if (action === 'filters') openFilters();
     else if (action === 'stats-options') {s.modal={type:'stats-options'};openDialog('统计视图',`<p class="dialog-intro">${e(s.month)} · 切换视图不改变金额</p><div class="view-options"><h3>统计周期</h3><div class="segmented">${[['month','月'],['quarter','季度'],['year','年']].map(([v,n])=>`<button data-action="period" data-value="${v}" aria-pressed="${s.period===v}" class="${s.period===v?'active':''}">${n}</button>`).join('')}</div><h3>图表</h3><div class="segmented">${[['bar','柱状'],['line','折线'],['pie','饼图']].map(([v,n])=>`<button data-action="chart" data-value="${v}" aria-pressed="${s.chart===v}" class="${s.chart===v?'active':''}">${icon(v,18)}${n}</button>`).join('')}</div></div>`);}
-    else if (action === 'view-receipt') {s.filters={q:'',type:'',category_id:''};s.billRange={from:s.receipt.from,to:s.receipt.to};s.offset=0;s.month=s.receipt.from.slice(0,7);navigate('bills');}
+    else if (action === 'view-receipt') {s.filters={q:'',type:'',category_id:''};s.billRange=recordRange(s.receipt.from,s.receipt.to);s.offset=0;s.month=s.receipt.from.slice(0,7);navigate('bills');}
     else if (action === 'filter-type') { s.filters.type = value; s.offset = 0; if (s.categories.find(c => c.id === s.filters.category_id)?.type !== value) s.filters.category_id = ''; await load(); }
     else if (action === 'clear-filters') { s.filters = { q: '', type: '', category_id: '' }; s.billRange = null; s.offset = 0; await load(); }
     else if (action === 'page-prev' || action === 'page-next') { s.offset = Math.max(0, s.offset + (action === 'page-prev' ? -50 : 50)); await load(); window.scrollTo({ top: 0 }); }
@@ -361,7 +366,7 @@ document.addEventListener('click', async event => {
     else if (action === 'export-all') await exportCsv(false);
     else if (action === 'export-filter') await exportCsv(true);
     else if (action === 'backup') openBackup();
-    else if (action === 'text-records') await openTextRecords();
+    else if (action === 'text-records') await openTextRecords(target.dataset.batchId||null);
     else if (action === 'download-backup') await downloadBackup();
     else if (action === 'start-restore') await startRestore();
     else if (action === 'activate-ledger') await activateLedger(id);
@@ -384,9 +389,10 @@ document.addEventListener('input', event => {
 });
 document.addEventListener('change', async event => {
   if (event.target.dataset.action === 'month') { if (!/^\d{4}-\d{2}$/.test(event.target.value)) return; s.month = event.target.value; s.billRange = null; s.offset = 0; await load(); }
+  if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;if(s.modal?.type==='entry')s.modal.dirty=true;saveDraft();updateForm(form.dataset.context);return;}
   if (event.target.name === 'occurred_on' && event.target.closest('[data-form="entry"]')) {
     const form = event.target.closest('form'), d = currentDraft(form.dataset.context), label = event.target.closest('.date-control').querySelector('span');
-    if (d.occurred_on) label.textContent = `${Number(d.occurred_on.slice(5, 7))}月${Number(d.occurred_on.slice(8))}日`;
+    if (d.occurred_on) label.textContent = recordDateLabel(d.occurred_on);
   }
   if (event.target.id === 'backup-file') await previewBackup(event.target.files?.[0]);
 });
@@ -404,6 +410,7 @@ document.addEventListener('submit', async event => {
     if (form.dataset.form === 'display') { const f = new FormData(form); s.chart = f.get('chart'); s.density = f.get('density'); storage.set('moneytalk:chart', s.chart); storage.set('moneytalk:density', s.density); closeDialog(true); render(); toast('显示设置已保存'); }
   } catch (error) { toast(error.message); }
 });
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open&&dialog.dataset.nonmodal==='true'){event.preventDefault();closeDialog();}});
 dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
 window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);s.filters=routeFilters(p);s.offset=routeOffset(p);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
 window.addEventListener('beforeunload', event => { if (s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty) { event.preventDefault(); event.returnValue = ''; } });
@@ -423,3 +430,6 @@ document.addEventListener('focusin',updateViewport);
 document.addEventListener('focusout',()=>requestAnimationFrame(updateViewport));
 updateViewport();
 init();
+
+const dockMedia=matchMedia('(min-width:1100px)');
+dockMedia.addEventListener('change',()=>{if(s.modal?.type!=='text-records'||!dialog.open)return;dialog.close();dialog.dataset.nonmodal=String(dockMedia.matches);dialog.setAttribute('aria-modal',String(!dockMedia.matches));document.body.classList.toggle('text-dock-open',dockMedia.matches);document.body.classList.toggle('dialog-open',!dockMedia.matches);if(dockMedia.matches)dialog.show();else dialog.showModal();});

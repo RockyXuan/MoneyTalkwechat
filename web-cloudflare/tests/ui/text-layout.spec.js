@@ -61,7 +61,8 @@ test('TEXT08 continuing rule, details editing, pause/resume and new batch', asyn
   await expect(page.locator('.flow-success')).toContainText('1 笔');
   await textAction(page, 'new').click();
   await textAction(page, 'open').click();
-  await expect(page.locator('.text-candidate [data-field="amount_minor"]')).toBeDisabled();
+  await expect(page.locator('.text-candidate')).toHaveCount(0);
+  await expect(page.locator('.confirmed-items')).toContainText('UI修改订阅');
   await textAction(page, 'pause').click();
   await expect(page.locator('#text-status')).toContainText('已暂停');
   expect((await ledger.call('/text-batches')).batches[0].status).toBe('paused');

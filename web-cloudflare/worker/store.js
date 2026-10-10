@@ -65,7 +65,10 @@ export function entryInsert(db, ledgerId, e, ignore = false) {
 export function filters(query, ledgerId) {
   const where = ['e.ledger_id=?', query.deleted === 'true' ? 'e.deleted_at IS NOT NULL' : 'e.deleted_at IS NULL'];
   const values = [ledgerId];
-  for (const [key, sql] of [['from', 'e.occurred_on>=?'], ['to', 'e.occurred_on<=?'], ['type', 'e.type=?'], ['category_id', 'e.category_id=?']]) {
+  for (const [key, operator] of [['from','>='],['to','<=']]) {
+    if(query[key]) {where.push(`((length(e.occurred_on)=7 AND e.occurred_on${operator}substr(?,1,7)) OR (length(e.occurred_on)=10 AND e.occurred_on${operator}?))`);values.push(query[key],query[key]);}
+  }
+  for (const [key, sql] of [['type', 'e.type=?'], ['category_id', 'e.category_id=?']]) {
     if (query[key]) { where.push(sql); values.push(query[key]); }
   }
   if (query.q) {
@@ -90,7 +93,8 @@ export async function exportBackup(db, ledger) {
   const rows=result[2].results;
   const text_batches=rows.map(({items_json,...b})=>({...b,items:JSON.parse(items_json)}));
   const text_slots=result[3].results;
-  return backupSchema.parse({ format: 'moneytalk-backup', version: text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
+  const monthPrecision=entries.some(e=>e.occurred_on.length===7)||text_batches.some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined));
+  return backupSchema.parse({ format: 'moneytalk-backup', version: monthPrecision ? 3 : text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
 }
 export function exportCsv(rows) {
   const header = ['日期', '类型', '分类', '金额（元）', '备注', '记录ID'];

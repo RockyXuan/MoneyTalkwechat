@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { textBatchSchema, textSlotSchema } from './text-schema.js';
-import { MAX_AMOUNT, ICONS, PALETTE, TIMEZONE, validDate, exactSum } from './format.js';
+import { MAX_AMOUNT, ICONS, PALETTE, TIMEZONE, validRecordDate, exactSum } from './format.js';
 export * from './format.js';
 
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
-const date = z.string().refine(validDate, '日期无效');
+const date = z.string().refine(validRecordDate, '日期无效');
 const timestamp = z.iso.datetime();
 export const entryInput = z.object({
   type: z.enum(['expense', 'income']), amount_minor: z.number().int().min(1).max(MAX_AMOUNT),
@@ -18,7 +18,7 @@ export const categoryInput = z.object({
 export const backupCategory = categoryInput.extend({ id });
 export const backupEntry = entryInput.extend({ id, version: z.number().int().min(1), created_at: timestamp, updated_at: timestamp, deleted_at: timestamp.nullable() });
 export const backupSchema = z.object({
-  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2)]), exported_at: timestamp,
+  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2), z.literal(3)]), exported_at: timestamp,
   ledger: z.object({ name: z.string().trim().min(1).max(64), currency: z.literal('CNY'), timezone: z.literal(TIMEZONE) }).strict(),
   categories: z.array(backupCategory).max(100), entries: z.array(backupEntry).max(50000),
   text_batches:z.array(textBatchSchema).max(100).optional(),text_slots:z.array(textSlotSchema).max(12000).optional(),
@@ -28,6 +28,7 @@ export function validateBackup(raw) {
   if (!parsed.success) return { valid: false, errors: parsed.error.issues.slice(0, 30).map(x => `${x.path.join('.')}: ${x.message}`) };
   const data = parsed.data;
   const errors = [];
+  if (data.version < 3 && ((data.text_slots||[]).some(s=>s.occurred_on.length===7) || data.entries.some(e=>e.occurred_on.length===7) || (data.text_batches||[]).some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined)))) errors.push('日期精度记录需要版本 3 备份');
   const cats = new Map();
   const names = new Set();
   for (const c of data.categories) {

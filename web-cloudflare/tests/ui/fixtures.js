@@ -56,6 +56,7 @@ export async function close(page) {
 export async function write(page, { amount = '12.34', note = 'UI虚构测试', date = '2026-09-14' } = {}) {
   await page.locator('#amount-main').fill(amount);
   await page.locator('#note-main').fill(note);
+  await page.locator('#entry-form-main [name="date_precision"]').selectOption(date.length===7?'month':'day');
   await page.locator('#entry-form-main [name="occurred_on"]').fill(date);
   await page.locator('.record-tools button[type="submit"]').click();
 }

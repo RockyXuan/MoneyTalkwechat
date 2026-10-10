@@ -78,7 +78,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const q = query(c), f = filters(q, c.get('ledger').id);
     const result = await c.env.DB.batch([
       statement(c.env.DB, `SELECT ${entryColumns} FROM ${joined} WHERE ${f.sql} ORDER BY e.occurred_on DESC,e.created_at DESC,e.id DESC LIMIT ? OFFSET ?`, [...f.values, q.limit, q.offset]),
-      statement(c.env.DB, `SELECT COUNT(*) AS count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
+      statement(c.env.DB, `SELECT COUNT(*) AS count,SUM(CASE WHEN length(e.occurred_on)=7 THEN 1 ELSE 0 END) AS month_precision_count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
       statement(c.env.DB, `SELECT e.occurred_on,COUNT(*) AS count,SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END) AS expense_minor,SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END) AS income_minor FROM ${joined} WHERE ${f.sql} GROUP BY e.occurred_on ORDER BY e.occurred_on DESC`, f.values),
     ]);
     return c.json({ entries: result[0].results, totals: result[1].results[0], days: result[2].results, limit: q.limit, offset: q.offset });
@@ -130,13 +130,15 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const f = filters({ from, to }, ledger);
     const periodSql = bucket === 'day' ? 'e.occurred_on' : 'substr(e.occurred_on,1,7)';
     const result = await c.env.DB.batch([
-      statement(c.env.DB, `SELECT COUNT(*) AS count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
+      statement(c.env.DB, `SELECT COUNT(*) AS count,SUM(CASE WHEN length(e.occurred_on)=7 THEN 1 ELSE 0 END) AS month_precision_count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
       statement(c.env.DB, `SELECT c.id,c.name,c.color_key,c.icon,c.archived,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY c.id ORDER BY amount_minor DESC,c.id`, f.values),
       statement(c.env.DB, `SELECT ${periodSql} AS bucket,e.category_id,SUM(e.amount_minor) AS amount_minor FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY bucket,e.category_id ORDER BY bucket,e.category_id`, f.values),
     ]);
     const totals = result[0].results[0];
     for (const value of [totals.expense_minor, totals.income_minor]) if (!Number.isSafeInteger(value)) throw new ApiError(422, 'AMOUNT_OVERFLOW', '账本金额超出精确计算范围');
-    return c.json({ from, to, bucket, buckets: buckets(from, to, bucket), totals, categories: result[1].results.map(categoryRow), series: result[2].results });
+    const series=result[2].results;
+    const unknownMonths=bucket==='day'?[...new Set(series.filter(v=>v.bucket.length===7).map(v=>v.bucket))]:[];
+    return c.json({ from, to, bucket, buckets: [...buckets(from, to, bucket),...unknownMonths], totals, categories: result[1].results.map(categoryRow), series });
   });
   app.get('/api/export.csv', async c => {
     const f = filters(query(c), c.get('ledger').id);

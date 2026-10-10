@@ -1,4 +1,4 @@
-import { parseAmount, validDate, today, shiftMonth, exactSum } from './format.js';
+import { parseAmount, validDate, validRecordDate, today, shiftMonth, exactSum } from './format.js';
 
 export const CYCLES = { single: '单笔', monthly: '每月', quarterly: '每季度', yearly: '每年', unknown: '待确认' };
 export const validMonth = s => /^\d{4}-\d{2}$/.test(s || '') && validDate(`${s}-01`);
@@ -33,6 +33,10 @@ export function parseTextRecords(raw, currentDay = today()) {
   return clauses.map((raw, index) => {
     const item = { id:`item-${index + 1}`, raw, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true };
     const foundDates = dates(raw);
+    if (!foundDates.length) {
+      const short=raw.match(/(?<!\d)(\d{1,2})\s*月(?:\s*(\d{1,2})\s*[日号])?/);
+      if(short)foundDates.push({text:short[0],index:short.index,year:Number(currentDay.slice(0,4))+(raw.includes('明年')?1:raw.includes('前年')?-2:raw.includes('去年')?-1:0),month:Number(short[1]),day:short[2]?Number(short[2]):null});
+    }
     const explicitRelative=raw.match(/前天|昨天|今天|今日/);
     if(explicitRelative) inheritedDate=explicitRelative[0];
     let masked = raw;
@@ -50,12 +54,18 @@ export function parseTextRecords(raw, currentDay = today()) {
       else if (/前天/.test(raw)) item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-172800000).toISOString().slice(0,10);
       else if (/昨天/.test(raw)) item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-86400000).toISOString().slice(0,10);
       else if (/今天|今日/.test(raw)) item.occurred_on=currentDay;
-      if (!item.occurred_on && inheritedDate && index>0 && item.cycle==='single') {
+      if (!item.occurred_on && foundDates.length) item.occurred_on=monthOf(foundDates[0]);
+      if (!item.occurred_on && /上上月|上个月|上月/.test(raw)) item.occurred_on=shiftMonth(currentDay.slice(0,7),raw.includes('上上月')?-2:-1);
+      if (!item.occurred_on && /本月|这个月|这月/.test(raw)) item.occurred_on=currentDay.slice(0,7);
+      if (!item.occurred_on && inheritedDate && index>0) {
         const offset={'今天':0,'今日':0,'昨天':1,'前天':2}[inheritedDate];
         item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-offset*86400000).toISOString().slice(0,10);
         item.questions.push('日期沿用同段前一项，请确认日期语境');
       }
-      if (!item.occurred_on) item.questions.push('记账日期未说明');
+      if (!item.occurred_on) {
+        item.occurred_on=currentDay.slice(0,7);
+        if (/去年|前年|上周|上星期|上季度|上季|前几个月|上上月|明年|下个月|下月/.test(raw)) item.questions.push('日期范围待确认，请选择实际月份');
+      }
     } else {
       const start=foundDates.find(d=>/从\s*$/.test(raw.slice(0,d.index)) || /开始|起订|起算/.test(raw.slice(d.index+d.text.length,d.index+d.text.length+5)));
       const end=foundDates.find(d=>/到|截至|截止/.test(raw.slice(Math.max(0,d.index-8),d.index)));
@@ -63,14 +73,15 @@ export function parseTextRecords(raw, currentDay = today()) {
       if (end) item.through_month=monthOf(end);
       const day=raw.match(/(?:每月|每个月)\s*(\d{1,2})\s*[日号]/);
       if (day) item.charge_day=Number(day[1]);
+      item.date_precision=day?'day':'month';
       item.ongoing=/持续|一直|以后每|今后每|不断|继续每/.test(raw) && !end;
       if (!item.start_month) item.questions.push('起始月未知，不能计算历史条数');
-      if (!item.charge_day) item.questions.push('扣款日未知，不能用每月 1 日代替');
+
       if (!item.through_month && !item.ongoing) item.questions.push('补记截止月或持续循环方式待确认');
     }
     let title=raw.split(/[,，]/).find(part=>{let core=part;for(const d of dates(part))core=core.replace(d.text,'');core=core.replace(/(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');return /[+-]?\d/.test(core)&&! /^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(part);})||raw.split(/[,，]/)[0];
     for (const d of foundDates) title=title.replace(d.text,'');
-    title=title.replace(/(?:每月|每个月)\s*\d{1,2}\s*[日号]/g,'').replace(/每个月|每月|每季度|每年|月付|年付|季付|今天|昨天|前天|先帮我|帮我|记录|记一下|记一笔|支出|收入|每|花了|花|付了|付|有|元|块|人民币|工资到账|收到|从|开始/g,'').replace(/[¥￥]?\s*[+-]?\d+(?:,\d{3})*(?:\.\d+)?/g,'').replace(/^[的\s]+|[的\s]+$/g,'').trim();
+    title=title.replace(/(?:每月|每个月)\s*\d{1,2}\s*[日号]/g,'').replace(/上个月|上月|本月|这个月|去年|前年|每个月|每月|每季度|每年|月付|年付|季付|今天|昨天|前天|先帮我|帮我|记录|记一下|记一笔|支出|收入|每|花了|花|付了|付|有|元|块|人民币|工资到账|收到|从|开始/g,'').replace(/[¥￥]?\s*[+-]?\d+(?:,\d{3})*(?:\.\d+)?/g,'').replace(/^[的\s]+|[的\s]+$/g,'').trim();
     item.title=title.slice(0,80) || (item.type==='income'?'收入待命名':'项目待命名');
     if (item.type==='income') item.category_id=/工资/.test(raw)?'salary':/奖金/.test(raw)?'bonus':'other-income';
     else item.category_id=/餐|饭|吃|咖啡|奶茶/.test(title)?'food':/车|地铁|公交|打车/.test(title)?'transport':/房租/.test(title)?'housing':'other';
@@ -86,22 +97,23 @@ export function compileTextItems(items, currentDay=today(), slots=[]) {
     if (!item.amount_minor) missing.push('金额待补全');
     if (!item.category_id) missing.push('分类待补全');
     if (item.cycle==='single') {
-      if (!validDate(item.occurred_on || '') || item.occurred_on > currentDay) missing.push('日期须为今天或之前的有效日期');
+      if (!validRecordDate(item.occurred_on || '') || item.occurred_on > currentDay) missing.push('日期须为本月或之前的有效月份，或今天之前的日期');
       if (!missing.length && !done.has(`${item.id}|${item.occurred_on}`)) entries.push({item_id:item.id, occurred_on:item.occurred_on});
     } else if (['monthly','quarterly','yearly'].includes(item.cycle)) {
       const end=item.ongoing ? currentDay.slice(0,7):item.through_month;
       if (item.ongoing && item.through_month) missing.push('请选择补记截止月，或持续到今天；两种范围不能同时使用');
       if (!validMonth(item.start_month)) missing.push('起始月待确认');
       if (!validMonth(end)) missing.push('截止月待确认');
-      if (!Number.isInteger(item.charge_day) || item.charge_day<1 || item.charge_day>31) missing.push('扣款日待确认');
+      const monthPrecision=item.date_precision==='month';
+      if (!monthPrecision && (!Number.isInteger(item.charge_day) || item.charge_day<1 || item.charge_day>31)) missing.push('扣款日待确认');
       if (validMonth(end) && validMonth(item.start_month) && item.start_month>end) missing.push('起始月晚于截止月');
       if (!missing.length) {
         const interval={monthly:1,quarterly:3,yearly:12}[item.cycle];
         for (let month=item.start_month, n=0;month<=end;month=shiftMonth(month,interval),n++) {
           if(n>=120) {missing.push('展开超过 120 笔，请缩小范围');break;}
           const [y,m]=month.split('-').map(Number),last=new Date(Date.UTC(y,m,0)).getUTCDate();
-          if(item.charge_day>last && item.short_month!=='last_day') {missing.push(`${month} 没有 ${item.charge_day} 日，请确认是否使用月末`);break;}
-          const day=`${month}-${String(Math.min(last,item.charge_day)).padStart(2,'0')}`;
+          if(!monthPrecision && item.charge_day>last && item.short_month!=='last_day') {missing.push(`${month} 没有 ${item.charge_day} 日，请确认是否使用月末`);break;}
+          const day=monthPrecision?month:`${month}-${String(Math.min(last,item.charge_day)).padStart(2,'0')}`;
           if(day>currentDay || done.has(`${item.id}|${day}`)) continue;
           entries.push({item_id:item.id,occurred_on:day});
         }

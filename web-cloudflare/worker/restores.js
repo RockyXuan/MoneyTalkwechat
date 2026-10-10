@@ -37,7 +37,7 @@ export function registerRestores(app) {
       text_batches:z.array(textBatchSchema).max(100).optional(),text_slots:z.array(textSlotSchema).max(12000).optional(),
       categories: z.array(backupCategory).max(100), entry_count: z.number().int().min(0).max(50000),
     }).strict().parse(await c.req.json());
-    const check = validateBackup({ format: 'moneytalk-backup', version: manifest.text_batches?.length?2:1, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
+    const check = validateBackup({ format: 'moneytalk-backup', version: 3, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
     const db = c.env.DB, owner = c.get('user').id;
     const previous = async () => {
@@ -80,7 +80,7 @@ export function registerRestores(app) {
     const db = c.env.DB;
     const cats = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,archived FROM categories WHERE ledger_id=?', [job.ledger_id])).map(categoryRow);
     const manifest = JSON.parse(job.manifest_json);
-    const check = validateBackup({ format: 'moneytalk-backup', version: manifest.text_batches?.length?2:1, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
+    const check = validateBackup({ format: 'moneytalk-backup', version: 3, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
     const oldRows = await all(db, `SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? AND id IN (${entries.map(() => '?').join(',')})`, [job.ledger_id, ...entries.map(e => e.id)]);
     const old = new Map(oldRows.map(e => [e.id, e]));
