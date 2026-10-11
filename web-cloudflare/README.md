@@ -100,4 +100,4 @@ pnpm legacy:convert /absolute/expenses.json /absolute/new-review-directory OLD_U
 
 本次新增逐条绿色确认、桌面右侧核对栏、购买顺序批次进度和月份日期精度，规则与用例见 [批次确认方案](docs/batch-confirm-ui-plan.md)，发布版本、59 项单元/集成及 92 次端到端测试、云端清理与真机验收边界见 [本次验收记录](docs/batch-confirm-ui-acceptance-20261010.md)。正式网址仍为 [MoneyTalk](https://moneytalk-web.550754381zzx.workers.dev/record)。
 
-2026-10-11：循环项确认旁增加“不填扣款日，按月记”，本项缺失信息及失败原因直接显示在绿色按钮旁；复用月份精度和已有确认服务，规则与新增测试见 [循环确认反馈方案](docs/recurring-feedback-plan-20261011.md)。发布证据另记当次验收，不将方案当成上线结果。
+2026-10-11：循环项确认旁增加“不填扣款日，按月记”，本项缺失信息及失败原因直接显示在绿色按钮旁；复用月份精度和已有确认服务，规则与新增测试见 [循环确认反馈方案](docs/recurring-feedback-plan-20261011.md)。已通过 60 项单元/集成及 100 次两引擎端到端测试并发布，生产核对、测试清理及真机边界见 [当次验收记录](docs/recurring-feedback-acceptance-20261011.md)。
