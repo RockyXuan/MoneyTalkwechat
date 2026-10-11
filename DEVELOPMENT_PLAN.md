@@ -28,4 +28,4 @@
 
 2026-10-11 分类建议已上线：私有别称可给出推荐已有分类与新建名称的平铺选项，点击一次选择，再确认入账；已有同名分类优先，不自动合并或学习。遵守全站“尽量少点击、建议直接展示”的交互规则。69 项单元/集成、164 项双引擎 E2E 与线上合成账本验收通过，真实 iPhone 仍待验收。见 [执行方案](web-cloudflare/docs/category-suggestions-plan-20261011.md)和[本次上线验收](web-cloudflare/docs/category-suggestions-acceptance-20261011.md)。
 
-本轮平台进度板：复用现有批次、slots 和标题来源建立六平台工作区；完整集成/E2E、线上独立合成账本和清理各自作为验收出口，不把本地截图当生产验收。见 [执行方案](web-cloudflare/docs/platform-board-plan-20261011.md)。
+本轮平台进度板已上线：复用现有批次、slots 和标题来源建立六平台工作区；75 项单元/集成、184 项完整双引擎 E2E、线上独立合成账本验证及清理均通过。真机、国内普通网络和用户最终验收单列，不把本地截图当生产或真机验收。见 [执行方案](web-cloudflare/docs/platform-board-plan-20261011.md)和[上线验收](web-cloudflare/docs/platform-board-acceptance-20261011.md)。
