@@ -26,4 +26,4 @@
 
 已授权实现：常见文字拆分 → 云端候选 → 明确日期与金额 → 逐笔预览 → 用户确认 → 记录周期，刷新和备份恢复后不重复。无起始月／扣款日时保留疑问；日／周循环、通用 AI、手机推送和后台自动入账不属于当前实现。自动测试、浏览器模拟与生产验收分别记录于 [功能说明](web-cloudflare/docs/text-recurring-records.md) 和 [云端记录](web-cloudflare/docs/cloudflare-deployment.md)。
 
-2026-10-11 新增分类建议：私有别称可给出推荐已有分类与新建名称的平铺选项，点击一次选择，再确认入账；已有同名分类优先，不自动合并或学习。遵守全站“尽量少点击、建议直接展示”的交互规则。见 [执行方案](web-cloudflare/docs/category-suggestions-plan-20261011.md)；本次测试及部署结论以独立验收记录为准。
+2026-10-11 分类建议已上线：私有别称可给出推荐已有分类与新建名称的平铺选项，点击一次选择，再确认入账；已有同名分类优先，不自动合并或学习。遵守全站“尽量少点击、建议直接展示”的交互规则。69 项单元/集成、164 项双引擎 E2E 与线上合成账本验收通过，真实 iPhone 仍待验收。见 [执行方案](web-cloudflare/docs/category-suggestions-plan-20261011.md)和[本次上线验收](web-cloudflare/docs/category-suggestions-acceptance-20261011.md)。
