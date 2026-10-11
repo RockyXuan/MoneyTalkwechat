@@ -1,20 +1,22 @@
 import { parseTextRecords, compileTextItems, CYCLES } from '../shared/text-records.js';
 import { parseAmount, decimal, money, recordDateLabel } from '../shared/format.js';
 import { batchProgress } from '../shared/batch-progress.js';
+import { PLATFORMS, tagPlatformItems } from '../shared/platform-sources.js';
 import { textItemsSchema } from '../shared/text-schema.js';
 import { request, mutate } from './api.js';
 import { escape as e, icon } from './ui.js';
 
 const fieldQuestion=/^(起始月未知|扣款日未知|补记截止月或持续循环方式|记账日期未说明|金额或币种待确认|金额无效)/;
-export function mountTextRecords(container,{categories,currentDay,draftKey,local=false,lock,onSaved,onCategoriesChanged=()=>{},onViewBills,initialBatchId=null}) {
+export function mountTextRecords(container,{categories,currentDay,draftKey,local=false,lock,onSaved,onCategoriesChanged=()=>{},onViewBills,initialBatchId=null,initialSource=''}) {
  let disposed=false,busy=false,batch=null,items=[],original='',slots=[],preview=null,pending=null,view='compose',receipt=null,rawValue='',deletePrompt=false,conflict=false;
+ let source=PLATFORMS.includes(initialSource)?initialSource:'';
  let precisions={},duplicateItems=new Set(),focusAfter=false,choiceFocus=null,itemErrors=new Map();
- try {const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(saved&&!initialBatchId){({batch,items,original,slots,pending}=saved);rawValue=saved.rawValue??original;precisions=saved.precisions||{};view=items.length?'review':'compose';}}catch{sessionStorage.removeItem(draftKey);}
+ try {const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(saved&&!initialBatchId){({batch,items,original,slots,pending}=saved);rawValue=saved.rawValue??original;precisions=saved.precisions||{};source=saved.source??source;view=items.length?'review':'compose';}}catch{sessionStorage.removeItem(draftKey);}
  container.className='text-flow';
  container.innerHTML='<div id="text-flow-heading"></div><div id="text-status" role="status" aria-live="polite"></div><div id="text-batch-list"></div><div id="text-work"></div><div id="text-preview"></div><div id="text-actions" class="flow-actions"></div>';
  const heading=container.querySelector('#text-flow-heading'),status=container.querySelector('#text-status'),list=container.querySelector('#text-batch-list'),work=container.querySelector('#text-work'),result=container.querySelector('#text-preview'),actions=container.querySelector('#text-actions');
  function message(text,tone=''){status.textContent=text;status.className=tone;}
- function persist(){if(disposed)return;try{sessionStorage.setItem(draftKey,JSON.stringify({batch,items,original,rawValue,slots,pending,precisions}));}catch{message('浏览器无法保留草稿，请保存后再离开。','error');}}
+ function persist(){if(disposed)return;try{sessionStorage.setItem(draftKey,JSON.stringify({batch,items,original,rawValue,slots,pending,precisions,source}));}catch{message('浏览器无法保留草稿，请保存后再离开。','error');}}
  function suggestionHtml(item){
   const hint=item.category_hint;if(!hint)return '';
   const active=categories.filter(c=>c.type===item.type&&!c.archived),recommended=active.filter(c=>hint.recommended_ids.includes(c.id));
@@ -43,7 +45,7 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
   heading.innerHTML=`<div class="flow-heading"><span class="step-number">${view==='result'?icon('check',20):icon('receipt',20)}</span><div><h3>${view==='compose'?'把收支告诉我':view==='result'?'这批已记录':'逐条核对，确认一条记一条'}</h3><p>${view==='compose'?'先理解、再确认；没说日子就只记月份':view==='result'?'已由服务器确认保存':'绿色按钮保存本项，其他条目保留'}</p></div></div>`;
   list.hidden=view!=='compose';work.replaceChildren();result.replaceChildren();actions.replaceChildren();deletePrompt=false;
   if(view==='compose'){
-   work.innerHTML=`<div class="input-zone"><label class="text-input-label">记账文字<textarea id="text-raw" rows="4" maxlength="10000" placeholder="午餐 35 元；上个月打车 18 元">${e(rawValue)}</textarea></label><p class="read-only-note">支持明确的文字格式；复杂口述继续在聊天线程理解。</p></div>`;
+   work.innerHTML=`<div class="input-zone"><div class="source-picker" aria-label="本批来源"><span>本批来源</span><div>${['',...PLATFORMS].map(name=>`<button type="button" data-text-action="source" data-source="${e(name)}" aria-pressed="${name===source}">${e(name||'自动识别')}</button>`).join('')}</div></div><label class="text-input-label">记账文字<textarea id="text-raw" rows="4" maxlength="10000" placeholder="午餐 35 元；上个月打车 18 元">${e(rawValue)}</textarea></label><p class="read-only-note">支持明确的文字格式；复杂口述继续在聊天线程理解。</p></div>`;
    actions.innerHTML='<button class="button primary" data-text-action="parse">下一步 · 核对</button>';
   }else if(view==='result'){
    result.innerHTML=`<section class="flow-success" role="status"><span class="success-mark">${icon('checks',32)}</span><h3>已入账 · ${local?'本地已保存':'云端已保存'}</h3><strong class="preview-total money">${receipt.expense_minor&&receipt.income_minor?`支出 ${money(receipt.expense_minor)}<br>收入 ${money(receipt.income_minor)}`:`${receipt.expense_minor?'支出':'收入'} ${money(receipt.expense_minor||receipt.income_minor)}`}</strong><p>${receipt.count} 笔</p><p>${e(receipt.from)}${receipt.from!==receipt.to?` 至 ${e(receipt.to)}`:''}</p>${receipt.from?.length===7||receipt.to?.length===7?'<p>只记月份 · 日期未指定</p>':''}</section>${receipt.progress?progressHtml(receipt.progress):''}`;
@@ -120,7 +122,8 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
  }
  async function handle(event){const button=event.target.closest('[data-text-action]');if(!button||button.disabled||busy)return;const action=button.dataset.textAction;if(pending&&action!=='retry')return;busy=true;controls();
   try{
-   if(action==='parse'){itemErrors.clear();rawValue=work.querySelector('#text-raw').value;original=rawValue;items=parseTextRecords(original,currentDay,categories);batch=null;slots=[];precisions={};preview=null;view='review';message('');persist();render();}
+   if(action==='source'){rawValue=work.querySelector('#text-raw').value;source=button.dataset.source;persist();render();}
+   if(action==='parse'){itemErrors.clear();rawValue=work.querySelector('#text-raw').value;original=rawValue;items=tagPlatformItems(parseTextRecords(original,currentDay,categories),source);batch=null;slots=[];precisions={};preview=null;view='review';message('');persist();render();}
    if(action==='new'){itemErrors.clear();batch=null;items=[];original='';rawValue='';slots=[];preview=null;view='compose';receipt=null;precisions={};duplicateItems.clear();conflict=false;message('');sessionStorage.removeItem(draftKey);render();await loadList();}
    if(action==='back-list'){view='compose';message('');render();await loadList();}
    if(action==='open'||action==='reload-batch'){const data=await request('/text-batches');const b=data.batches.find(b=>b.id===(action==='open'?button.dataset.id:batch?.id));if(!b)throw new Error('记录已不存在，请刷新列表');selectBatch(b);}

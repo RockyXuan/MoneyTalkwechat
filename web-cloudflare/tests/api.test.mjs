@@ -414,3 +414,23 @@ test('a valid backup containing empty alias arrays restores without changing its
  assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
  assert.deepEqual(backupContent((await req('/api/backup',{user,ledger:job.id})).data),backupContent(backup));
 });
+
+test('platform progress uses confirmed entries and current categories, deletion and restore preserve source without exposing other ledgers',async()=>{
+ const user='platform-board';await req('/api/session',{user});
+ const items=['淘宝 · 合成首件','京东 · 合成中件','淘宝 · 合成尾件'].map((title,n)=>textItem({id:`p${n}`,title,cycle:'single',occurred_on:'2026-09',amount_minor:n+1}));
+ const b=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'混合平台合成验收',items}})).data.batch;
+ const plan=(await req(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{item_ids:['p2']}})).data;
+ const saved=(await req(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:plan.preview_hash,item_ids:['p2']}})).data;
+ const board=async()=> (await req('/api/text-batches',{user})).data.platforms;
+ let p=(await board()).find(x=>x.source==='淘宝');assert.equal(p.latest.progress.next_title,'合成首件');assert.equal(p.latest.progress.last_confirmed,'合成尾件');assert.equal(p.latest.progress.has_gaps,true);assert.equal((await board()).find(x=>x.source==='京东').latest.progress.confirmed_items,0);
+ const id=saved.entry_ids[0],entry=(await req(`/api/entries/${id}`,{user})).data.entry;
+ assert.equal((await req(`/api/entries/${id}`,{user,method:'PATCH',body:{...expense(),note:entry.note,occurred_on:entry.occurred_on,amount_minor:entry.amount_minor,category_id:'transport',version:entry.version}})).status,200);
+ assert.deepEqual((await board()).find(x=>x.source==='淘宝').latest.categories,[{id:'transport',count:1}]);
+ assert.equal((await req(`/api/entries/${id}/delete`,{user,method:'POST',body:{version:2}})).status,200);p=(await board()).find(x=>x.source==='淘宝');assert.equal(p.latest.progress.deleted_entries,1);assert.deepEqual(p.latest.categories,[]);
+ assert.equal((await req(`/api/entries/${id}/restore`,{user,method:'POST',body:{version:3}})).status,200);assert.deepEqual((await board()).find(x=>x.source==='淘宝').latest.categories,[{id:'transport',count:1}]);
+ assert.ok(!(await req('/api/text-batches')).data.batches.some(x=>x.id===b.id));
+ const backup=(await req('/api/backup',{user})).data,preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:backup.entries.length,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries}});assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ assert.deepEqual((await req('/api/text-batches',{user,ledger:job.id})).data.platforms,await board());
+});

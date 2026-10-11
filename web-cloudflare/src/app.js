@@ -1,6 +1,7 @@
 import './styles.css';
 import './responsive.css';
 import './mobile.css';
+import './platform-board.css';
 import { request, mutate, queryString, setLedger, download } from './api.js';
 import { shell, recordPage, statsPage, billsPage, settingsPage, loading, entryForm, categoryManager, categoryEditor } from './views.js';
 import { escape as e, icon, iconButton, empty, recordRow, categoryIcon } from './ui.js';
@@ -165,12 +166,12 @@ function closeDialog(force = false) {
   if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
   return true;
 }
-async function openTextRecords(initialBatchId=null) {
+async function openTextRecords(initialBatchId=null,initialSource='') {
   if(dialog.open)closeDialog(true);
   const modal={type:'text-records',dispose:null};s.modal=modal;
   openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,initialSource,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}${initialSource?`:source:${initialSource}`:''}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
@@ -454,7 +455,7 @@ document.addEventListener('click', async event => {
     else if (action === 'export-all') await exportCsv(false);
     else if (action === 'export-filter') await exportCsv(true);
     else if (action === 'backup') openBackup();
-    else if (action === 'text-records') await openTextRecords(target.dataset.batchId||null);
+    else if (action === 'text-records') await openTextRecords(target.dataset.batchId||null,target.dataset.source||'');
     else if (action === 'download-backup') await downloadBackup();
     else if (action === 'start-restore') await startRestore();
     else if (action === 'activate-ledger') await activateLedger(id);

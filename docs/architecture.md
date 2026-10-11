@@ -6,6 +6,8 @@
 
 ## 最小运行路径
 
+2026-10-11 平台进度板复用文字批次的“平台 · 商品”标题、原序 items 和 slots；列表接口增加派生 platforms，不新增表或备份版本。混合批次分组展示但不复制账目；分类来自已生成账目的当前 category_id。所有保留批次参与分组，超过 100 批仍遵守现有显式上限错误，不悄悄截断。平台只是录入口径，不能用来源卡合计支付平台与电商平台金额，避免重复消费概念。查看 [执行方案](../web-cloudflare/docs/platform-board-plan-20261011.md)。
+
 浏览器 → 同源 `/api` → Worker → D1。静态文件由 Workers Static Assets 托管。前端为原生 HTML/CSS/JavaScript，经 Vite 构建；不依赖 Taro、React、NestJS、Coze 或 Supabase。Chart.js 只加载柱状、折线和饼图需要的模块，图表代码在统计页按需加载；Lucide 仅打包使用的 SVG。字体使用系统字体，资源随应用提供。
 
 本地 `pnpm dev` 先构建、应用本地迁移，再启动 5173 页面和 8787 接口。D1 在 `.wrangler/` 持久化。测试另外使用 Miniflare 临时 D1，不复用本地演示数据库。

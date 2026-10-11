@@ -5,6 +5,7 @@ import { today, digest, canonical } from '../shared/format.js';
 import { all, first, statement, operation, validateCategory, stamp } from './store.js';
 import { ApiError } from './auth.js';
 import { batchProgress } from '../shared/batch-progress.js';
+import { platformBoard } from '../shared/platform-board.js';
 const input=z.object({original_text:z.string().trim().min(1).max(10000),items:textItemsSchema}).strict();
 const version=z.number().int().min(1);
 const itemIds=z.array(z.string().regex(/^[A-Za-z0-9_-]{1,100}$/)).min(1).max(40).refine(ids=>new Set(ids).size===ids.length).optional();
@@ -34,8 +35,8 @@ export function registerTextRecords(app) {
   const rows=await all(c.env.DB,'SELECT * FROM text_batches WHERE ledger_id=? ORDER BY updated_at DESC,id LIMIT 101',[c.get('ledger').id]);
   if(rows.length>100)throw new ApiError(400,'TEXT_LIMIT','当前文字批次超过上限，请导出备份后整理');
   const batches=[];
-  for(const row of rows){const batch=textBatchRow(row);const slots=await all(c.env.DB,'SELECT s.item_id,s.occurred_on,s.entry_id,e.created_at,e.deleted_at,e.amount_minor,e.type,e.occurred_on AS current_occurred_on FROM text_slots s JOIN entries e ON e.ledger_id=s.ledger_id AND e.id=s.entry_id WHERE s.ledger_id=? AND s.batch_id=?',[c.get('ledger').id,batch.id]);const plan=compileTextItems(batch.items,today(),slots);batches.push({...batch,slots,progress:batchProgress(batch,slots),pending_count:plan.pending_count,due_count:batch.status==='paused'?0:plan.count});}
-  return c.json({batches,reminder_count:batches.filter(b=>b.status!=='paused'&&(b.pending_count||b.due_count||b.status==='pending')).length});
+  for(const row of rows){const batch=textBatchRow(row);const slots=await all(c.env.DB,'SELECT s.item_id,s.occurred_on,s.entry_id,e.created_at,e.deleted_at,e.amount_minor,e.category_id,e.type,e.occurred_on AS current_occurred_on FROM text_slots s JOIN entries e ON e.ledger_id=s.ledger_id AND e.id=s.entry_id WHERE s.ledger_id=? AND s.batch_id=?',[c.get('ledger').id,batch.id]);const plan=compileTextItems(batch.items,today(),slots);batches.push({...batch,slots,progress:batchProgress(batch,slots),pending_count:plan.pending_count,due_count:batch.status==='paused'?0:plan.count});}
+  return c.json({batches,platforms:platformBoard(batches),reminder_count:batches.filter(b=>b.status!=='paused'&&(b.pending_count||b.due_count||b.status==='pending')).length});
  });
  app.post('/api/text-batches',async c=>{
   const value=input.parse(await c.req.json()),db=c.env.DB,ledger=c.get('ledger').id;

@@ -146,8 +146,8 @@ for (const width of [360, 390, 430, 768, 1440, 1920]) {
         const controls = await page.locator('.mobile-tools button').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
         expect(controls.every(h => h >= 44)).toBe(true);
         if (route === 'record') {
-          const recent = await page.locator('.record-layout > .recent-card').boundingBox();
-          const entry = await page.locator('.record-layout > .entry-card').boundingBox();
+          const recent = await page.locator('.record-workspace > .recent-card').boundingBox();
+          const entry = await page.locator('.record-entry-column > .entry-card').boundingBox();
           expect(Math.abs(recent.x - entry.x)).toBeLessThanOrEqual(1);
           expect(Math.abs(recent.width - entry.width), 'cards must align regardless of note length').toBeLessThanOrEqual(1);
         }
