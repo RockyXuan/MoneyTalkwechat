@@ -96,7 +96,7 @@ test('REC11–14 double click, interrupted response, retry and server readback',
 
 test('EDIT01–03 details, dirty editing, keep, discard and save', async ({ page, ledger }) => {
   await open(page, 'bills');
-  const entry = page.locator('.mobile-bills [data-action="entry"][data-id="demo-lunch"]');
+  const entry = page.locator('.mobile-bills .record-detail[data-id="demo-lunch"]');
   await entry.click();
   await expect(page.locator('#dialog')).toContainText('账单详情');
   await page.locator('#note-dialog').fill('未保存修改');
@@ -119,7 +119,7 @@ test('EDIT01–03 details, dirty editing, keep, discard and save', async ({ page
 
 test('EDIT04–05 cancel delete, delete, undo, trash details and restore', async ({ page, ledger }) => {
   await open(page, 'bills');
-  const entry = page.locator('.mobile-bills [data-id="demo-lunch"]');
+  const entry = page.locator('.mobile-bills .record-detail[data-id="demo-lunch"]');
   await entry.click();
   await action(page, 'delete-entry').click();
   await expect(page.locator('#dialog')).toContainText('35.00');
@@ -146,7 +146,7 @@ test('EDIT04–05 cancel delete, delete, undo, trash details and restore', async
 
 test('EDIT06–07 concurrent edit reports conflict, explicit reload gets latest', async ({ page, ledger }) => {
   await open(page, 'bills');
-  await page.locator('.mobile-bills [data-id="demo-lunch"]').click();
+  await page.locator('.mobile-bills .record-detail[data-id="demo-lunch"]').click();
   const old = (await ledger.call('/entries/demo-lunch')).entry;
   await ledger.call('/entries/demo-lunch', { type: old.type, amount_minor: 4000, category_id: old.category_id, occurred_on: old.occurred_on, note: '第二台设备', version: old.version }, 'PATCH');
   await page.locator('#note-dialog').fill('第一台设备');

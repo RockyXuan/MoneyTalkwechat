@@ -343,3 +343,22 @@ test('month dates survive filtering, daily/annual statistics, edit, trash, CSV a
  const restored=(await req('/api/backup',{user,ledger:job.id})).data;assert.deepEqual(backupContent(restored),backupContent(backup));
  assert.equal((await req(`/api/text-batches/${batch.id}/preview`,{user,ledger:job.id,method:'POST',body:{}})).data.count,0);
 });
+
+test('field edits preserve the other values, refresh aggregates and reject stale versions', async () => {
+  const user='field-edit-contract';await req('/api/session',{user});
+  let entry=(await req('/api/entries',{user,method:'POST',body:expense({note:'合成<备注>&原文'})})).data.entry;
+  const originalId=entry.id;
+  for(const change of [{note:''},{category_id:'transport'},{amount_minor:4101},{occurred_on:'2026-08'}]){
+    const body=Object.fromEntries(['type','note','category_id','amount_minor','occurred_on','version'].map(k=>[k,entry[k]]));
+    const result=await req(`/api/entries/${entry.id}`,{user,method:'PATCH',body:{...body,...change}});assert.equal(result.status,200);
+    const next=(await req(`/api/entries/${entry.id}`,{user})).data.entry;
+    for(const k of ['type','note','category_id','amount_minor','occurred_on'])assert.equal(next[k],k in change?change[k]:entry[k]);
+    assert.equal(next.version,entry.version+1);
+    assert.equal((await req(`/api/entries/${entry.id}`,{user,method:'PATCH',body:{...body,...change,note:'合成过期'}})).status,409);
+    entry=next;
+  }
+  assert.equal(entry.id,originalId);
+  const august=(await req('/api/stats?from=2026-08-01&to=2026-08-31',{user})).data;assert.equal(august.totals.expense_minor,4101);assert.equal(august.categories.find(c=>c.id==='transport').amount_minor,4101);
+  assert.equal((await req('/api/entries?from=2026-09-01&to=2026-09-30',{user})).data.totals.count,0);
+  assert.equal((await req('/api/backup',{user})).data.entries[0].occurred_on,'2026-08');
+});

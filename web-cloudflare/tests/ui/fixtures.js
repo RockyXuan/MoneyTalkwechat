@@ -16,6 +16,7 @@ export const test = base.extend({
     const backup = demoBackup();
     backup.ledger.name = `测试-${crypto.randomUUID().slice(0, 12)}`;
     if (seed === 'empty') backup.entries = [];
+    if (seed === 'small') backup.entries = backup.entries.slice(0,6);
     if (seed === 'trash') backup.entries = backup.entries.map(e => ({ ...e, deleted_at: '2026-09-15T00:00:00.000Z', version: 2 }));
     const preview = await call('/restores/preview', backup);
     expect(preview.valid).toBe(true);

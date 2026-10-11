@@ -136,20 +136,26 @@ async function openTextRecords(initialBatchId=null) {
 }
 function updateForm(context) {
   if (context === 'dialog' && s.modal?.type === 'entry') {
-    const { draft } = s.modal;
-    openDialog(draft.id ? '账单详情' : '记一笔', entryForm(draft, s, 'dialog') + (draft.id ? `<button class="detail-delete" data-action="delete-entry" data-id="${e(draft.id)}">${icon('trash', 17)}删除这条记录</button><p class="entry-detail-meta">记录日期：${e(draft.occurred_on)}<br>修改保存后同步更新统计。</p>` : ''), { type: 'entry', wide: true });
+    const { draft, field } = s.modal;
+    const activeName = dialog.contains(document.activeElement) ? document.activeElement.name : '';
+    const selection = ['amount', 'note'].includes(activeName) ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+    openDialog(field ? `修改${{occurred_on:'日期',note:'备注',category_id:'分类',amount:'金额'}[field]}` : draft.id ? '账单详情' : '记一笔', entryForm(draft, s, 'dialog', field) + (draft.id && !field ? `<button class="detail-delete" data-action="delete-entry" data-id="${e(draft.id)}">${icon('trash', 17)}删除这条记录</button><p class="entry-detail-meta">记录日期：${e(draft.occurred_on)}<br>修改保存后同步更新统计。</p>` : ''), { type: 'entry', wide: true });
     dialog.dataset.locked = draft.saving ? 'true' : 'false';
+    dialog.classList.toggle('field-edit-dialog', Boolean(field));
+    if (activeName && !draft.saving) { const replacement=dialog.querySelector(`[name="${activeName}"]:not([type=hidden])`); replacement?.focus({preventScroll:true}); if(selection && replacement)replacement.setSelectionRange(...selection); }
   } else { saveDraft(); render(); }
 }
-async function openEntry(id) {
+async function openEntry(id, requestedField = '') {
+  const field = ['occurred_on','note','category_id','amount'].includes(requestedField) ? requestedField : '';
   try {
     const { entry } = await request(`/entries/${id}`);
     if (entry.deleted_at) {
       s.modal = { type: 'deleted', entry };
       openDialog('已删除的记录', `<div class="backup-summary"><h3>${e(entry.note || entry.category_name)}</h3><p>${e(entry.occurred_on)} · ${e(entry.category_name)} · ${money(entry.amount_minor)}</p></div><button class="button primary" data-action="restore-entry" data-id="${e(entry.id)}" data-version="${entry.version}">恢复记录</button><p class="dialog-intro">恢复后重新计入对应日期的收支。</p>`); return;
     }
-    s.modal = { type: 'entry', dirty: false, draft: { ...entry, amount: decimal(entry.amount_minor), expanded: false, error: '', pending: null } };
+    s.modal = { type: 'entry', dirty: false, field, draft: { ...entry, amount: decimal(entry.amount_minor), expanded: false, error: '', pending: null } };
     updateForm('dialog');
+    if (field) {const control=dialog.querySelector(field==='category_id'?'[aria-pressed="true"]':`[name="${field}"]:not([type=hidden])`); control?.focus({preventScroll:true}); if(field==='amount'||field==='note')control?.select();}
   } catch (error) { toast(error.message); }
 }
 function newEntry(date) {
@@ -174,7 +180,7 @@ async function saveEntry(form) {
     }
     draft.saving = true; draft.error = ''; draft.conflict = false; if (!draft.id) saveDraft(); updateForm(context);
     const result = await mutate(draft.id ? `/entries/${draft.id}` : '/entries', draft.pending.body, { method: draft.id ? 'PATCH' : 'POST', key: draft.pending.key });
-    const wasEdit = Boolean(draft.id);
+    const wasEdit = Boolean(draft.id), editedField = context === 'dialog' ? s.modal?.field : '';
     if (!wasEdit) { s.draft = { ...baseDraft(), type: draft.type, category_id: draft.category_id, occurred_on: draft.occurred_on }; saveDraft(); }
     else draft.pending = null;
     draft.saving = false;
@@ -182,6 +188,11 @@ async function saveEntry(form) {
     s.receipt={count:1,expense_minor:draft.type==='expense'?result.entry.amount_minor:0,income_minor:draft.type==='income'?result.entry.amount_minor:0,from:result.entry.occurred_on,to:result.entry.occurred_on};
     toast(wasEdit ? `修改已保存到${s.session.local ? '本地' : '云端'}` : `${money(result.entry.amount_minor)} 已入账 · ${result.entry.occurred_on}`);
     await load({ quiet: true });
+    if (wasEdit && editedField) {
+      const saved = [...root.querySelectorAll('[data-edit-field]')].find(node => node.dataset.id === draft.id && node.dataset.editField === editedField && node.getClientRects().length);
+      saved?.focus({preventScroll:true}); saved?.classList.add('field-saved');
+      if(saved)setTimeout(()=>saved.classList.remove('field-saved'),1000);
+    }
     return result;
   } catch (error) {
     draft.saving = false; draft.error = error.message;
@@ -337,14 +348,14 @@ document.addEventListener('click', async event => {
     if (action === 'login') { sessionStorage.removeItem('moneytalk:local-logged-out'); location.reload(); }
     else if (action === 'refresh') await load();
     else if (action === 'new-entry') newEntry();
-    else if (action === 'entry') await openEntry(id);
+    else if (action === 'entry') await openEntry(id, target.dataset.editField);
     else if (action === 'close-dialog') closeDialog();
     else if(action==='keep-editing'){s.modal=s.modal.previous;updateForm('dialog');}
     else if(action==='discard-editing')closeDialog(true);
     else if (action === 'entry-type') { const d = currentDraft(context); if (!d || d.pending) return; d.type = value; d.category_id = s.categories.find(c => c.type === value && !c.archived)?.id || ''; d.expanded = false; d.error = ''; if (s.modal) s.modal.dirty = true; updateForm(context); }
     else if (action === 'entry-category') { const d = currentDraft(context); if (!d || d.pending) return; d.category_id = id; if (s.modal) s.modal.dirty = true; updateForm(context); }
     else if (action === 'expand-categories') { const d = currentDraft(context); d.expanded = !d.expanded; updateForm(context); }
-    else if (action === 'reload-entry') await openEntry(id);
+    else if (action === 'reload-entry') await openEntry(id, s.modal?.field);
     else if (action === 'delete-entry') await confirmDelete(id);
     else if (action === 'confirm-delete') await performDelete();
     else if (action === 'restore-entry') { target.disabled = true; await restoreEntry(id, target.dataset.version); target.disabled = false; }
@@ -389,7 +400,7 @@ document.addEventListener('input', event => {
 });
 document.addEventListener('change', async event => {
   if (event.target.dataset.action === 'month') { if (!/^\d{4}-\d{2}$/.test(event.target.value)) return; s.month = event.target.value; s.billRange = null; s.offset = 0; await load(); }
-  if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;if(s.modal?.type==='entry')s.modal.dirty=true;saveDraft();updateForm(form.dataset.context);return;}
+  if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);if(!d || d.pending)return;d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;if(s.modal?.type==='entry')s.modal.dirty=true;saveDraft();updateForm(form.dataset.context);return;}
   if (event.target.name === 'occurred_on' && event.target.closest('[data-form="entry"]')) {
     const form = event.target.closest('form'), d = currentDraft(form.dataset.context), label = event.target.closest('.date-control').querySelector('span');
     if (d.occurred_on) label.textContent = recordDateLabel(d.occurred_on);
