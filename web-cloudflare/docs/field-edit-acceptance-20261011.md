@@ -20,7 +20,15 @@
 
 已人工核对稳定动画后的合成截图：[桌面](visual/field-edit-bills-desktop-20261011.png)、[360px手机](visual/field-edit-bills-mobile-20261011.png)。内置浏览器先尝试本地8791，遇服务重启后的错误页／恢复受限；按顺位改用Ego Lite TaskSpace50，在同一空间验证本地DOM与随后云端。Ego截图接口超时，视觉证据采用实际Playwright运行截图人工检查；没有把截图超时说成通过。
 
-云端发布及读回待本轮发布后补齐。
+## 云端发布与读回
+
+- 代码提交 `9cb5ee8be54a7fc67497c124fa6088a03575b3ff` 已推送指定分支。Worker `moneytalk-web` 当前部署版本 `1303ab61-a145-4659-98ed-a1cf1839b035`，2026-10-11 15:19:17（上海时间）生效，流量100%。此后仅补验收文档，不把文档提交当成运行代码版本。
+- 正常线上 `/bills` 与 `/stats` 在同一 Ego Lite TaskSpace50 逐一打开日期、备注、分类、金额小面板，核对对应字段、内容高度及关闭；仅读真实账目，不保存更改。主 JS `index-D03kQixE.js`、CSS `index-DF44C33r.css` 与本地测试产物逐字一致。匿名访问仍返回302进入登录保护。
+- 独立合成候选账本从未激活：创建一笔0.02元虚构记录，逐字段改备注、分类、金额0.03元、月份，核对其他值保留、版本增加与同次请求重放；旧版本返回409；跨月统计、分类统计、v3备份正确；软删除后活动记录为0。
+- 清理 SQL 同时限定唯一账本ID、合成前缀名称、本人归属，排除任何正在使用的账本。清理后合成账本不存在，账本数量与当前账本恢复基线；真实备份全部内容（含已删除记录、分类及待确认批次）与测试前完全一致。未补齐、确认或修改用户真实消费。
+- TaskSpace50已关闭（keep空列表）；未使用个人Chrome窗口或原生Computer。线上截图未作为成功证据，线上结论来自实际交互、接口读回及资产比对；稳定视觉证据来自本地合成截图。
+
+本轮最终门禁日志 `release-verified.log`；发布预检 `deploy-check-final.log`；部署和当前流量 `deploy.log`／`deployments.json`；线上 UI 与服务结果 `live-ui-result.json`／`cloud-result.json`；私有前后基线 `before.json`／`after.json`；清理 `cleanup.log`。均位于下述私有证据目录。
 
 本轮私有证据目录：`/private/tmp/moneytalk-field-edit-20261011`。真实账本基线、备份、云端测试标识及带个人数据的材料仅在该目录保留；不提交。可重复测试在 `tests/api.test.mjs` 和 `tests/ui/field-edit.spec.js`，统一门禁 `pnpm verify:release`。
 
