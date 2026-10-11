@@ -18,6 +18,7 @@ const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
 const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
 let closeTimer, dialogReturnFocus, dialogTrigger, dialogDisposer;
+let outsideGesture, dismissedPoint;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: (s.session?.today || today()).slice(0,7), note: '', expanded: false, error: '', pending: null });
 const draftKey = () => `moneytalk:draft:${s.session.user.id}:${s.session.ledger.id}`;
@@ -116,11 +117,49 @@ function openDialog(title, body, { type = '', wide = false } = {}) {
   if (!dialog.open) {if(docked)dialog.show();else dialog.showModal();}
   dialog.scrollTop = 0;
   document.body.classList.toggle('dialog-open',!docked);document.body.classList.toggle('text-dock-open',docked);
+  if(s.modal && !s.modal.initialControls)s.modal.initialControls=dialogControls();
+}
+function entryValues(draft) {
+  let amount;try{amount=parseAmount(draft.amount);}catch{amount=`invalid:${draft.amount}`;}
+  return canonical({type:draft.type,amount,category_id:draft.category_id,occurred_on:draft.occurred_on,
+    date_precision:draft.date_precision||(draft.occurred_on.length===7?'month':'day'),note:draft.note.trim()});
+}
+function dialogControls() {
+  return JSON.stringify([...dialog.querySelectorAll('input,select,textarea')].map(control=>[
+    control.name||control.id||control.dataset.field||'',control.type,
+    control.type==='file'?[...control.files].map(file=>[file.name,file.size,file.lastModified]):
+    ['checkbox','radio'].includes(control.type)?control.checked:control.value
+  ]));
+}
+function hasDialogChanges() {
+  if(s.modal?.type==='entry')return s.modal.original!==entryValues(s.modal.draft);
+  // Text input already persists in this browser session on every edit and on
+  // disposal. Closing that dock never discards the user's local draft.
+  if(s.modal?.type==='text-records')return false;
+  return Boolean(s.modal?.initialControls && s.modal.initialControls!==dialogControls());
+}
+function returnToEditing() {
+  const {previous,suspended}=s.modal;
+  s.modal=previous;
+  dialog.replaceChildren(suspended.nodes);
+  dialog.className=suspended.className;dialog.dataset.type=previous.type;
+  if(suspended.nonmodal){dialog.close();dialog.show();}
+  dialog.dataset.nonmodal=String(suspended.nonmodal);dialog.setAttribute('aria-modal',String(!suspended.nonmodal));
+  document.body.classList.toggle('dialog-open',!suspended.nonmodal);document.body.classList.toggle('text-dock-open',suspended.nonmodal);
+  dialog.querySelector('.dialog-body').scrollTop=suspended.scrollTop;
+  suspended.focus?.focus({preventScroll:true});
 }
 function closeDialog(force = false) {
+  if(!force&&dialog.classList.contains('closing'))return false;
   if (dialog.dataset.locked === 'true' && !force) { toast('正在处理，请稍候'); return false; }
-  if(!force&&s.modal?.type==='discard'){s.modal=s.modal.previous;updateForm('dialog');return false;}
-  if(!force&&s.modal?.type==='entry'&&s.modal.draft.id&&s.modal.dirty){const previous=s.modal;s.modal={type:'discard',previous};openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;}
+  if(!force&&s.modal?.type==='discard'){returnToEditing();return false;}
+  if(!force&&s.modal?.type==='entry'&&s.modal.draft.pending){toast('保存结果尚未核实，请先重试保存');return false;}
+  if(!force&&hasDialogChanges()){
+    const previous=s.modal,nodes=document.createDocumentFragment();
+    const suspended={nodes,className:dialog.className,nonmodal:dialog.dataset.nonmodal==='true',scrollTop:dialog.querySelector('.dialog-body').scrollTop,focus:dialog.contains(s.modal.lastFocus)?s.modal.lastFocus:dialog.querySelector('[aria-pressed="true"],input:not([type=hidden]),textarea,select')||document.activeElement};
+    nodes.append(...dialog.childNodes);s.modal={type:'discard',previous,suspended};
+    openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;
+  }
   const finish=()=>{dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
   clearTimeout(closeTimer);
   if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
@@ -153,7 +192,8 @@ async function openEntry(id, requestedField = '') {
       s.modal = { type: 'deleted', entry };
       openDialog('已删除的记录', `<div class="backup-summary"><h3>${e(entry.note || entry.category_name)}</h3><p>${e(entry.occurred_on)} · ${e(entry.category_name)} · ${money(entry.amount_minor)}</p></div><button class="button primary" data-action="restore-entry" data-id="${e(entry.id)}" data-version="${entry.version}">恢复记录</button><p class="dialog-intro">恢复后重新计入对应日期的收支。</p>`); return;
     }
-    s.modal = { type: 'entry', dirty: false, field, draft: { ...entry, amount: decimal(entry.amount_minor), expanded: false, error: '', pending: null } };
+    s.modal = { type: 'entry', field, draft: { ...entry, amount: decimal(entry.amount_minor), expanded: false, error: '', pending: null } };
+    s.modal.original=entryValues(s.modal.draft);
     updateForm('dialog');
     if (field) {const control=dialog.querySelector(field==='category_id'?'[aria-pressed="true"]':`[name="${field}"]:not([type=hidden])`); control?.focus({preventScroll:true}); if(field==='amount'||field==='note')control?.select();}
   } catch (error) { toast(error.message); }
@@ -165,7 +205,7 @@ function newEntry(date) {
     document.querySelector('#amount-main')?.focus();
   } else if (s.page === 'record' || (s.page === 'stats' && matchMedia('(min-width: 1440px)').matches)) {
     render(); const field = document.querySelector('[name="amount"]'); field?.scrollIntoView({ block: 'center', behavior: 'smooth' }); field?.focus();
-  } else { s.modal = { type: 'entry', draft: s.draft, dirty: false }; updateForm('dialog'); }
+  } else { s.modal = { type: 'entry', draft: s.draft, original:entryValues(s.draft),originalDraft:{...s.draft} }; updateForm('dialog'); }
 }
 async function saveEntry(form) {
   const context = form.dataset.context, draft = currentDraft(context);
@@ -266,7 +306,7 @@ async function previewBackup(file) {
   const modal = s.modal, area = document.querySelector('#backup-preview');
   if (!file || modal.type !== 'backup') return;
   const ticket = (modal.previewTicket || 0) + 1; modal.previewTicket = ticket;
-  modal.file = null; modal.preview = null; modal.busy = true;
+  modal.file = null; modal.preview = null; modal.busy = true;dialog.dataset.locked='true';
   area.innerHTML = '<p class="dialog-intro">正在检查备份内容…</p>';
   try {
     if (file.size > 20 * 1024 * 1024) throw new Error('文件超过 20 MB，请先拆分备份');
@@ -277,7 +317,7 @@ async function previewBackup(file) {
     modal.file = data; modal.preview = preview;
     area.innerHTML = `${backupSummary(preview)}<p class="dialog-intro">校验通过。下一步写入独立候选账本；当前账本保持不变。</p><button class="button primary" data-action="start-restore">创建并校验候选账本</button><div class="restore-progress" id="restore-progress" role="status"></div>`;
   } catch (error) { if (s.modal === modal && modal.previewTicket === ticket) area.innerHTML = `<p class="field-error" role="alert">${e(error instanceof SyntaxError ? '无法读取 JSON 文件，请选择完整的 MoneyTalk 备份' : error.message)}</p>`; }
-  finally { if (modal.previewTicket === ticket) modal.busy = false; }
+  finally { if (s.modal===modal&&modal.previewTicket === ticket){modal.busy = false;dialog.dataset.locked='false';} }
 }
 async function startRestore() {
   const modal = s.modal; if (!modal?.file || modal.busy) return;
@@ -298,6 +338,7 @@ async function startRestore() {
     await request(`/restores/${job.id}/finish`, { method: 'POST', body: {} });
     progress.innerHTML = `<div class="success-mark">${icon('checks', 27)}</div><p><strong>${job.repeated ? '已找到并核对同一备份的候选账本' : '候选账本已通过完整校验'}</strong></p><p>分类、记录与备份内容一致，当前账本仍在使用。</p><button class="button primary" data-action="activate-ledger" data-id="${e(job.id)}">切换到已校验的候选账本</button>`;
     button.hidden = true;
+    modal.initialControls=dialogControls();
   } catch (error) { progress.innerHTML = `<p class="field-error">${e(error.message)}。当前账本未被替换；可以使用同一备份重试。</p>`; button.textContent = '继续恢复并核对'; button.disabled = false; }
   finally { modal.busy = false; dialog.dataset.locked = 'false'; fileInput.disabled = false; }
 }
@@ -338,6 +379,38 @@ async function logout() {
   else location.assign('/cdn-cgi/access/logout');
 }
 
+function outsideDialog(event) {
+  const rect=dialog.getBoundingClientRect();
+  return event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;
+}
+dialog.addEventListener('focusin',event=>{if(s.modal&&event.target!==dialog)s.modal.lastFocus=event.target;});
+function repeatedDismiss(event) {
+  return dismissedPoint && performance.now()-dismissedPoint.time<500 && Math.hypot(event.clientX-dismissedPoint.x,event.clientY-dismissedPoint.y)<12;
+}
+document.addEventListener('pointerdown',event=>{
+  outsideGesture=null;
+  if(event.button!==0||!dialog.open||!outsideDialog(event))return;
+  if(dialog.dataset.nonmodal==='true'&&event.target.closest('button,a,input,select,textarea,label,[data-route],[data-action]'))return;
+  outsideGesture={modal:s.modal,pointerId:event.pointerId,x:event.clientX,y:event.clientY,ready:false};
+},true);
+document.addEventListener('pointerup',event=>{
+  if(outsideGesture)outsideGesture.ready=outsideGesture.pointerId===event.pointerId&&outsideGesture.modal===s.modal&&outsideDialog(event)&&Math.hypot(event.clientX-outsideGesture.x,event.clientY-outsideGesture.y)<8;
+},true);
+document.addEventListener('pointercancel',()=>{outsideGesture=null;},true);
+document.addEventListener('click',event=>{
+  // Absorb the second click at the same spot, even if the closing animation
+  // has finished. It must not activate the underlying ledger or discard prompt.
+  if(repeatedDismiss(event)){event.preventDefault();event.stopImmediatePropagation();return;}
+  const gesture=outsideGesture;outsideGesture=null;
+  if(!dialog.open||!gesture?.ready||gesture.modal!==s.modal||!outsideDialog(event)){dismissedPoint=null;return;}
+  event.preventDefault();event.stopImmediatePropagation();
+  // A backdrop click never chooses whether to discard changed content.
+  if(s.modal?.type!=='discard'){
+    const previous=s.modal,closing=closeDialog();
+    if(closing||s.modal!==previous)dismissedPoint={x:event.clientX,y:event.clientY,time:performance.now()};
+  }
+},true);
+document.addEventListener('dblclick',event=>{if(repeatedDismiss(event)){event.preventDefault();event.stopImmediatePropagation();}},true);
 document.addEventListener('click', async event => {
   const route = event.target.closest('[data-route]');
   if (route && !event.metaKey && !event.ctrlKey && !event.shiftKey) { event.preventDefault(); navigate(route.dataset.route); return; }
@@ -350,10 +423,14 @@ document.addEventListener('click', async event => {
     else if (action === 'new-entry') newEntry();
     else if (action === 'entry') await openEntry(id, target.dataset.editField);
     else if (action === 'close-dialog') closeDialog();
-    else if(action==='keep-editing'){s.modal=s.modal.previous;updateForm('dialog');}
-    else if(action==='discard-editing')closeDialog(true);
-    else if (action === 'entry-type') { const d = currentDraft(context); if (!d || d.pending) return; d.type = value; d.category_id = s.categories.find(c => c.type === value && !c.archived)?.id || ''; d.expanded = false; d.error = ''; if (s.modal) s.modal.dirty = true; updateForm(context); }
-    else if (action === 'entry-category') { const d = currentDraft(context); if (!d || d.pending) return; d.category_id = id; if (s.modal) s.modal.dirty = true; updateForm(context); }
+    else if(action==='keep-editing')returnToEditing();
+    else if(action==='discard-editing'){
+      const previous=s.modal.previous;
+      if(previous.type==='entry'&&!previous.draft.id){s.draft={...previous.originalDraft};saveDraft();render();}
+      closeDialog(true);
+    }
+    else if (action === 'entry-type') { const d = currentDraft(context); if (!d || d.pending) return; d.type = value; d.category_id = s.categories.find(c => c.type === value && !c.archived)?.id || ''; d.expanded = false; d.error = ''; updateForm(context); }
+    else if (action === 'entry-category') { const d = currentDraft(context); if (!d || d.pending) return; d.category_id = id; updateForm(context); }
     else if (action === 'expand-categories') { const d = currentDraft(context); d.expanded = !d.expanded; updateForm(context); }
     else if (action === 'reload-entry') await openEntry(id, s.modal?.field);
     else if (action === 'delete-entry') await confirmDelete(id);
@@ -393,14 +470,13 @@ document.addEventListener('input', event => {
   const form = event.target.closest('[data-form="entry"]'); if (!form) return;
   const d = currentDraft(form.dataset.context); if (!d || d.pending) return;
   if (['amount', 'note', 'occurred_on'].includes(event.target.name)) d[event.target.name] = event.target.value;
-  if (s.modal?.type === 'entry') s.modal.dirty = true;
   if (event.target.name === 'amount') event.target.classList.toggle('long-value', event.target.value.length > 10);
   if (event.target.name === 'note') form.querySelector('.char-count').textContent = `${d.note.length}/200`;
   if (!d.id) saveDraft();
 });
 document.addEventListener('change', async event => {
   if (event.target.dataset.action === 'month') { if (!/^\d{4}-\d{2}$/.test(event.target.value)) return; s.month = event.target.value; s.billRange = null; s.offset = 0; await load(); }
-  if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);if(!d || d.pending)return;d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;if(s.modal?.type==='entry')s.modal.dirty=true;saveDraft();updateForm(form.dataset.context);return;}
+  if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);if(!d || d.pending)return;d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;saveDraft();updateForm(form.dataset.context);return;}
   if (event.target.name === 'occurred_on' && event.target.closest('[data-form="entry"]')) {
     const form = event.target.closest('form'), d = currentDraft(form.dataset.context), label = event.target.closest('.date-control').querySelector('span');
     if (d.occurred_on) label.textContent = recordDateLabel(d.occurred_on);
@@ -424,7 +500,7 @@ document.addEventListener('submit', async event => {
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open&&dialog.dataset.nonmodal==='true'){event.preventDefault();closeDialog();}});
 dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
 window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);s.filters=routeFilters(p);s.offset=routeOffset(p);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
-window.addEventListener('beforeunload', event => { if (s.modal?.type === 'entry' && s.modal.draft.id && s.modal.dirty) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { const modal=s.modal?.type==='discard'?s.modal.previous:s.modal;if (modal?.type==='entry'&&modal.draft.id&&(modal.original!==entryValues(modal.draft)||modal.draft.pending)) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && s.session && !dialog.open && !s.draft?.saving && !document.activeElement?.matches('input,textarea')) { s.session.today = today(); load({ quiet: true }); } });
 window.addEventListener('online', () => { if (s.error) load(); });
 function updateViewport() {
