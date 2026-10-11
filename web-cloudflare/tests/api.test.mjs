@@ -269,6 +269,26 @@ test('ambiguous existing recurrence remains a draft at the server even with ques
  assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{method:'POST',body:{version:1,preview_hash:plan.preview_hash}})).status,400);
 });
 
+test('legacy unknown charge day requires explicit month precision and still rejects an unknown start',async()=>{
+ const user='explicit-month-choice';await req('/api/session',{user});
+ const legacy=textItem({id:'legacy-month',start_month:null,through_month:'2026-01',charge_day:null,amount_minor:1,questions:[]});
+ const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成旧循环模式',items:[legacy]}})).data.batch;
+ const preview=()=>req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{item_ids:[legacy.id]}});
+ let plan=(await preview()).data;assert.equal(plan.count,0);assert.ok(plan.rows[0].missing.includes('扣款日待确认'));
+ const patch=async(version,item)=>req(`/api/text-batches/${batch.id}`,{user,method:'PATCH',body:{version,original_text:batch.original_text,items:[item]}});
+ const monthly={...legacy,date_precision:'month'};assert.equal((await patch(1,monthly)).status,200);
+ plan=(await preview()).data;assert.equal(plan.count,0);assert.ok(plan.rows[0].missing.includes('起始月待确认'));assert.ok(!plan.rows[0].missing.includes('扣款日待确认'));
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:2,preview_hash:plan.preview_hash,item_ids:[legacy.id]}})).status,400);
+ assert.equal((await req('/api/entries',{user})).data.totals.count,0);
+ assert.equal((await patch(2,{...monthly,start_month:'2025-10'})).status,200);
+ plan=(await preview()).data;assert.equal(plan.count,4);
+ const body={version:3,preview_hash:plan.preview_hash,item_ids:[legacy.id]},key=crypto.randomUUID();
+ const result=await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body,key});assert.equal(result.status,200);assert.equal(result.data.expense_minor,4);
+ assert.deepEqual((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body,key})).data,result.data);
+ const entries=(await req('/api/entries',{user})).data.entries;assert.equal(entries.length,4);assert.deepEqual(entries.map(e=>e.occurred_on).sort(),['2025-10','2025-11','2025-12','2026-01']);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,3);assert.equal(backup.text_batches[0].items[0].charge_day,null);assert.equal(backup.text_batches[0].items[0].date_precision,'month');
+});
+
 test('one-item confirmation binds preview scope, preserves purchase gaps, locks saved rows and retries once',async()=>{
  const user='per-item-test';await req('/api/session',{user});
  const items=['第一件','第二件','第三件'].map((title,n)=>textItem({id:`item-${n+1}`,cycle:'single',occurred_on:'2026-09',amount_minor:n+1,title:`淘宝 · ${title}`}));
