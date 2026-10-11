@@ -1,3 +1,4 @@
+import { categorySuggestion, spokenCategory } from './category-suggestions.js';
 import { parseAmount, validDate, validRecordDate, today, shiftMonth, exactSum } from './format.js';
 
 export const CYCLES = { single: '单笔', monthly: '每月', quarterly: '每季度', yearly: '每年', unknown: '待确认' };
@@ -7,7 +8,7 @@ function dates(text) {
   return [...text.matchAll(new RegExp(`(?<!\\d)(${dateToken})\\s*(?:年|-)\\s*(\\d{1,2})\\s*(?:月|-)(?:\\s*(\\d{1,2})\\s*[日号]?)?`, 'g'))].map(m => ({ text:m[0], index:m.index, year:Number(m[1]) < 100 ? 2000 + Number(m[1]) : Number(m[1]), month:Number(m[2]), day:m[3] ? Number(m[3]) : null }));
 }
 const monthOf = d => `${d.year}-${String(d.month).padStart(2,'0')}`;
-export function parseTextRecords(raw, currentDay = today()) {
+export function parseTextRecords(raw, currentDay = today(), categories = null) {
   if (typeof raw !== 'string' || !raw.trim() || raw.length > 10000) throw new Error('请填写 1–10,000 字的文字');
   const parts = raw.split(/[\n；;。]+/).map(x=>x.trim()).filter(Boolean);
   const clauses = [];
@@ -21,7 +22,7 @@ export function parseTextRecords(raw, currentDay = today()) {
       for(const d of dates(chunk))masked=masked.replace(d.text,'');
       masked=masked.replace(/\d{2,4}\s*年|(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
       const priced=/[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
-      if(at===0&&!priced&&/^(?:从|今天|昨日|昨天|前天|截至|截止)/.test(chunk)&&chunks.length>1){prefix=chunk;continue;}
+      if(at===0&&!priced&&/^(?:从|今天|昨日|昨天|前天|截至|截止|分类|归到|归入)/.test(chunk)&&chunks.length>1){prefix=chunk;continue;}
       if(prefix&&!priced){prefix+='，'+chunk;continue;}
       if(prefix){chunk=prefix+'，'+chunk;prefix='';}
       if(clauses.length&&(!priced||/^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(chunk)))clauses[clauses.length-1]+='，'+chunk;
@@ -32,6 +33,7 @@ export function parseTextRecords(raw, currentDay = today()) {
   if (clauses.length > 40) throw new Error('一次最多 40 项，请分批核对');
   return clauses.map((raw, index) => {
     const item = { id:`item-${index + 1}`, raw, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true };
+    const spoken=categories?spokenCategory(raw,categories,item.type):null;
     const foundDates = dates(raw);
     if (!foundDates.length) {
       const short=raw.match(/(?<!\d)(\d{1,2})\s*月(?:\s*(\d{1,2})\s*[日号])?/);
@@ -82,10 +84,13 @@ export function parseTextRecords(raw, currentDay = today()) {
     let title=raw.split(/[,，]/).find(part=>{let core=part;for(const d of dates(part))core=core.replace(d.text,'');core=core.replace(/(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');return /[+-]?\d/.test(core)&&! /^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(part);})||raw.split(/[,，]/)[0];
     for (const d of foundDates) title=title.replace(d.text,'');
     title=title.replace(/(?:每月|每个月)\s*\d{1,2}\s*[日号]/g,'').replace(/上个月|上月|本月|这个月|去年|前年|每个月|每月|每季度|每年|月付|年付|季付|今天|昨天|前天|先帮我|帮我|记录|记一下|记一笔|支出|收入|每|花了|花|付了|付|有|元|块|人民币|工资到账|收到|从|开始/g,'').replace(/[¥￥]?\s*[+-]?\d+(?:,\d{3})*(?:\.\d+)?/g,'').replace(/^[的\s]+|[的\s]+$/g,'').trim();
+    if(spoken?.token)title=title.replace(spoken.token,'').trim();
     item.title=title.slice(0,80) || (item.type==='income'?'收入待命名':'项目待命名');
     if (item.type==='income') item.category_id=/工资/.test(raw)?'salary':/奖金/.test(raw)?'bonus':'other-income';
     else item.category_id=/餐|饭|吃|咖啡|奶茶/.test(title)?'food':/车|地铁|公交|打车/.test(title)?'transport':/房租/.test(title)?'housing':'other';
     if (foundDates.some(d=>!validMonth(monthOf(d)))) item.questions.push('原文日期无效');
+    if(spoken)return categorySuggestion(item,categories,spoken.name);
+    if(categories&&!categories.some(c=>c.id===item.category_id&&c.type===item.type&&!c.archived))item.category_id=null;
     return item;
   });
 }
@@ -95,6 +100,7 @@ export function compileTextItems(items, currentDay=today(), slots=[]) {
     const missing=[...item.questions], entries=[];
     if (!item.title.trim()) missing.push('名称待补全');
     if (!item.amount_minor) missing.push('金额待补全');
+    if(item.category_hint&&!item.category_hint.resolved)missing.push(`请选择“${item.category_hint.name}”的分类建议`);
     if (!item.category_id) missing.push('分类待补全');
     if (item.cycle==='single') {
       if (!validRecordDate(item.occurred_on || '') || item.occurred_on > currentDay) missing.push('日期须为本月或之前的有效月份，或今天之前的日期');

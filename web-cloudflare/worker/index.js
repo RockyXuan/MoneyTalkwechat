@@ -3,7 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import { ApiError, authenticate, requireSameOrigin } from './auth.js';
 import { all, first, statement, stamp, initUser, ownedLedger, validateCategory, operation, entryInsert, filters, categoryRow, exportBackup, exportCsv } from './store.js';
-import { entryInput, categoryInput, validDate, today, periodRange, buckets } from '../shared/domain.js';
+import { entryInput, categoryInput, validDate, today, periodRange, buckets, digest } from '../shared/domain.js';
 import { registerRestores } from './restores.js';
 import { registerTextRecords } from './text-records.js';
 
@@ -55,14 +55,28 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     await statement(c.env.DB, 'UPDATE users SET active_ledger_id=? WHERE id=?', [target.id, c.get('user').id]).run();
     return c.json({ ledger: target });
   });
-  app.get('/api/categories', async c => c.json({ categories: (await all(c.env.DB, 'SELECT id,name,type,color_key,icon,sort_order,archived,version FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [c.get('ledger').id])).map(categoryRow) }));
+  app.get('/api/categories', async c => c.json({ categories: (await all(c.env.DB, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,version FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [c.get('ledger').id])).map(categoryRow) }));
+  app.post('/api/categories/resolve', async c => {
+    const value=z.object({name:categoryInput.shape.name,type:categoryInput.shape.type}).strict().parse(await c.req.json());
+    const db=c.env.DB,ledger=c.get('ledger').id,user=c.get('user'),key=c.req.header('Idempotency-Key'),requestValue={route:'resolve-category',value};
+    const prior=await first(db,'SELECT request_hash,response_json FROM operations WHERE user_id=? AND ledger_id=? AND key=?',[user.id,ledger,key||'']);
+    if(prior){if(prior.request_hash!==await digest(requestValue))throw new ApiError(409,'KEY_REUSED','同一次提交内容已变化');return c.json(JSON.parse(prior.response_json));}
+    const existing=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);
+    if(existing?.archived)throw new ApiError(409,'CATEGORY_ARCHIVED','同名分类已停用，请先在分类管理恢复，或选择其他分类');
+    if(existing)return c.json(await operation(db,user,ledger,key,requestValue,{category:categoryRow(existing),reused:true},[]));
+    const count=await first(db,'SELECT COUNT(*) AS n FROM categories WHERE ledger_id=?',[ledger]);
+    if(count.n>=100)throw new ApiError(400,'CATEGORY_LIMIT','一个账本最多支持 100 个分类，请选择已有分类');
+    const category={id:crypto.randomUUID(),...value,color_key:'slate',icon:'wallet',sort_order:100,archived:false,version:1};
+    try{return c.json(await operation(db,user,ledger,key,requestValue,{category,reused:false},[statement(db,'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived) SELECT ?,?,?,?,?,?,?,0 WHERE (SELECT COUNT(*) FROM categories WHERE ledger_id=?)<100',[ledger,category.id,category.name,category.type,category.color_key,category.icon,category.sort_order,ledger])],{sql:'(SELECT COUNT(*) FROM categories WHERE ledger_id=?)<100',values:[ledger]}),201);}
+    catch(error){const same=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);if(!same||same.archived)throw error;return c.json(await operation(db,user,ledger,key,requestValue,{category:categoryRow(same),reused:true},[]));}
+  });
   app.post('/api/categories', async c => {
     const value = categoryInput.parse(await c.req.json());
     const db = c.env.DB, ledger = c.get('ledger').id;
     const count = await first(db, 'SELECT COUNT(*) AS n FROM categories WHERE ledger_id=?', [ledger]);
     if (count.n >= 100) throw new ApiError(400, 'CATEGORY_LIMIT', '一个账本最多支持 100 个分类');
     const category = { id: crypto.randomUUID(), ...value, version: 1 };
-    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-category', value }, { category }, [statement(db, 'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived) VALUES(?,?,?,?,?,?,?,?)', [ledger, category.id, value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived)])]);
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-category', value }, { category }, [statement(db, 'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived,aliases_json) VALUES(?,?,?,?,?,?,?,?,?)', [ledger, category.id, value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(value.aliases||[])])]);
     return c.json(result, 201);
   });
   app.patch('/api/categories/:id', async c => {
@@ -71,7 +85,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const old = await first(db, 'SELECT * FROM categories WHERE ledger_id=? AND id=?', [ledger, id]);
     if (!old) throw new ApiError(404, 'NOT_FOUND', '分类不存在');
     if (old.type !== value.type && await first(db, 'SELECT id FROM entries WHERE ledger_id=? AND category_id=? LIMIT 1', [ledger, id])) throw new ApiError(400, 'CATEGORY_IN_USE', '已有记录的分类不能切换收入或支出类型');
-    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-category', id, version, value }, { category: { id, ...value, version: version + 1 } }, [statement(db, 'UPDATE categories SET name=?,type=?,color_key=?,icon=?,sort_order=?,archived=?,version=version+1 WHERE ledger_id=? AND id=? AND version=?', [value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM categories WHERE ledger_id=? AND id=? AND version=?)', values: [ledger, id, version] });
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-category', id, version, value }, { category: { id, ...value, aliases:value.aliases??JSON.parse(old.aliases_json||'[]'), version: version + 1 } }, [statement(db, 'UPDATE categories SET name=?,type=?,color_key=?,icon=?,sort_order=?,archived=?,aliases_json=?,version=version+1 WHERE ledger_id=? AND id=? AND version=?', [value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(value.aliases??JSON.parse(old.aliases_json||'[]')), ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM categories WHERE ledger_id=? AND id=? AND version=?)', values: [ledger, id, version] });
     return c.json(result);
   });
   app.get('/api/entries', async c => {

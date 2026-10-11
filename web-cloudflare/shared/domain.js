@@ -11,14 +11,15 @@ export const entryInput = z.object({
   category_id: id, occurred_on: date, note: z.string().trim().max(200).default(''),
 }).strict();
 export const categoryInput = z.object({
+  aliases: z.array(z.string().trim().min(1).max(32)).max(20).refine(a=>new Set(a.map(x=>x.normalize('NFKC').toLocaleLowerCase())).size===a.length,'别称不能重复').optional(),
   name: z.string().trim().min(1).max(32), type: z.enum(['expense', 'income']),
   color_key: z.enum(Object.keys(PALETTE)), icon: z.enum(ICONS),
   sort_order: z.number().int().min(0).max(10000).default(100), archived: z.boolean().default(false),
 }).strict();
-export const backupCategory = categoryInput.extend({ id });
+export const backupCategory = categoryInput.extend({ id }).transform(({aliases,...category})=>({...category,...(aliases?.length?{aliases}:{})}));
 export const backupEntry = entryInput.extend({ id, version: z.number().int().min(1), created_at: timestamp, updated_at: timestamp, deleted_at: timestamp.nullable() });
 export const backupSchema = z.object({
-  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2), z.literal(3)]), exported_at: timestamp,
+  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]), exported_at: timestamp,
   ledger: z.object({ name: z.string().trim().min(1).max(64), currency: z.literal('CNY'), timezone: z.literal(TIMEZONE) }).strict(),
   categories: z.array(backupCategory).max(100), entries: z.array(backupEntry).max(50000),
   text_batches:z.array(textBatchSchema).max(100).optional(),text_slots:z.array(textSlotSchema).max(12000).optional(),
@@ -29,6 +30,7 @@ export function validateBackup(raw) {
   const data = parsed.data;
   const errors = [];
   if (data.version < 3 && ((data.text_slots||[]).some(s=>s.occurred_on.length===7) || data.entries.some(e=>e.occurred_on.length===7) || (data.text_batches||[]).some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined)))) errors.push('日期精度记录需要版本 3 备份');
+  if (data.version < 4 && (data.categories.some(c=>c.aliases?.length) || (data.text_batches||[]).some(b=>b.items.some(i=>i.category_hint)))) errors.push('分类建议需要版本 4 备份');
   const cats = new Map();
   const names = new Set();
   for (const c of data.categories) {
@@ -50,7 +52,10 @@ export function validateBackup(raw) {
   for(const b of data.text_batches||[]){
     if(batchIds.has(b.id))errors.push('文字批次 ID 重复');
     batchIds.set(b.id,b);
-    for(const item of b.items)if(item.category_id&&cats.get(item.category_id)?.type!==item.type)errors.push('文字候选分类缺失或类型不符');
+    for(const item of b.items){
+      if(item.category_id&&cats.get(item.category_id)?.type!==item.type)errors.push('文字候选分类缺失或类型不符');
+      if(item.category_hint?.recommended_ids.some(id=>cats.get(id)?.type!==item.type))errors.push('分类建议引用缺失或类型不符');
+    }
     if(b.updated_at<b.created_at)errors.push('文字批次修改时间早于创建时间');
   }
   for(const slot of data.text_slots||[]){
@@ -68,7 +73,7 @@ export function validateBackup(raw) {
   } };
 }
 export function backupContent(data) {
-  return { ledger: data.ledger, categories: [...data.categories].sort((a, b) => a.id.localeCompare(b.id)), entries: [...data.entries].sort((a, b) => a.id.localeCompare(b.id)), ...(data.text_batches?.length ? {text_batches:[...data.text_batches].sort((a,b)=>a.id.localeCompare(b.id))}:{}), ...(data.text_slots?.length ? {text_slots:[...data.text_slots].sort((a,b)=>`${a.batch_id}|${a.item_id}|${a.occurred_on}`.localeCompare(`${b.batch_id}|${b.item_id}|${b.occurred_on}`))}:{}) };
+  return { ledger: data.ledger, categories: data.categories.map(({aliases,...category})=>({...category,...(aliases?.length?{aliases}:{})})).sort((a, b) => a.id.localeCompare(b.id)), entries: [...data.entries].sort((a, b) => a.id.localeCompare(b.id)), ...(data.text_batches?.length ? {text_batches:[...data.text_batches].sort((a,b)=>a.id.localeCompare(b.id))}:{}), ...(data.text_slots?.length ? {text_slots:[...data.text_slots].sort((a,b)=>`${a.batch_id}|${a.item_id}|${a.occurred_on}`.localeCompare(`${b.batch_id}|${b.item_id}|${b.occurred_on}`))}:{}) };
 }
 export function csvCell(value) {
   let text = String(value ?? '');

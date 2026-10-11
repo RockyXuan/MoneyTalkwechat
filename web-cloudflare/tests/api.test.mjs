@@ -362,3 +362,55 @@ test('field edits preserve the other values, refresh aggregates and reject stale
   assert.equal((await req('/api/entries?from=2026-09-01&to=2026-09-30',{user})).data.totals.count,0);
   assert.equal((await req('/api/backup',{user})).data.entries[0].occurred_on,'2026-08');
 });
+
+test('private category aliases persist with version and survive full backup restore',async()=>{
+ const user='alias-contract';await req('/api/session',{user});
+ const cat=(await req('/api/categories',{user,method:'POST',body:{name:'合成孩子',type:'expense',color_key:'blue',icon:'wallet',aliases:['小禾']}})).data.category;
+ const get=()=>req('/api/categories',{user}).then(r=>r.data.categories.find(c=>c.id===cat.id));assert.deepEqual((await get()).aliases,['小禾']);
+ const body={name:cat.name,type:cat.type,color_key:cat.color_key,icon:cat.icon,sort_order:100,archived:false,version:1};
+ assert.equal((await req(`/api/categories/${cat.id}`,{user,method:'PATCH',body})).status,200);assert.deepEqual((await get()).aliases,['小禾']);
+ assert.equal((await req(`/api/categories/${cat.id}`,{user,method:'PATCH',body:{...body,version:1,aliases:[]}})).status,409);
+ assert.equal((await req('/api/categories',{user:'outsider',ledger:(await req('/api/session',{user})).data.ledger.id})).status,403);
+ const hint=textItem({id:'alias-restore',cycle:'single',occurred_on:'2026-09',category_id:null,category_hint:{name:'小禾',recommended_ids:[cat.id],resolved:false}});
+ await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成分类建议恢复',items:[hint]}});
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,4);assert.deepEqual(backup.categories.find(c=>c.id===cat.id).aliases,['小禾']);
+ const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ assert.deepEqual(backupContent((await req('/api/backup',{user,ledger:job.id})).data),backupContent(backup));
+});
+test('one-click category creation reuses same name concurrently and retains idempotency at limit',async()=>{
+ const user='alias-create';await req('/api/session',{user});const body={name:'合成新分类',type:'expense'},key=crypto.randomUUID();
+ const results=await Promise.all([req('/api/categories/resolve',{user,method:'POST',body,key}),req('/api/categories/resolve',{user,method:'POST',body}),req('/api/categories/resolve',{user,method:'POST',body,key})]);
+ assert.ok(results.every(r=>r.status<300));assert.equal(new Set(results.map(r=>r.data.category.id)).size,1);
+ assert.equal((await req('/api/categories/resolve',{user,method:'POST',body:{...body,name:'另一个'},key})).status,409);
+ const id=results[0].data.category.id;const cat=(await req('/api/categories',{user})).data.categories.find(c=>c.id===id);
+ await req(`/api/categories/${id}`,{user,method:'PATCH',body:{name:cat.name,type:cat.type,color_key:cat.color_key,icon:cat.icon,version:1,archived:true}});
+ assert.equal((await req('/api/categories/resolve',{user,method:'POST',body})).status,409);
+ assert.equal((await req('/api/categories/resolve',{user,method:'POST',body,key})).data.category.id,id);
+ const ledger=(await req('/api/session',{user})).data.ledger.id;const n=(await req('/api/categories',{user})).data.categories.length;
+ for(let i=n;i<99;i++)await db.prepare("INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order) VALUES(?,?,?,'expense','slate','wallet',100)").bind(ledger,`limit-${i}`,`限制分类${i}`).run();
+ const lastKey=crypto.randomUUID(),last={name:'最后一个',type:'expense'};
+ const near=await Promise.all([req('/api/categories/resolve',{user,method:'POST',body:last,key:lastKey}),req('/api/categories/resolve',{user,method:'POST',body:{name:'并发另一个',type:'expense'}})]);
+ assert.equal(near.filter(r=>r.status<300).length,1);assert.equal((await req('/api/categories',{user})).data.categories.length,100);
+ const successful=near.find(r=>r.status<300);if(successful.data.category.name===last.name)assert.equal((await req('/api/categories/resolve',{user,method:'POST',body:last,key:lastKey})).status,200);
+ assert.equal((await req('/api/categories/resolve',{user,method:'POST',body:{name:'超限',type:'expense'}})).status,400);
+});
+test('unresolved category suggestions cannot create entries and foreign hints are rejected',async()=>{
+ const user='alias-pending';await req('/api/session',{user});
+ const item=textItem({id:'alias-item',cycle:'single',occurred_on:'2026-09',category_id:'food',category_hint:{name:'小禾',recommended_ids:['food'],resolved:false}});
+ const bad=await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成无效推荐',items:[{...item,category_hint:{...item.category_hint,recommended_ids:['not-owned']}}]}});assert.equal(bad.status,400);
+ const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成未选择推荐',items:[item]}})).data.batch;
+ const preview=(await req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{}})).data;assert.equal(preview.count,0);assert.equal(preview.pending_count,1);
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:preview.preview_hash}})).status,400);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,4);assert.equal(backup.text_batches[0].items[0].category_hint.resolved,false);
+ assert.equal((await req('/api/restores/preview',{user,method:'POST',body:backup})).data.valid,true);
+});
+
+test('a valid backup containing empty alias arrays restores without changing its content fingerprint',async()=>{
+ const user='empty-alias-restore';await req('/api/session',{user});const backup=demoBackup();backup.version=4;backup.entries=[];backup.categories=backup.categories.map(c=>({...c,aliases:[]}));
+ const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0}})).data;
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ assert.deepEqual(backupContent((await req('/api/backup',{user,ledger:job.id})).data),backupContent(backup));
+});

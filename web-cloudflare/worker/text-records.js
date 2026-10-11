@@ -28,6 +28,7 @@ async function preview(c,batch,selectedIds=null) {
  const hash=await digest({id:batch.id,version:batch.version,items:batch.items,selectedIds,entries:plan.entries,duplicates,slots});
  return {...plan,duplicates,preview_hash:hash};
 }
+async function validateHints(c,items){for(const item of items)for(const id of item.category_hint?.recommended_ids||[]){const cat=await first(c.env.DB,'SELECT type FROM categories WHERE ledger_id=? AND id=?',[c.get('ledger').id,id]);if(cat?.type!==item.type)throw new ApiError(400,'INVALID_CATEGORY','分类建议须来自当前账本的同类型分类');}}
 export function registerTextRecords(app) {
  app.get('/api/text-batches',async c=>{
   const rows=await all(c.env.DB,'SELECT * FROM text_batches WHERE ledger_id=? ORDER BY updated_at DESC,id LIMIT 101',[c.get('ledger').id]);
@@ -38,6 +39,7 @@ export function registerTextRecords(app) {
  });
  app.post('/api/text-batches',async c=>{
   const value=input.parse(await c.req.json()),db=c.env.DB,ledger=c.get('ledger').id;
+  await validateHints(c,value.items);
   const fingerprint=await digest({original_text:value.original_text,items:value.items.map(({id,...i})=>i)});
   const existing=await first(db,'SELECT * FROM text_batches WHERE ledger_id=? AND fingerprint=?',[ledger,fingerprint]);
   if(existing)return c.json({batch:textBatchRow(existing),repeated:true});
@@ -49,6 +51,7 @@ export function registerTextRecords(app) {
  });
  app.patch('/api/text-batches/:id',async c=>{
   const value=input.extend({version}).parse(await c.req.json()),batch=await getBatch(c),db=c.env.DB,ledger=c.get('ledger').id;
+  await validateHints(c,value.items);
   const locked=await all(db,'SELECT DISTINCT item_id FROM text_slots WHERE ledger_id=? AND batch_id=?',[ledger,batch.id]);
   if(locked.some(row=>canonical(batch.items.find(i=>i.id===row.item_id))!==canonical(value.items.find(i=>i.id===row.item_id))))throw new ApiError(409,'TEXT_LOCKED','已生成账目的规则字段不能修改；请暂停旧规则后建立新规则，未生成的项目仍可补全');
   const now=stamp();

@@ -170,7 +170,7 @@ async function openTextRecords(initialBatchId=null) {
   const modal={type:'text-records',dispose:null};s.modal=modal;
   openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
@@ -277,7 +277,7 @@ function editCategory(id) { s.modal = { type: 'category', category: s.categories
 async function saveCategory(form) {
   const modal = s.modal; if (modal.busy) return;
   const fields = new FormData(form), previous = modal.category;
-  const body = { name: fields.get('name').trim(), type: previous?.type || fields.get('type'), color_key: fields.get('color_key'), icon: fields.get('icon'), sort_order: Number(fields.get('sort_order')), archived: fields.get('archived') === 'on' };
+  const body = { aliases:String(fields.get('aliases')||'').split(/[,，;；\n]/).map(x=>x.trim()).filter(Boolean), name: fields.get('name').trim(), type: previous?.type || fields.get('type'), color_key: fields.get('color_key'), icon: fields.get('icon'), sort_order: Number(fields.get('sort_order')), archived: fields.get('archived') === 'on' };
   if (previous) body.version = previous.version;
   if (modal.body && canonical(modal.body) !== canonical(body)) modal.key = crypto.randomUUID();
   modal.body = body; modal.busy = true; dialog.dataset.locked = 'true'; form.querySelector('button[type=submit]').disabled = true;

@@ -10,7 +10,7 @@ export function entryRow(row) {
   const { ledger_id, ...entry } = row;
   return entry;
 }
-export function categoryRow(row) { return { ...row, archived: Boolean(row.archived) }; }
+export function categoryRow(row) { const {aliases_json,...category}=row; const aliases=JSON.parse(aliases_json||'[]');return {...category,archived:Boolean(row.archived),...(aliases.length?{aliases}:{})}; }
 export async function initUser(db, identity) {
   const userId = await digest(`${identity.issuer}|${identity.sub}`);
   const existing = await first(db, 'SELECT * FROM users WHERE id=?', [userId]);
@@ -84,7 +84,7 @@ export function filters(query, ledgerId) {
 }
 export async function exportBackup(db, ledger) {
   const result = await db.batch([
-    statement(db, 'SELECT id,name,type,color_key,icon,sort_order,archived FROM categories WHERE ledger_id=? ORDER BY id', [ledger.id]),
+    statement(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived FROM categories WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT id,original_text,items_json,status,version,created_at,updated_at FROM text_batches WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT batch_id,item_id,occurred_on,entry_id FROM text_slots WHERE ledger_id=? ORDER BY batch_id,item_id,occurred_on', [ledger.id]),
@@ -94,7 +94,7 @@ export async function exportBackup(db, ledger) {
   const text_batches=rows.map(({items_json,...b})=>({...b,items:JSON.parse(items_json)}));
   const text_slots=result[3].results;
   const monthPrecision=entries.some(e=>e.occurred_on.length===7)||text_batches.some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined));
-  return backupSchema.parse({ format: 'moneytalk-backup', version: monthPrecision ? 3 : text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
+  return backupSchema.parse({ format: 'moneytalk-backup', version: categories.some(c=>JSON.parse(c.aliases_json||'[]').length)||text_batches.some(b=>b.items.some(i=>i.category_hint)) ? 4 : monthPrecision ? 3 : text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
 }
 export function exportCsv(rows) {
   const header = ['日期', '类型', '分类', '金额（元）', '备注', '记录ID'];
