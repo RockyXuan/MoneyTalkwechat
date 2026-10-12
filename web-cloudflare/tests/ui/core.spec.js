@@ -276,7 +276,9 @@ test('STAT01–05 all periods and charts use identical totals, preference and dr
   await expect(page.locator('.chart-data table')).toBeVisible();
   await page.locator('.ranking-row[data-id="food"]').click();
   await expect(page).toHaveURL(/\/bills/);
-  await expect(page.locator('.filter-summary')).toContainText('餐饮');
+  await expect(page.locator('.active-filters')).toContainText('分类：餐饮');
+  await expect(page.locator('[data-action=remove-filter][data-value=category_id]')).toBeVisible();
+  await expect(page).toHaveURL(/category_id=food/);
   await expect(page.locator('.summary-card.expense')).toContainText('1,240.00');
 });
 
@@ -292,7 +294,9 @@ test('STAT06 legend drilldown, prior/next year and date picker', async ({ page }
   await expect(page.locator('#expense-chart')).toBeVisible();
   await page.locator('.mobile-tools input[type="month"]').fill('2026-09');
   await page.locator('.chart-legend [data-id="shopping"]').click();
-  await expect(page.locator('.filter-summary')).toContainText('购物');
+  await expect(page.locator('.active-filters')).toContainText('分类：购物');
+  await expect(page.locator('[data-action=remove-filter][data-value=category_id]')).toBeVisible();
+  await expect(page).toHaveURL(/category_id=shopping/);
 });
 
 test('SET01–03 category create, rename, stable color, archive and history', async ({ page, ledger }) => {

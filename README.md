@@ -22,6 +22,8 @@
 
 ## 产品和交付入口
 
+2026-10-12 产品研究与改进：[中国、美国及全球 17 款产品的研究沉淀](web-cloudflare/docs/research-20261012/README.md)、[本轮实施与验收计划](web-cloudflare/docs/research-20261012/implementation-plan.md)、[后续路线与选择边界](web-cloudflare/docs/research-20261012/roadmap.md)。用户已选手机版 B 平台快捷切换；退款专项已按用户最新要求封存；预算、白条/月付仅列待评估候选，研究建议不等于已经上线。当前轮次实际发布状态见本目录后续验收记录。
+
 [产品主旨](PROJECT_BRIEF.md) · [架构与边界](docs/architecture.md) · [阶段进度](DEVELOPMENT_PLAN.md) · [Mac 交接及历史来源](docs/mac-html-cloudflare-handoff.md) · [本地验收记录](web-cloudflare/docs/acceptance.md) · [协作规则](AGENTS.md)
 
 首版聚焦可靠收入/支出、修改删除、分类、基础统计、导出恢复。语音、通用 AI 和家庭共享仍待评估，没有放入无法使用的首版入口。iOS-first、App Store、CloudKit、微信公众号/小程序同步、GLM5.2/WorkBuddy 旧任务均已作废。

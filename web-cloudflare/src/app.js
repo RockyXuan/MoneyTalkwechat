@@ -16,14 +16,14 @@ const routeFilters = params => ({ type: ['expense', 'income'].includes(params.ge
 const routeOffset = params => { const value = Number(params.get('offset')); return Number.isSafeInteger(value) && value >= 0 && value <= 10000000 ? Math.floor(value / 50) * 50 : 0; };
 const initialRange=validDate(initialParams.get('from'))&&validDate(initialParams.get('to'))&&initialParams.get('from')<=initialParams.get('to')?{from:initialParams.get('from'),to:initialParams.get('to')}:null;
 const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
-const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
+const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, platformSource:'', filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
 let closeTimer, dialogReturnFocus, dialogTrigger, dialogDisposer;
 let outsideGesture, dismissedPoint;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: (s.session?.today || today()).slice(0,7), note: '', expanded: false, error: '', pending: null });
 const draftKey = () => `moneytalk:draft:${s.session.user.id}:${s.session.ledger.id}`;
-function saveDraft() { if (!s.session || !s.draft) return; try { const { saving, error, ...draft } = s.draft; sessionStorage.setItem(draftKey(), JSON.stringify(draft)); } catch { toast('当前浏览器不能保留草稿，请在离开前保存'); } }
+function saveDraft() { if (!s.session || !s.draft) return; try { const { saving, error, ...draft } = s.draft; sessionStorage.setItem(draftKey(), JSON.stringify(draft)); if(s.modal?.type==='entry'&&s.modal.draft.isCopy){const {saving,error,...copy}=s.modal.draft;sessionStorage.setItem(`${draftKey()}:copy`,JSON.stringify(copy));} } catch { toast('当前浏览器不能保留草稿，请在离开前保存'); } }
 function readDraft() { try { s.draft = { ...baseDraft(), ...JSON.parse(sessionStorage.getItem(draftKey()) || '{}'), saving: false, error: '' }; } catch { s.draft = baseDraft(); } }
 function clearDrafts() { s.receipt=null; for (let i = sessionStorage.length - 1; i >= 0; i--) { const key = sessionStorage.key(i); if (key?.startsWith('moneytalk:draft:')) sessionStorage.removeItem(key); } }
 function currentDraft(context) { return context === 'dialog' ? s.modal?.draft : s.draft; }
@@ -64,6 +64,7 @@ async function init() {
     readDraft();
     if (!knownPages.includes(location.pathname.slice(1))) history.replaceState(null, '', `/${s.page}`);
     render(); await load();
+    try{const copy=JSON.parse(sessionStorage.getItem(`${draftKey()}:copy`)||'null');if(copy?.isCopy){s.modal={type:'entry',draft:{...copy,saving:false,error:''},original:entryValues(copy)};updateForm('dialog');}}catch{/* Invalid optional draft cannot prevent opening the ledger. */}
   } catch (error) { showConnectionError(error); }
 }
 function showConnectionError(error) {
@@ -88,6 +89,7 @@ async function load({ quiet = false } = {}) {
     ]);
     if (ticket !== epoch) return;
     s.categories = categories.categories; s.recent = recent; s.textSummary=textSummary;
+    if(!textSummary.platforms?.some(g=>g.source===s.platformSource))s.platformSource=textSummary.platforms?.find(g=>g.resume)?.source||textSummary.platforms?.[0]?.source||'';
     if (page === 'stats') s.stats = current; if (page === 'bills') s.bills = current;
     render();
   } catch (error) {
@@ -161,7 +163,7 @@ function closeDialog(force = false) {
     nodes.append(...dialog.childNodes);s.modal={type:'discard',previous,suspended};
     openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;
   }
-  const finish=()=>{dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
+  const finish=()=>{if(s.modal?.type==='entry'&&s.modal.draft.isCopy)sessionStorage.removeItem(`${draftKey()}:copy`);dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
   clearTimeout(closeTimer);
   if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
   return true;
@@ -179,7 +181,7 @@ function updateForm(context) {
     const { draft, field } = s.modal;
     const activeName = dialog.contains(document.activeElement) ? document.activeElement.name : '';
     const selection = ['amount', 'note'].includes(activeName) ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
-    openDialog(field ? `修改${{occurred_on:'日期',note:'备注',category_id:'分类',amount:'金额'}[field]}` : draft.id ? '账单详情' : '记一笔', entryForm(draft, s, 'dialog', field) + (draft.id && !field ? `<button class="detail-delete" data-action="delete-entry" data-id="${e(draft.id)}">${icon('trash', 17)}删除这条记录</button><p class="entry-detail-meta">记录日期：${e(draft.occurred_on)}<br>修改保存后同步更新统计。</p>` : ''), { type: 'entry', wide: true });
+    openDialog(field ? `修改${{occurred_on:'日期',note:'备注',category_id:'分类',amount:'金额'}[field]}` : draft.id ? '账单详情' : draft.isCopy?'再记一笔':'记一笔', (draft.isCopy?'<p class="copy-intro">已带入金额、分类和备注。日期默认本月，请核对后保存。</p>':'') + entryForm(draft, s, 'dialog', field) + (draft.id && !field ? `<button class="button secondary duplicate-entry" data-action="duplicate-entry" data-id="${e(draft.id)}" ${draft.saving?'disabled':''}>${icon('plus',17)}再记一笔</button><button class="detail-delete" data-action="delete-entry" data-id="${e(draft.id)}">${icon('trash', 17)}删除这条记录</button><p class="entry-detail-meta">记录日期：${e(draft.occurred_on)}<br>修改保存后同步更新统计。</p>` : ''), { type: 'entry', wide: true });
     dialog.dataset.locked = draft.saving ? 'true' : 'false';
     dialog.classList.toggle('field-edit-dialog', Boolean(field));
     if (activeName && !draft.saving) { const replacement=dialog.querySelector(`[name="${activeName}"]:not([type=hidden])`); replacement?.focus({preventScroll:true}); if(selection && replacement)replacement.setSelectionRange(...selection); }
@@ -198,6 +200,19 @@ async function openEntry(id, requestedField = '') {
     updateForm('dialog');
     if (field) {const control=dialog.querySelector(field==='category_id'?'[aria-pressed="true"]':`[name="${field}"]:not([type=hidden])`); control?.focus({preventScroll:true}); if(field==='amount'||field==='note')control?.select();}
   } catch (error) { toast(error.message); }
+}
+async function duplicateEntry(id) {
+  if(s.modal?.draft?.saving||s.modal?.draft?.pending)return;
+  if(hasDialogChanges()){toast('请先保存或取消当前修改，再记一笔');return;}
+  const previous=s.modal,originalDraft=previous.draft;originalDraft.saving=true;originalDraft.preparing=true;updateForm('dialog');
+  try{
+    const {entry}=await request(`/entries/${id}`);
+    if(s.modal!==previous)return;
+    if(entry.deleted_at){toast('这条记录已删除，请先恢复');return;}
+    const category=s.categories.find(c=>c.id===entry.category_id&&!c.archived);
+    const draft={...baseDraft(),isCopy:true,type:entry.type,amount:decimal(entry.amount_minor),note:entry.note,category_id:category?.id||'',date_precision:'month',error:category?'':'原分类已停用，请选择新分类'};
+    s.modal={type:'entry',draft,original:entryValues(draft)};saveDraft();updateForm('dialog');
+  }finally{originalDraft.saving=false;originalDraft.preparing=false;if(s.modal===previous)updateForm('dialog');}
 }
 function newEntry(date) {
   if (date) { s.draft.date_precision=date.length===7?'month':'day';s.draft.occurred_on = date; saveDraft(); }
@@ -222,7 +237,7 @@ async function saveEntry(form) {
     draft.saving = true; draft.error = ''; draft.conflict = false; if (!draft.id) saveDraft(); updateForm(context);
     const result = await mutate(draft.id ? `/entries/${draft.id}` : '/entries', draft.pending.body, { method: draft.id ? 'PATCH' : 'POST', key: draft.pending.key });
     const wasEdit = Boolean(draft.id), editedField = context === 'dialog' ? s.modal?.field : '';
-    if (!wasEdit) { s.draft = { ...baseDraft(), type: draft.type, category_id: draft.category_id, occurred_on: draft.occurred_on }; saveDraft(); }
+    if (!wasEdit && !draft.isCopy) { s.draft = { ...baseDraft(), type: draft.type, category_id: draft.category_id, occurred_on: draft.occurred_on }; saveDraft(); }
     else draft.pending = null;
     draft.saving = false;
     if (context === 'dialog') closeDialog(true);
@@ -422,12 +437,15 @@ document.addEventListener('click', async event => {
     if (action === 'login') { sessionStorage.removeItem('moneytalk:local-logged-out'); location.reload(); }
     else if (action === 'refresh') await load();
     else if (action === 'new-entry') newEntry();
+    else if (action === 'duplicate-entry') await duplicateEntry(id);
+    else if (action === 'platform-select') {s.platformSource=target.dataset.source;render();}
     else if (action === 'entry') await openEntry(id, target.dataset.editField);
     else if (action === 'close-dialog') closeDialog();
     else if(action==='keep-editing')returnToEditing();
     else if(action==='discard-editing'){
       const previous=s.modal.previous;
-      if(previous.type==='entry'&&!previous.draft.id){s.draft={...previous.originalDraft};saveDraft();render();}
+      if(previous.type==='entry'&&!previous.draft.id&&!previous.draft.isCopy){s.draft={...previous.originalDraft};saveDraft();render();}
+      if(previous.type==='entry'&&previous.draft.isCopy)sessionStorage.removeItem(`${draftKey()}:copy`);
       closeDialog(true);
     }
     else if (action === 'entry-type') { const d = currentDraft(context); if (!d || d.pending) return; d.type = value; d.category_id = s.categories.find(c => c.type === value && !c.archived)?.id || ''; d.expanded = false; d.error = ''; updateForm(context); }
@@ -439,13 +457,15 @@ document.addEventListener('click', async event => {
     else if (action === 'restore-entry') { target.disabled = true; await restoreEntry(id, target.dataset.version); target.disabled = false; }
     else if (action === 'undo-toast') { const undo = undoAction; undoAction = null; toastElement.classList.remove('show'); if (undo) await undo(); }
     else if (action === 'previous-month' || action === 'next-month') { s.month = shiftMonth(s.month, (action === 'previous-month' ? -1 : 1) * (s.page === 'stats' ? s.period === 'year' ? 12 : s.period === 'quarter' ? 3 : 1 : 1)); s.month = s.month < '1900-01' ? '1900-01' : s.month > '2100-12' ? '2100-12' : s.month; s.offset = 0; s.billRange = null; await load(); }
+    else if (action === 'current-period') {s.month=s.session.today.slice(0,7);s.billRange=null;s.offset=0;await load();}
+    else if (action === 'remove-filter') {if(value==='range')s.billRange=null;else if(['q','type','category_id'].includes(value))s.filters[value]='';s.offset=0;await load();}
     else if (action === 'period') { s.period = value; await load(); refreshStatsOptions(); }
     else if (action === 'chart') { s.chart = value; storage.set('moneytalk:chart', value); render(); refreshStatsOptions(); }
     else if (action === 'category-bills') categoryBills(id);
     else if (action === 'filters') openFilters();
     else if (action === 'stats-options') {s.modal={type:'stats-options'};openDialog('统计视图',`<p class="dialog-intro">${e(s.month)} · 切换视图不改变金额</p><div class="view-options"><h3>统计周期</h3><div class="segmented">${[['month','月'],['quarter','季度'],['year','年']].map(([v,n])=>`<button data-action="period" data-value="${v}" aria-pressed="${s.period===v}" class="${s.period===v?'active':''}">${n}</button>`).join('')}</div><h3>图表</h3><div class="segmented">${[['bar','柱状'],['line','折线'],['pie','饼图']].map(([v,n])=>`<button data-action="chart" data-value="${v}" aria-pressed="${s.chart===v}" class="${s.chart===v?'active':''}">${icon(v,18)}${n}</button>`).join('')}</div></div>`);}
     else if (action === 'view-receipt') {s.filters={q:'',type:'',category_id:''};s.billRange=recordRange(s.receipt.from,s.receipt.to);s.offset=0;s.month=s.receipt.from.slice(0,7);navigate('bills');}
-    else if (action === 'filter-type') { s.filters.type = value; s.offset = 0; if (s.categories.find(c => c.id === s.filters.category_id)?.type !== value) s.filters.category_id = ''; await load(); }
+    else if (action === 'filter-type') { s.filters.type = value; s.offset = 0; if (value && s.categories.find(c => c.id === s.filters.category_id)?.type !== value) s.filters.category_id = ''; await load(); }
     else if (action === 'clear-filters') { s.filters = { q: '', type: '', category_id: '' }; s.billRange = null; s.offset = 0; await load(); }
     else if (action === 'page-prev' || action === 'page-next') { s.offset = Math.max(0, s.offset + (action === 'page-prev' ? -50 : 50)); await load(); window.scrollTo({ top: 0 }); }
     else if (action === 'backdate') newEntry(target.dataset.date);

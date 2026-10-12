@@ -30,6 +30,18 @@ before(async () => {
 });
 after(async () => { await mf?.dispose(); });
 
+test('copy workflow creates independent month entry, retry keeps identity and original stays unchanged', async () => {
+ const user='copy-workflow';await req('/api/session',{user});
+ const original=(await req('/api/entries',{user,method:'POST',body:expense({note:'合成常用',occurred_on:'2025-12-31'})})).data.entry;
+ const read=(await req(`/api/entries/${original.id}`,{user})).data.entry;
+ const body={type:read.type,amount_minor:read.amount_minor,category_id:read.category_id,note:read.note,occurred_on:'2026-09'};
+ const key=crypto.randomUUID(),created=await req('/api/entries',{user,method:'POST',body,key});assert.equal(created.status,201);assert.notEqual(created.data.entry.id,original.id);
+ assert.equal((await req('/api/entries',{user,method:'POST',body,key})).data.entry.id,created.data.entry.id);
+ assert.deepEqual((await req(`/api/entries/${original.id}`,{user})).data.entry,read);
+ assert.equal((await req(`/api/entries/${original.id}`,{user:'other-copy-user'})).status,404);
+ assert.equal((await req('/api/entries?from=2026-09-01&to=2026-09-30',{user})).data.totals.expense_minor,read.amount_minor);
+});
+
 test('production identity fails closed; local bypass needs explicit flags and loopback', async () => {
   await assert.rejects(() => authenticate(new Request(origin), { ENVIRONMENT: 'production', LOCAL_DEV_MODE: 'true' }), e => e.status === 503);
   await assert.rejects(() => authenticate(new Request('https://example.com'), { ENVIRONMENT: 'local', LOCAL_DEV_MODE: 'true' }), e => e.status === 503);
