@@ -63,3 +63,5 @@
 - [Actual 公开演示账单](visual/actual-demo-transactions.png)：实际进入公开演示并执行搜索，查看筛选与表格；没有连接银行或个人账号。
 
 YNAB 的[官方输入改版说明](https://www.ynab.com/whats-new/the-clearest-way-to-enter-transactions)强调把收支与转账的不同含义显式展示，减少信用卡付款混淆。这支持我们保留明确类型、真实保存回执和操作附近的错误说明，并不意味着应把专业预算流程全部移植到 MoneyTalk。
+
+本轮四项改进已上线，实际测试、部署版本、线上验收与未验证边界见 [验收记录](acceptance.md)。

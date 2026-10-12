@@ -33,3 +33,5 @@
 2026-10-11 分类建议已上线：私有别称可给出推荐已有分类与新建名称的平铺选项，点击一次选择，再确认入账；已有同名分类优先，不自动合并或学习。遵守全站“尽量少点击、建议直接展示”的交互规则。69 项单元/集成、164 项双引擎 E2E 与线上合成账本验收通过，真实 iPhone 仍待验收。见 [执行方案](web-cloudflare/docs/category-suggestions-plan-20261011.md)和[本次上线验收](web-cloudflare/docs/category-suggestions-acceptance-20261011.md)。
 
 2026-10-11 平台进度板已上线：电脑左侧记账、右侧六平台卡片，按原序首尾商品、实际确认范围、连续边界和历史批次续记，分类跟随真实账目。75 项单元/集成、184 项双引擎 E2E 和线上独立合成账本验证通过，测试账本已清理；真实 iPhone 和用户最终验收仍待完成。复用文字批次与备份，不增加平台自动采集。见 [执行方案](web-cloudflare/docs/platform-board-plan-20261011.md)和[上线验收](web-cloudflare/docs/platform-board-acceptance-20261011.md)。
+
+2026-10-12 第一批研究改进已上线：手机版 B 平台切换、显式筛选标签、当前期间快捷返回、独立“再记一笔”草稿。76 项自动化测试及 206 项双引擎端到端通过，线上隔离账本写读清理完成；真实 iPhone/国内网络仍待验收。详见 [实际验收记录](web-cloudflare/docs/research-20261012/acceptance.md)。
