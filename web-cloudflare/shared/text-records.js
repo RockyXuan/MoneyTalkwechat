@@ -24,8 +24,9 @@ function textClauses(raw) {
       let masked=chunk;for(const d of dates(chunk))masked=masked.replace(d.text,'');
       masked=masked.replace(/\d{2,4}\s*年|(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
       const priced=/[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
-      const header=!priced&&/^(?:从|今天|今日|昨日|昨天|前天|上个月|本月|\d{2,4}年|分类|归到|归入)/.test(chunk);
-      if(header&&sentenceHasPrice&&/^(?:从|截至|截止)/.test(chunk)){clauses.at(-1).end=span.end;continue;}
+      const context=titleSource(chunk)?chunk.replace(/^\s*[^·：:]+?\s*[·：:]\s*/,''):chunk;
+      const header=!priced&&/^(?:从|今天|今日|昨日|昨天|前天|上个月|本月|\d{2,4}年|分类|归到|归入)/.test(context);
+      if(header&&sentenceHasPrice&&/^(?:从|截至|截止)/.test(context)){clauses.at(-1).end=span.end;continue;}
       if(priced)sentenceHasPrice=true;
       if(header){prefix=prefix?{start:prefix.start,end:span.end}:span;continue;}
       if(prefix&&!priced){prefix.end=span.end;continue;}
@@ -102,7 +103,8 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
     else item.category_id=/餐|饭|吃|咖啡|奶茶/.test(title)?'food':/车|地铁|公交|打车/.test(title)?'transport':/房租/.test(title)?'housing':'other';
     if (foundDates.some(d=>!validMonth(monthOf(d)))) item.questions.push('原文日期无效');
     inheritedPlatform=titleSource(item.title)||inheritedPlatform;
-    const tagged=inheritPlatform&&inheritedPlatform?tagPlatformItems([item],inheritedPlatform)[0]:item;
+    const platform=ownPlatform||(inheritPlatform?inheritedPlatform:null);
+    const tagged=platform?tagPlatformItems([item],platform)[0]:item;
     if(spoken)return categorySuggestion(tagged,categories,spoken.name);
     if(categories&&!categories.some(c=>c.id===item.category_id&&c.type===item.type&&!c.archived))item.category_id=null;
     return tagged;

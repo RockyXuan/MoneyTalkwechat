@@ -39,3 +39,7 @@ test('trailing recurring date details stay on the original item; a chosen platfo
  const p=parseTextIntake('合成服务每月0.01元，从2026年8月到2026年9月，每月15日扣款',day);assert.equal(p.count,1);assert.equal(p.segments[0].items[0].start_month,'2026-08');assert.equal(p.segments[0].items[0].through_month,'2026-09');assert.equal(p.segments[0].items[0].charge_day,15);
  const auto=parseTextIntake('京东 · 合成甲1元；合成乙2元',day);assert.equal(auto.segments[0].items[1].title,'京东 · 合成乙');const chosen=parseTextIntake('京东 · 合成甲1元；合成乙2元',day,null,{inheritPlatform:false});assert.equal(chosen.segments[0].items[1].title,'合成乙');
 });
+
+test('platform-prefixed calendar headers remain part of one recurring item and explicit source beats chosen fallback',()=>{
+ const p=parseTextIntake('微信 · 从2016年1月开始，每月合成循环0.01元，补记到2025年12月',day,null,{inheritPlatform:false});assert.equal(p.count,1);const item=p.segments[0].items[0];assert.equal(item.title,'微信 · 合成循环');assert.equal(item.start_month,'2016-01');assert.equal(item.through_month,'2025-12');assert.equal(compileTextItems([item],day).count,120);
+});
