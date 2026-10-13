@@ -11,7 +11,7 @@ ACCOUNT = '1b2d1ae28fa06087cb07499650768745'
 BASE_MODEL = '@cf/qwen/qwen3-30b-a3b-fp8'
 COMPARISON_MODEL = '@cf/qwen/qwen3.8-27b'
 SUITE = ROOT / 'docs/semantic-intake-20261013/golden-cases.json'
-CAP = 8000  # Aggregate across prompt versions. Free plan enforces the actual account quota.
+CAP = 9500  # Aggregate UTC-day reservation ceiling; retain 500 below the official Free limit.
 
 def budget_used(folder, utc_day=None):
     """Known completed usage settles reservation; unknown outcomes keep the full bound.
@@ -65,6 +65,17 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
         raise RuntimeError('Fresh, account-specific Free proof required; no inference sent')
     suite = json.loads(SUITE.read_text())
     args=sys.argv[1:]
+    version = 'synthetic-free-v4'
+    if '--prompt' in args:
+        pos = args.index('--prompt')
+        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5'): raise RuntimeError('Invalid fixed prompt version')
+        version = 'synthetic-free-' + args[pos + 1]; del args[pos:pos + 2]
+    messy = '--messy' in args
+    if messy:
+        args.remove('--messy')
+        suite = json.loads((SUITE.parent / 'messy-cases.json').read_text())
+    extended = '--extended' in args
+    if extended: args.remove('--extended')
     run_suffix=''
     if '--run' in args:
         pos=args.index('--run')
@@ -73,34 +84,38 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
     comparison='--comparison' in args
     if comparison: args.remove('--comparison')
     model=COMPARISON_MODEL if comparison else BASE_MODEL
-    outdir=ROOT / (('docs/semantic-intake-20261013/free-qwen38-v4' if comparison else 'docs/semantic-intake-20261013/free-api-v4')+run_suffix)
-    ids = args or ['SEM01']
+    outdir=ROOT / ('docs/semantic-intake-20261013/' + ('free-qwen38-' if comparison else 'free-api-') + version.rsplit('-', 1)[1] + run_suffix)
+    ids = args or [suite['cases'][0]['id']]
     selected = [next(c for c in suite['cases'] if c['id'] == i) for i in ids]
-    if any(not i.startswith('SEM') for i in ids): raise RuntimeError('Extended long-input calls not enabled')
+    prefixes = ('MESSY',) if messy else ('SEM', 'SCALE') if extended else ('SEM',)
+    if any(not i.startswith(prefixes) for i in ids): raise RuntimeError('Explicit synthetic long-input selection required')
     outdir.mkdir(exist_ok=True)
     statefile = outdir / 'reservations.json'
     state = json.loads(statefile.read_text()) if statefile.exists() else {'reserved_neurons': 0, 'attempts': []}
     auth=read_auth()
     request_code = """import {evaluationRequest} from './scripts/semantic-evaluation.mjs';
 import fs from 'node:fs';const p=JSON.parse(fs.readFileSync(0,'utf8'));
-try { const r=evaluationRequest(p.fixture,p.suite,'synthetic-free-v4',p.model);console.log(JSON.stringify({body:r.body,reserved:r.reservedNeurons})); }
+try { const r=evaluationRequest(p.fixture,p.suite,p.version,p.model);console.log(JSON.stringify({body:r.body,reserved:r.reservedNeurons})); }
 catch(e){console.log(JSON.stringify({error:e.message}));}"""
     score_code = """import {evaluateEnvelope} from './scripts/semantic-evaluation.mjs';
 import fs from 'node:fs';const p=JSON.parse(fs.readFileSync(0,'utf8'));
-try {console.log(JSON.stringify(evaluateEnvelope(p.envelope,p.fixture,p.suite,p.model)));}
+try {console.log(JSON.stringify(evaluateEnvelope(p.envelope,p.fixture,p.suite,p.model,p.version)));}
 catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
     for f in selected:
         target = outdir / (f['id'] + '.json')
         if target.exists() or f['id'] in [a['case'] for a in state['attempts']]:
             print(f['id'], 'already attempted; no automatic retry', flush=True); continue
-        req = node(request_code, {'fixture': f, 'suite': suite, 'model':model})
+        # A long batch must not turn a one-hour observation into permanent permission.
+        if not node(verify_code, {'proof': proof, 'account': ACCOUNT}).get('ok'):
+            print('Plan proof expired; no call sent', flush=True); break
+        req = node(request_code, {'fixture': f, 'suite': suite, 'model':model, 'version': version})
         if 'error' in req: print(f['id'], req['error'], flush=True); continue
         if budget_used(outdir.parent) + req['reserved'] > CAP: print('Budget stop; no call sent', flush=True); break
         state['reserved_neurons'] += req['reserved']
         state['attempts'].append({'case': f['id'], 'reserved': req['reserved'], 'utc': datetime.datetime.now(datetime.timezone.utc).isoformat()})
         statefile.write_text(json.dumps(state, ensure_ascii=False, indent=2))
         t = time.monotonic()
-        record = {'case': f['id'], 'model_requested': model, 'prompt_version': 'synthetic-free-v4',
+        record = {'case': f['id'], 'model_requested': model, 'prompt_version': version,
                   'fixture_sha256': hashlib.sha256(f['raw'].encode()).hexdigest(), 'request_sha256': hashlib.sha256(json.dumps(req['body'],ensure_ascii=False).encode()).hexdigest(), 'request':req['body'], 'max_tokens': req['body'].get('max_tokens',req['body'].get('max_completion_tokens')),
                   'reserved_neurons': req['reserved'], 'plan_verified': 'Free $0; dashboard', 'synthetic_only': True}
         request = urllib.request.Request(f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/ai/run/{model}',
@@ -113,7 +128,7 @@ catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
                 raw = r.read(2 * 1024 * 1024 + 1)
                 if len(raw) > 2 * 1024 * 1024: raise RuntimeError('provider response too large')
                 record['envelope'] = json.loads(raw)
-            record['evaluation'] = node(score_code, {'envelope': record['envelope'], 'fixture': f, 'suite': suite, 'model':model})
+            record['evaluation'] = node(score_code, {'envelope': record['envelope'], 'fixture': f, 'suite': suite, 'model':model, 'version': version})
         except urllib.error.HTTPError as e:
             record['http_status'] = e.code
             try: record['provider_error'] = json.loads(e.read(8192))

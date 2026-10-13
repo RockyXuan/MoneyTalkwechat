@@ -56,6 +56,31 @@ function locate(raw, r) {
   return { start: at, end: at + r.quote.length, quote: r.quote };
 }
 
+// Prove simple date claims rather than accepting any valid-looking date with any quote.
+// Complex ranges still require review; this is not a replacement for semantic evaluation.
+function checkQuotedDate(date, refs, anchorDay, questions) {
+  const candidates = new Set();
+  const months = { 一:1, 二:2, 三:3, 四:4, 五:5, 六:6, 七:7, 八:8, 九:9, 十:10, 十一:11, 十二:12 };
+  for (const { quote } of refs) {
+    if (/范围|从.*(?:到|至)|截至|截止|起始|开始.*到/.test(quote)) { questions.push('日期范围需要核对'); continue; }
+    for (const [token, delta] of [['前天',-2],['昨天',-1],['昨日',-1],['今天',0],['今日',0]]) {
+      if (quote.includes(token)) candidates.add(new Date(Date.parse(`${anchorDay}T00:00:00Z`)+delta*86400000).toISOString().slice(0,10));
+    }
+    const full = [...quote.matchAll(/(?<!\d)((?:19|20)\d{2})\s*年\s*(\d{1,2})\s*月(?:\s*(\d{1,2})\s*[日号])?/g),
+      ...quote.matchAll(/(?<!\d)((?:19|20)\d{2})-(\d{2})(?:-(\d{2}))?(?!\d)/g)];
+    for (const m of full) candidates.add(`${m[1]}-${m[2].padStart(2,'0')}${m[3]?'-'+m[3].padStart(2,'0'):''}`);
+    if (!full.length) {
+      const year=Number(anchorDay.slice(0,4))+(quote.includes('前年')?-2:quote.includes('去年')?-1:quote.includes('明年')?1:0);
+      for (const m of quote.matchAll(/(?<!\d)(\d{1,2}|十二|十一|[一二三四五六七八九十])月(?:\s*(\d{1,2})\s*[日号])?/g)) {
+        const month=months[m[1]]??Number(m[1]);
+        candidates.add(`${year}-${String(month).padStart(2,'0')}${m[2]?'-'+m[2].padStart(2,'0'):''}`);
+      }
+    }
+  }
+  if (candidates.size === 1 && !candidates.has(date)) throw Error('日期与明确原文或日期锚点不符，不能编造日或月份');
+  if (candidates.size !== 1) questions.push('日期引用含义需要核对');
+}
+
 export function validateSemanticProposal(output, context) {
   // Safe bounded JSON only; never evaluate a model's code or salvage truncated JSON.
   if (typeof output === 'string' && new TextEncoder().encode(output).length > 1024 * 1024) throw Error('模型输出超限');
@@ -102,7 +127,10 @@ export function validateSemanticProposal(output, context) {
       if (date !== null || (i.date.kind === 'unspecified' && i.date.evidence.length)) throw Error('未知日期不能被模型补成确定日期');
       date = i.date.kind === 'unspecified' ? context.anchor_day.slice(0, 7) : null;
       questions.push(i.date.kind === 'unspecified' ? '月份默认本月，日期未指定' : '日期待确认');
-    } else if (!date || !validRecordDate(date) || !i.date.evidence.length) throw Error('日期或日期引文无效');
+    } else {
+      if (!date || !validRecordDate(date) || !i.date.evidence.length) throw Error('日期或日期引文无效');
+      checkQuotedDate(date, i.date.evidence, context.anchor_day, questions);
+    }
     if (date && (date.length === 7 ? date > context.anchor_day.slice(0, 7) : date > context.anchor_day)) questions.push('日期在未来，请核对');
     const rule = i.recurrence;
     rule.evidence.forEach(r => locate(context.raw, r));

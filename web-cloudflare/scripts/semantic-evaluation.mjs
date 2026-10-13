@@ -1,5 +1,6 @@
 // Synthetic evaluation only. Not imported by the application and never writes a ledger.
 import { semanticContext, semanticMessages, semanticJsonSchema, validateSemanticProposal } from '../shared/semantic-proposal.js';
+import { compactMessages, validateCompactProposal } from '../shared/semantic-wire.js';
 
 export const FREE_MODEL = '@cf/qwen/qwen3-30b-a3b-fp8';
 export const COMPARISON_MODEL = '@cf/qwen/qwen3.8-27b';
@@ -7,14 +8,15 @@ export const PROMPT_VERSION = 'synthetic-free-v4';
 
 export function evaluationRequest(fixture, suite, version = PROMPT_VERSION, model = FREE_MODEL) {
   if (![FREE_MODEL, COMPARISON_MODEL].includes(model)) throw Error('模型不在免费评测固定名单');
-  if (!['synthetic-free-v1', 'synthetic-free-v3','synthetic-free-v4'].includes(version)) throw Error('提示版本未固定');
+  if (!['synthetic-free-v1', 'synthetic-free-v3','synthetic-free-v4','synthetic-free-v5'].includes(version)) throw Error('提示版本未固定');
   const categories = [...suite.categories, ...(fixture.expected.category_override || [])];
   const context = semanticContext(fixture.raw, suite.anchor_day, categories);
-  const messages = semanticMessages(context);
-  messages[0].content += '\n/no_think\n必须逐笔保留事实，后文更正替换原项目，不另生成一笔；分类标题作用于后续项目。日期未指定时只给 unspecified/null。金额引文尽量只引用金额原词，不能把型号等无关数字当价格。不要在 ignored 中逐句重复闲聊，可选短代表引文。以下是完整 JSON Schema：' + JSON.stringify(semanticJsonSchema());
+  const messages = version==='synthetic-free-v5' ? compactMessages(context) : semanticMessages(context);
+  if (version!=='synthetic-free-v5') messages[0].content += '\n/no_think\n必须逐笔保留事实，后文更正替换原项目，不另生成一笔；分类标题作用于后续项目。日期未指定时只给 unspecified/null。金额引文尽量只引用金额原词，不能把型号等无关数字当价格。不要在 ignored 中逐句重复闲聊，可选短代表引文。以下是完整 JSON Schema：' + JSON.stringify(semanticJsonSchema());
   if (['synthetic-free-v3','synthetic-free-v4'].includes(version)) messages[0].content += '\n字段规则：每项顶层 items[].id 用唯一流水编号 p1,p2,p3，不能用分类id代替；category.id 和 category.alternatives 才用提供的分类ID，不写名字或别称。已选已有分类则 suggested_name=null。occurrence 只数【完全相同的 quote 字符串】在 raw 中出现第几次，从0起；不同 quote 各自从0开始，绝不是句子或条目的编号。人群分类、平台、昨天等日期作用于整组购买事实，直到下一次明确切换，不能只作用于第一笔。source 必须保留原文平台。后文更正替换对应项目，金额 evidence 可引用后文更正，项目 evidence 的第一段必须引用原购买位置以保留顺序。已经明确给出实付就用 exact实付，不再从原价减；只给原价和优惠才用 subtract原价优惠；邮费并入实付用 sum实付邮费。不引用凭空算出的差额。单笔 recurrence 必须是 {"cycle":"single","start_month":null,"through_month":null,"ongoing":false,"charge_day":null,"evidence":[]}。没有日期词时 date={"kind":"unspecified","value":null,"evidence":[]}，anchor_day 仅用于换算相对日期，不是发生日期。明确年份月份不加日。日期引文必须包含日期词。循环未知起始月不得写当前月。ignored 只包含闲聊、计划、否定、已记还款，不包含已经提取的消费。陌生人名分类有歧义，id=null,suggested_name=原称呼,alternatives=[推荐分类id]。\n示例（不是此次原文）：raw="孩子的铅笔11，积木24。铅笔改成13。" 应输出两项，顶层id分别p1,p2，均 category.id=kids，source=null，date unspecified/null，均 single；铅笔 evidence=[{"quote":"铅笔11","occurrence":0},{"quote":"铅笔改成13","occurrence":0}]，amount={"method":"exact","terms":[{"value":"13","evidence":{"quote":"铅笔改成13","occurrence":0}}],"stated_total":"13"}；积木 amount exact24，quote="积木24",occurrence=0。另一个示例：昨天淘宝水壶原价46实付31，雨衣22，应为两笔source淘宝、date relative 2026-10-12、引文昨天，amount分别exact31和exact22，绝不是46-31。所有未用数组为[]；所有空值为null，不省略字段。';
   if (version==='synthetic-free-v4') messages[0].content += '\n分类的硬性条件：只要用户明确给了一个分类称呼，先逐字与当前 categories.name 和 aliases 比较；完全没有匹配的，就必须 category.id=null,suggested_name=用户该称呼,alternatives=[你认为合适的已有分类ID]，不能因为含义相近、像孩子名字或猜测关系而自动替用户选定。已有同名分类则用它的ID。商品型号、容量属于 title 内容需要保留，但不是价格。unknown 日期允许引用原文说忘了/不确定的句子，value必须null；循环的 through_month不是单笔发生日期。';
-  const max_tokens = fixture.id === 'SEM25' ? 11264 : 4096;
+  const max_tokens = fixture.id === 'SEM25' || ['SCALE8000','SCALE20000','SCALE50000'].includes(fixture.id) || fixture.id.startsWith('MESSY') ? 11264 :
+    fixture.id === 'SCALE80ITEMS' ? 24576 : fixture.id === 'SCALE400ITEMS' ? 131072 : version==='synthetic-free-v5' ? 3072 : 4096;
   const body = { messages, max_tokens, temperature: 0, seed: 42, stream: false };
   if (model===COMPARISON_MODEL) {
     messages[0].content=messages[0].content.replace('/no_think','');
@@ -105,9 +107,9 @@ export function scoreProposal(proposal, fixture) {
   return { pass: failures.length===0, checked, failures, architectural_invariants: excluded };
 }
 
-export function evaluateEnvelope(envelope, fixture, suite, model=FREE_MODEL) {
-  const {context} = evaluationRequest(fixture, suite,PROMPT_VERSION,model);
+export function evaluateEnvelope(envelope, fixture, suite, model=FREE_MODEL, version=PROMPT_VERSION) {
+  const {context} = evaluationRequest(fixture, suite,version,model);
   const completion=extractCompletion(envelope,model);
-  const proposal=validateSemanticProposal(completion.content,context);
+  const proposal=version==='synthetic-free-v5' ? validateCompactProposal(completion.content,context) : validateSemanticProposal(completion.content,context);
   return { ...completion, proposal, score:scoreProposal(proposal,fixture) };
 }

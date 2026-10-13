@@ -1,0 +1,569 @@
+{
+  "kind": "synthetic actual model evaluation and stricter offline replay",
+  "v4": {
+    "generated_at": "2026-10-13T17:46:53.499Z",
+    "model": "@cf/qwen/qwen3.8-27b",
+    "prompt_version": "synthetic-free-v4",
+    "audit_version": "full-field-audit-v1",
+    "total": 25,
+    "attempted": 8,
+    "passed": 7,
+    "untested": [
+      "SEM01",
+      "SEM02",
+      "SEM03",
+      "SEM04",
+      "SEM05",
+      "SEM06",
+      "SEM08",
+      "SEM09",
+      "SEM10",
+      "SEM14",
+      "SEM15",
+      "SEM16",
+      "SEM17",
+      "SEM18",
+      "SEM23",
+      "SEM24",
+      "SEM25"
+    ],
+    "failed": [
+      "SEM11"
+    ],
+    "fixed_combination": true,
+    "core_pass": false,
+    "website_ready": false,
+    "reason": "核心全通过仍需杂乱长段、分类复核及网站完整链路验收",
+    "rows": [
+      {
+        "id": "SEM01",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM02",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM03",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM04",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM05",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM06",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM07",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM07.json",
+            "seconds": 23.786,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T13:45:45.657995+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM08",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM09",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM10",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM11",
+        "attempted": true,
+        "pass": false,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM11.json",
+            "seconds": 70.754,
+            "pass": false,
+            "failures": [
+              "完整第2项/date"
+            ],
+            "utc": "2026-10-13T13:47:20.976034+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM12",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM12.json",
+            "seconds": 71.299,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T13:46:09.534350+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM13",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM13.json",
+            "seconds": 64.882,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T13:48:31.836114+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM14",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM15",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM16",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM17",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM18",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM19",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM19.json",
+            "seconds": 65.306,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T13:49:36.819011+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM20",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4/SEM20.json",
+            "seconds": 24.956,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T13:50:42.211035+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM21",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4-20261014-core/SEM21.json",
+            "seconds": 50.494,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T17:30:18.704641+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM22",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v4-20261014-core/SEM22.json",
+            "seconds": 39.95,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T17:31:09.324319+00:00",
+            "system_sha256": "98993b53c63b71ceb11e12e1a2eeb0d77a8e69b055f00b08f9ca7dbd0bf1f360",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM23",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM24",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM25",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      }
+    ]
+  },
+  "v5": {
+    "generated_at": "2026-10-13T17:46:53.502Z",
+    "model": "@cf/qwen/qwen3.8-27b",
+    "prompt_version": "synthetic-free-v5",
+    "audit_version": "full-field-audit-v1",
+    "total": 25,
+    "attempted": 1,
+    "passed": 1,
+    "untested": [
+      "SEM01",
+      "SEM02",
+      "SEM03",
+      "SEM04",
+      "SEM05",
+      "SEM06",
+      "SEM07",
+      "SEM08",
+      "SEM09",
+      "SEM10",
+      "SEM12",
+      "SEM13",
+      "SEM14",
+      "SEM15",
+      "SEM16",
+      "SEM17",
+      "SEM18",
+      "SEM19",
+      "SEM20",
+      "SEM21",
+      "SEM22",
+      "SEM23",
+      "SEM24",
+      "SEM25"
+    ],
+    "failed": [],
+    "fixed_combination": true,
+    "core_pass": false,
+    "website_ready": false,
+    "reason": "核心全通过仍需杂乱长段、分类复核及网站完整链路验收",
+    "rows": [
+      {
+        "id": "SEM01",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM02",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM03",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM04",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM05",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM06",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM07",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM08",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM09",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM10",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM11",
+        "attempted": true,
+        "pass": true,
+        "attempts": [
+          {
+            "path": "free-qwen38-v5-20261014-probe/SEM11.json",
+            "seconds": 45.7,
+            "pass": true,
+            "failures": [],
+            "utc": "2026-10-13T17:36:30.852392+00:00",
+            "system_sha256": "ca6b7024950ddd527757af43f42b02fe55259b45ac3ea188b32ba4e83a1e1b75",
+            "model": "@cf/qwen/qwen3.8-27b",
+            "settings": {
+              "temperature": 0,
+              "seed": 42,
+              "reasoning_effort": "low"
+            }
+          }
+        ]
+      },
+      {
+        "id": "SEM12",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM13",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM14",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM15",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM16",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM17",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM18",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM19",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM20",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM21",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM22",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM23",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM24",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      },
+      {
+        "id": "SEM25",
+        "attempted": false,
+        "pass": false,
+        "attempts": []
+      }
+    ]
+  },
+  "new_calls": [
+    {
+      "case": "SEM21",
+      "prompt_version": "synthetic-free-v4",
+      "http_status": 200,
+      "seconds": 50.494,
+      "usage": {
+        "prompt_tokens": 2184,
+        "completion_tokens": 2415,
+        "total_tokens": 4599,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 791.890869140625
+      }
+    },
+    {
+      "case": "SEM22",
+      "prompt_version": "synthetic-free-v4",
+      "http_status": 200,
+      "seconds": 39.95,
+      "usage": {
+        "prompt_tokens": 2180,
+        "completion_tokens": 1590,
+        "total_tokens": 3770,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 551.7272338867188
+      }
+    },
+    {
+      "case": "SEM11",
+      "prompt_version": "synthetic-free-v5",
+      "http_status": 200,
+      "seconds": 45.7,
+      "usage": {
+        "prompt_tokens": 2257,
+        "completion_tokens": 1774,
+        "total_tokens": 4031,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 608.404541015625
+      }
+    }
+  ],
+  "new_neurons": 1952.0226440429688,
+  "website_enabled": false,
+  "real_inputs_sent": false
+}

@@ -70,6 +70,19 @@ test('monthly unknown starting date remains unresolved; missing charge day is al
  const out=validateSemanticProposal(proposal(i),context(raw));assert.equal(out.items[0].recurrence.start_month,null);assert.ok(out.items[0].questions.includes('起始月待确认'));
  i.recurrence.ongoing=true;assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/范围冲突/);
 });
+test('quoted dates prove relative days and month precision instead of merely looking valid',()=>{
+ const raw='昨天杯子58元';const i=item(raw);i.date={kind:'relative',value:'2026-10-11',evidence:[ref('昨天')]};
+ assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/锚点/);
+ for(const quote of ['2026年9月','九月','2026-09']){
+  const c=context(`${quote}杯子58元`),r=item('杯子58元');r.date={kind:'explicit',value:'2026-09',evidence:[ref(quote)]};
+  assert.equal(validateSemanticProposal(proposal(r),c).items[0].occurred_on,'2026-09');
+  r.date.value='2026-09-01';assert.throws(()=>validateSemanticProposal(proposal(r),c),/编造日/);
+ }
+ const c=context('2026年9月 58元的杯子'),r=item('58元的杯子');r.date={kind:'explicit',value:'2026-09',evidence:[ref('2026年9月 58元')]};
+ assert.equal(validateSemanticProposal(proposal(r),c).items[0].occurred_on,'2026-09');
+ const iso=context('2026-09-12杯子58元'),d=item('杯子58元');d.date={kind:'explicit',value:'2026-09-12',evidence:[ref('2026-09-12')]};
+ assert.equal(validateSemanticProposal(proposal(d),iso).items[0].occurred_on,'2026-09-12');
+});
 test('unknown date may cite the actual statement of uncertainty, but cannot acquire a guessed date',()=>{
  const raw='杯子58元，哪天忘了';const i=item('杯子58元');i.date={kind:'unknown',value:null,evidence:[ref('哪天忘了')]};
  const out=validateSemanticProposal(proposal(i),context(raw));assert.equal(out.items[0].occurred_on,null);assert.ok(out.items[0].questions.includes('日期待确认'));

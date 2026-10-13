@@ -1,0 +1,5530 @@
+{
+  "version": "full-field-audit-v1",
+  "notes": "Independent stricter expectations. Original raw/expected answers unchanged. Unspecified dates use the fixture anchor month. SEM11 September context continues to the next platform, matching current text intake inheritance. Classification accuracy enforced where user explicitly specifies it; inferred categories require separate review.",
+  "cases": {
+    "SEM01": {
+      "records": [
+        {
+          "title": "茶叶",
+          "amount_minor": 4380,
+          "date": "2026-10-12",
+          "source": "淘宝",
+          "type": "expense"
+        },
+        {
+          "title": "雨伞",
+          "amount_minor": 1990,
+          "date": "2026-10-12",
+          "source": "淘宝",
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM02": {
+      "records": [
+        {
+          "title": "笔袋",
+          "amount_minor": 3000,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM03": {
+      "records": [
+        {
+          "title": "绘本",
+          "amount_minor": 6100,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "卡片机",
+          "amount_minor": 9500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM04": {
+      "records": [
+        {
+          "title": "午餐",
+          "amount_minor": 1800,
+          "date": "2026-10-13",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM05": {
+      "records": [
+        {
+          "title": "咖啡",
+          "amount_minor": 1200,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM06": {
+      "records": [
+        {
+          "title": "拼图",
+          "amount_minor": 4700,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM07": {
+      "records": [
+        {
+          "title": "画笔",
+          "amount_minor": 1700,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM08": {
+      "records": [
+        {
+          "title": "水彩",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM09": {
+      "records": [
+        {
+          "title": "纸巾",
+          "amount_minor": 960,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "洗手液",
+          "amount_minor": 1240,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM10": {
+      "records": [
+        {
+          "title": "杯子",
+          "amount_minor": 5400,
+          "date": "2026-10-11",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-12",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "午餐",
+          "amount_minor": 1800,
+          "date": "2026-10-13",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM11": {
+      "records": [
+        {
+          "title": "杯子",
+          "amount_minor": 5200,
+          "date": "2026-09",
+          "source": "淘宝",
+          "type": "expense"
+        },
+        {
+          "title": "毛巾",
+          "amount_minor": 1000,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM14": {
+      "records": [
+        {
+          "title": "工资",
+          "amount_minor": 640000,
+          "date": "2026-10",
+          "source": null,
+          "type": "income"
+        },
+        {
+          "title": "午餐",
+          "amount_minor": 2200,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "菜",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM15": {
+      "records": [
+        {
+          "title": null,
+          "amount_minor": 3300,
+          "date": "2026-10",
+          "source": null,
+          "type": "income"
+        }
+      ]
+    },
+    "SEM16": {
+      "records": [
+        {
+          "title": "书",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM17": {
+      "records": [
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-12",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-13",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM18": {
+      "records": [
+        {
+          "title": "第一件",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "第二件",
+          "amount_minor": 2500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "第三件",
+          "amount_minor": 4000,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM19": {
+      "records": [
+        {
+          "title": "杯子",
+          "amount_minor": null,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        },
+        {
+          "title": "毛巾",
+          "amount_minor": 1000,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM20": {
+      "records": [
+        {
+          "title": "手机15 256GB",
+          "amount_minor": 419900,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM21": {
+      "records": [
+        {
+          "title": "绘本",
+          "amount_minor": 5800,
+          "date": "2026-10",
+          "source": "淘宝",
+          "type": "expense"
+        },
+        {
+          "title": "杯子",
+          "amount_minor": 5400,
+          "date": "2026-10",
+          "source": "京东",
+          "type": "expense"
+        },
+        {
+          "title": "咖啡糖",
+          "amount_minor": 2000,
+          "date": "2026-10",
+          "source": "抖音",
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM22": {
+      "records": [
+        {
+          "title": "茶叶",
+          "amount_minor": 6850,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM23": {
+      "records": [
+        {
+          "title": "耳机",
+          "amount_minor": 22500,
+          "date": "2026-10",
+          "source": null,
+          "type": "expense"
+        }
+      ]
+    },
+    "SEM24": {
+      "records": []
+    },
+    "SEM12": {
+      "records": [],
+      "recurring_count": 1,
+      "recurring_source": null,
+      "recurring_type": "expense",
+      "charge_day": null,
+      "ongoing": false
+    },
+    "SEM13": {
+      "records": [],
+      "recurring_count": 1,
+      "recurring_source": null,
+      "recurring_type": "expense",
+      "charge_day": null,
+      "ongoing": false
+    },
+    "SEM25": {
+      "records": [
+        {
+          "title": "商品一",
+          "amount_minor": 99,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丁",
+          "amount_minor": 2,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丂",
+          "amount_minor": 3,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品七",
+          "amount_minor": 4,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丄",
+          "amount_minor": 5,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丅",
+          "amount_minor": 6,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丆",
+          "amount_minor": 7,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品万",
+          "amount_minor": 8,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丈",
+          "amount_minor": 9,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品三",
+          "amount_minor": 10,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品上",
+          "amount_minor": 11,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品下",
+          "amount_minor": 12,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丌",
+          "amount_minor": 13,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品不",
+          "amount_minor": 14,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品与",
+          "amount_minor": 15,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丏",
+          "amount_minor": 16,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丐",
+          "amount_minor": 17,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丑",
+          "amount_minor": 18,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丒",
+          "amount_minor": 19,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品专",
+          "amount_minor": 20,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品且",
+          "amount_minor": 21,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丕",
+          "amount_minor": 22,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品世",
+          "amount_minor": 23,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丗",
+          "amount_minor": 24,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丘",
+          "amount_minor": 25,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丙",
+          "amount_minor": 26,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品业",
+          "amount_minor": 27,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丛",
+          "amount_minor": 28,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品东",
+          "amount_minor": 29,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丝",
+          "amount_minor": 30,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丞",
+          "amount_minor": 31,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丟",
+          "amount_minor": 32,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丠",
+          "amount_minor": 33,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品両",
+          "amount_minor": 34,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丢",
+          "amount_minor": 35,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丣",
+          "amount_minor": 36,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品两",
+          "amount_minor": 37,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品严",
+          "amount_minor": 38,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品並",
+          "amount_minor": 39,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丧",
+          "amount_minor": 40,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丨",
+          "amount_minor": 41,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    },
+    "SCALE8000": {
+      "records": [
+        {
+          "title": "商品一",
+          "amount_minor": 99,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丁",
+          "amount_minor": 2,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丂",
+          "amount_minor": 3,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品七",
+          "amount_minor": 4,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丄",
+          "amount_minor": 5,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丅",
+          "amount_minor": 6,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丆",
+          "amount_minor": 7,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品万",
+          "amount_minor": 8,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丈",
+          "amount_minor": 9,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品三",
+          "amount_minor": 10,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品上",
+          "amount_minor": 11,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品下",
+          "amount_minor": 12,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丌",
+          "amount_minor": 13,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品不",
+          "amount_minor": 14,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品与",
+          "amount_minor": 15,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丏",
+          "amount_minor": 16,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丐",
+          "amount_minor": 17,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丑",
+          "amount_minor": 18,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丒",
+          "amount_minor": 19,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品专",
+          "amount_minor": 20,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品且",
+          "amount_minor": 21,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丕",
+          "amount_minor": 22,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品世",
+          "amount_minor": 23,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丗",
+          "amount_minor": 24,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丘",
+          "amount_minor": 25,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丙",
+          "amount_minor": 26,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品业",
+          "amount_minor": 27,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丛",
+          "amount_minor": 28,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品东",
+          "amount_minor": 29,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丝",
+          "amount_minor": 30,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丞",
+          "amount_minor": 31,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丟",
+          "amount_minor": 32,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丠",
+          "amount_minor": 33,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品両",
+          "amount_minor": 34,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丢",
+          "amount_minor": 35,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丣",
+          "amount_minor": 36,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品两",
+          "amount_minor": 37,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品严",
+          "amount_minor": 38,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品並",
+          "amount_minor": 39,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丧",
+          "amount_minor": 40,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丨",
+          "amount_minor": 41,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    },
+    "SCALE20000": {
+      "records": [
+        {
+          "title": "商品一",
+          "amount_minor": 99,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丁",
+          "amount_minor": 2,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丂",
+          "amount_minor": 3,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品七",
+          "amount_minor": 4,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丄",
+          "amount_minor": 5,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丅",
+          "amount_minor": 6,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丆",
+          "amount_minor": 7,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品万",
+          "amount_minor": 8,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丈",
+          "amount_minor": 9,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品三",
+          "amount_minor": 10,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品上",
+          "amount_minor": 11,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品下",
+          "amount_minor": 12,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丌",
+          "amount_minor": 13,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品不",
+          "amount_minor": 14,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品与",
+          "amount_minor": 15,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丏",
+          "amount_minor": 16,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丐",
+          "amount_minor": 17,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丑",
+          "amount_minor": 18,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丒",
+          "amount_minor": 19,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品专",
+          "amount_minor": 20,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品且",
+          "amount_minor": 21,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丕",
+          "amount_minor": 22,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品世",
+          "amount_minor": 23,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丗",
+          "amount_minor": 24,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丘",
+          "amount_minor": 25,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丙",
+          "amount_minor": 26,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品业",
+          "amount_minor": 27,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丛",
+          "amount_minor": 28,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品东",
+          "amount_minor": 29,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丝",
+          "amount_minor": 30,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丞",
+          "amount_minor": 31,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丟",
+          "amount_minor": 32,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丠",
+          "amount_minor": 33,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品両",
+          "amount_minor": 34,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丢",
+          "amount_minor": 35,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丣",
+          "amount_minor": 36,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品两",
+          "amount_minor": 37,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品严",
+          "amount_minor": 38,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品並",
+          "amount_minor": 39,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丧",
+          "amount_minor": 40,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丨",
+          "amount_minor": 41,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    },
+    "SCALE50000": {
+      "records": [
+        {
+          "title": "商品一",
+          "amount_minor": 99,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丁",
+          "amount_minor": 2,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丂",
+          "amount_minor": 3,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品七",
+          "amount_minor": 4,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丄",
+          "amount_minor": 5,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丅",
+          "amount_minor": 6,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丆",
+          "amount_minor": 7,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品万",
+          "amount_minor": 8,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丈",
+          "amount_minor": 9,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品三",
+          "amount_minor": 10,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品上",
+          "amount_minor": 11,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品下",
+          "amount_minor": 12,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丌",
+          "amount_minor": 13,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品不",
+          "amount_minor": 14,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品与",
+          "amount_minor": 15,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丏",
+          "amount_minor": 16,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丐",
+          "amount_minor": 17,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丑",
+          "amount_minor": 18,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丒",
+          "amount_minor": 19,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品专",
+          "amount_minor": 20,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品且",
+          "amount_minor": 21,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丕",
+          "amount_minor": 22,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品世",
+          "amount_minor": 23,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丗",
+          "amount_minor": 24,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丘",
+          "amount_minor": 25,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丙",
+          "amount_minor": 26,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品业",
+          "amount_minor": 27,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丛",
+          "amount_minor": 28,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品东",
+          "amount_minor": 29,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丝",
+          "amount_minor": 30,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丞",
+          "amount_minor": 31,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丟",
+          "amount_minor": 32,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丠",
+          "amount_minor": 33,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品両",
+          "amount_minor": 34,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丢",
+          "amount_minor": 35,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丣",
+          "amount_minor": 36,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品两",
+          "amount_minor": 37,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品严",
+          "amount_minor": 38,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品並",
+          "amount_minor": 39,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丧",
+          "amount_minor": 40,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品丨",
+          "amount_minor": 41,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    },
+    "SCALE80ITEMS": {
+      "records": [
+        {
+          "title": "商品编号000",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号001",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号002",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号003",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号004",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号005",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号006",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号007",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号008",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号009",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号010",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号011",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号012",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号013",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号014",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号015",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号016",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号017",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号018",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号019",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号020",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号021",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号022",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号023",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号024",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号025",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号026",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号027",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号028",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号029",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号030",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号031",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号032",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号033",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号034",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号035",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号036",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号037",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号038",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号039",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号040",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号041",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号042",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号043",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号044",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号045",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号046",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号047",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号048",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号049",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号050",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号051",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号052",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号053",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号054",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号055",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号056",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号057",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号058",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号059",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号060",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号061",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号062",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号063",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号064",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号065",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号066",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号067",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号068",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号069",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号070",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号071",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号072",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号073",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号074",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号075",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号076",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号077",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号078",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号079",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    },
+    "SCALE400ITEMS": {
+      "records": [
+        {
+          "title": "商品编号000",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号001",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号002",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号003",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号004",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号005",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号006",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号007",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号008",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号009",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号010",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号011",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号012",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号013",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号014",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号015",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号016",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号017",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号018",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号019",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号020",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号021",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号022",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号023",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号024",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号025",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号026",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号027",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号028",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号029",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号030",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号031",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号032",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号033",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号034",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号035",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号036",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号037",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号038",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号039",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号040",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号041",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号042",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号043",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号044",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号045",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号046",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号047",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号048",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号049",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号050",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号051",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号052",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号053",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号054",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号055",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号056",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号057",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号058",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号059",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号060",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号061",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号062",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号063",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号064",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号065",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号066",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号067",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号068",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号069",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号070",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号071",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号072",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号073",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号074",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号075",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号076",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号077",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号078",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号079",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号080",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号081",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号082",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号083",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号084",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号085",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号086",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号087",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号088",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号089",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号090",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号091",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号092",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号093",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号094",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号095",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号096",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号097",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号098",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号099",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号100",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号101",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号102",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号103",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号104",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号105",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号106",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号107",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号108",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号109",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号110",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号111",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号112",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号113",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号114",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号115",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号116",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号117",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号118",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号119",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号120",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号121",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号122",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号123",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号124",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号125",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号126",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号127",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号128",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号129",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号130",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号131",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号132",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号133",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号134",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号135",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号136",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号137",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号138",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号139",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号140",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号141",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号142",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号143",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号144",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号145",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号146",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号147",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号148",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号149",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号150",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号151",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号152",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号153",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号154",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号155",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号156",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号157",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号158",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号159",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号160",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号161",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号162",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号163",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号164",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号165",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号166",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号167",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号168",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号169",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号170",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号171",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号172",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号173",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号174",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号175",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号176",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号177",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号178",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号179",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号180",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号181",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号182",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号183",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号184",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号185",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号186",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号187",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号188",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号189",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号190",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号191",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号192",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号193",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号194",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号195",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号196",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号197",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号198",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号199",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号200",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号201",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号202",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号203",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号204",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号205",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号206",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号207",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号208",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号209",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号210",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号211",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号212",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号213",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号214",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号215",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号216",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号217",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号218",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号219",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号220",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号221",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号222",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号223",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号224",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号225",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号226",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号227",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号228",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号229",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号230",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号231",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号232",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号233",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号234",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号235",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号236",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号237",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号238",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号239",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号240",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号241",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号242",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号243",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号244",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号245",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号246",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号247",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号248",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号249",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号250",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号251",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号252",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号253",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号254",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号255",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号256",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号257",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号258",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号259",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号260",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号261",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号262",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号263",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号264",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号265",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号266",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号267",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号268",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号269",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号270",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号271",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号272",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号273",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号274",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号275",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号276",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号277",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号278",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号279",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号280",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号281",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号282",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号283",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号284",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号285",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号286",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号287",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号288",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号289",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号290",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号291",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号292",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号293",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号294",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号295",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号296",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号297",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号298",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号299",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号300",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号301",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号302",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号303",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号304",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号305",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号306",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号307",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号308",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号309",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号310",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号311",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号312",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号313",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号314",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号315",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号316",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号317",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号318",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号319",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号320",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号321",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号322",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号323",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号324",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号325",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号326",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号327",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号328",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号329",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号330",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号331",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号332",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号333",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号334",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号335",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号336",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号337",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号338",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号339",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号340",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号341",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号342",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号343",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号344",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号345",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号346",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号347",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号348",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号349",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号350",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号351",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号352",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号353",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号354",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号355",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号356",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号357",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号358",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号359",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号360",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号361",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号362",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号363",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号364",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号365",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号366",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号367",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号368",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号369",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号370",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号371",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号372",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号373",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号374",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号375",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号376",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号377",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号378",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号379",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号380",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号381",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号382",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号383",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号384",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号385",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号386",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号387",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号388",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号389",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号390",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号391",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号392",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号393",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号394",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号395",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号396",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号397",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号398",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        },
+        {
+          "title": "商品编号399",
+          "amount_minor": 1,
+          "date": "2026-09",
+          "source": "京东",
+          "type": "expense",
+          "category_id": "shopping"
+        }
+      ]
+    }
+  }
+}
