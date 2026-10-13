@@ -31,13 +31,18 @@ async function preview(c,batch,selectedIds=null) {
 }
 async function validateHints(c,items){for(const item of items)for(const id of item.category_hint?.recommended_ids||[]){const cat=await first(c.env.DB,'SELECT type FROM categories WHERE ledger_id=? AND id=?',[c.get('ledger').id,id]);if(cat?.type!==item.type)throw new ApiError(400,'INVALID_CATEGORY','分类建议须来自当前账本的同类型分类');}}
 export function registerTextRecords(app) {
+ const slotSql='SELECT s.batch_id,s.item_id,s.occurred_on,s.entry_id,e.created_at,e.deleted_at,e.amount_minor,e.category_id,e.type,e.occurred_on AS current_occurred_on FROM text_slots s JOIN entries e ON e.ledger_id=s.ledger_id AND e.id=s.entry_id WHERE s.ledger_id=?';
+ const enrich=(batch,slots)=>{const plan=compileTextItems(batch.items,today(),slots);return {...batch,slots,progress:batchProgress(batch,slots),pending_count:plan.pending_count,due_count:batch.status==='paused'?0:plan.count};};
  app.get('/api/text-batches',async c=>{
-  const rows=await all(c.env.DB,'SELECT * FROM text_batches WHERE ledger_id=? ORDER BY updated_at DESC,id LIMIT 101',[c.get('ledger').id]);
+  const ledger=c.get('ledger').id;
+  const rows=await all(c.env.DB,'SELECT * FROM text_batches WHERE ledger_id=? ORDER BY updated_at DESC,id LIMIT 101',[ledger]);
   if(rows.length>100)throw new ApiError(400,'TEXT_LIMIT','当前文字批次超过上限，请导出备份后整理');
-  const batches=[];
-  for(const row of rows){const batch=textBatchRow(row);const slots=await all(c.env.DB,'SELECT s.item_id,s.occurred_on,s.entry_id,e.created_at,e.deleted_at,e.amount_minor,e.category_id,e.type,e.occurred_on AS current_occurred_on FROM text_slots s JOIN entries e ON e.ledger_id=s.ledger_id AND e.id=s.entry_id WHERE s.ledger_id=? AND s.batch_id=?',[c.get('ledger').id,batch.id]);const plan=compileTextItems(batch.items,today(),slots);batches.push({...batch,slots,progress:batchProgress(batch,slots),pending_count:plan.pending_count,due_count:batch.status==='paused'?0:plan.count});}
+  const byBatch=new Map();
+  for(const slot of await all(c.env.DB,slotSql,[ledger])){const {batch_id,...record}=slot;if(!byBatch.has(batch_id))byBatch.set(batch_id,[]);byBatch.get(batch_id).push(record);}
+  const batches=rows.map(row=>enrich(textBatchRow(row),byBatch.get(row.id)||[]));
   return c.json({batches,platforms:platformBoard(batches),reminder_count:batches.filter(b=>b.status!=='paused'&&(b.pending_count||b.due_count||b.status==='pending')).length});
  });
+ app.get('/api/text-batches/:id',async c=>{const batch=await getBatch(c),slots=await all(c.env.DB,slotSql+' AND s.batch_id=?',[c.get('ledger').id,batch.id]);return c.json({batch:enrich(batch,slots.map(({batch_id,...slot})=>slot))});});
  app.post('/api/text-batches',async c=>{
   const value=input.parse(await c.req.json()),db=c.env.DB,ledger=c.get('ledger').id;
   await validateHints(c,value.items);

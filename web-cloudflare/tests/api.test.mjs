@@ -446,3 +446,18 @@ test('platform progress uses confirmed entries and current categories, deletion 
  await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries}});assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
  assert.deepEqual((await req('/api/text-batches',{user,ledger:job.id})).data.platforms,await board());
 });
+
+test('batch history reads 100 batches with two scoped data queries and single batch lookup preserves permissions',async()=>{
+ const user='history-read-budget';const sess=(await req('/api/session',{user})).data;
+ const {parseTextRecords}=await import('../shared/text-records.js');const {batchInsert}=await import('../worker/text-records.js');
+ const items=parseTextRecords('淘宝 · 合成旧商品0.01元','2026-10-13').map(i=>({...i,category_id:'food'}));
+ const now=new Date().toISOString();await db.batch(Array.from({length:100},(_,i)=>batchInsert(db,sess.ledger.id,{id:`history-${i}`,original_text:`淘宝 · 合成旧商品${i}`,items,status:'pending',version:1,created_at:now,updated_at:now},`fixture-${i}`)));
+ const originalDb=db;let batchReads=0,slotReads=0;
+ db={prepare(sql){if(sql.startsWith('SELECT * FROM text_batches'))batchReads++;if(sql.includes('FROM text_slots s JOIN entries'))slotReads++;return originalDb.prepare(sql);},batch:statements=>originalDb.batch(statements)};
+ let data;try{data=(await req('/api/text-batches',{user})).data;}finally{db=originalDb;}
+ assert.equal(data.batches.length,100);assert.equal(data.reminder_count,100);assert.equal(batchReads,1);assert.equal(slotReads,1);assert.equal(data.platforms.find(p=>p.source==='淘宝').batches.length,100);
+ const current=(await req('/api/text-batches/history-0',{user})).data.batch;assert.equal(current.items[0].title,items[0].title);assert.equal(current.pending_count,0);assert.equal(current.due_count,1);
+ assert.equal((await req('/api/text-batches/history-0',{user:'bob'})).status,404);
+ assert.equal((await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成超过边界',items}})).data.error.code,'TEXT_LIMIT');
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.text_batches.length,100);assert.equal((await req('/api/restores/preview',{user,method:'POST',body:backup})).data.valid,true);
+});

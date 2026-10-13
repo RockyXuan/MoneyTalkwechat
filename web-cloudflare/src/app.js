@@ -41,7 +41,23 @@ function render() {
   const ticket = ++renderEpoch;
   document.documentElement.classList.toggle('compact', s.density === 'compact');
   const content = !s.session || !s.draft ? loading() : ({ record: recordPage, bills: billsPage, stats: statsPage, settings: settingsPage }[s.page])(s);
-  root.innerHTML = shell(s, content);
+  const frame=document.createElement('template');frame.innerHTML=shell(s,content);
+  const previousMobile=root.querySelector('.mobile-nav'),previousSidebar=root.querySelector('.sidebar');
+  const updateLinks=(previous,replacement)=>{for(const link of previous.querySelectorAll('[data-route]')){
+    const next=replacement.querySelector(`[data-route="${link.dataset.route}"]`);if(!next)continue;
+    link.className=next.className;if(next.hasAttribute('aria-current'))link.setAttribute('aria-current',next.getAttribute('aria-current'));else link.removeAttribute('aria-current');
+  }};
+  // Never detach navigation during a pointer gesture: even reinserting the same
+  // node cancels a native click between pointerdown and pointerup in browsers.
+  if(previousMobile&&previousSidebar&&root.querySelector('.app-workspace')){
+    updateLinks(previousMobile,frame.content.querySelector('.mobile-nav'));
+    updateLinks(previousSidebar.querySelector('nav'),frame.content.querySelector('.sidebar nav'));
+    for(const selector of ['.ledger-switch','.sidebar-bottom'])previousSidebar.querySelector(selector).replaceWith(frame.content.querySelector(selector));
+    root.querySelector('.app-workspace').replaceWith(frame.content.querySelector('.app-workspace'));
+    const tools=root.querySelector('.mobile-tools'),nextTools=frame.content.querySelector('.mobile-tools');
+    if(tools&&nextTools)tools.replaceWith(nextTools);else if(tools)tools.remove();else if(nextTools)root.insertBefore(nextTools,previousMobile);
+  }else root.replaceChildren(frame.content);
+  if(focused?.matches?.('[data-route]')&&focused.isConnected)focused.focus({preventScroll:true});
   if (formContext && focusName && formContext !== 'dialog') {
     const replacement = root.querySelector(`[data-context="${formContext}"] [name="${focusName}"]`);
     replacement?.focus({ preventScroll: true });
@@ -173,7 +189,7 @@ async function openTextRecords(initialBatchId=null,initialSource='') {
   const modal={type:'text-records',dispose:null};s.modal=modal;
   openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,initialSource,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}${initialSource?`:source:${initialSource}`:''}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,initialSource,onStartSource:source=>{s.platformSource=source;openTextRecords(null,source);},categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}${initialSource?`:source:${initialSource}`:''}`,lock:busy=>{if(s.modal===modal)dialog.dataset.locked=busy?'true':'false';},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {

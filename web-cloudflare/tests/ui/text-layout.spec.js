@@ -35,6 +35,7 @@ test('TEXT07–10 unknown start stays draft, reopen, delete cancel and confirm',
   await expect(page.locator('#text-status')).toContainText('0 笔入账');
   expect((await ledger.call('/entries')).totals.count).toBe(61);
   await textAction(page, 'new').click();
+  await expect(page.locator('.new-batch-prompt')).toHaveCount(0);
   await expect(page.locator('.text-batch-row')).toContainText('UI虚构云存储');
   await textAction(page, 'open').click();
   await expect(page.locator('[data-field="start_month"]')).toHaveValue('');

@@ -1,22 +1,27 @@
 import { parseTextRecords, compileTextItems, CYCLES } from '../shared/text-records.js';
 import { parseAmount, decimal, money, recordDateLabel } from '../shared/format.js';
 import { batchProgress } from '../shared/batch-progress.js';
-import { PLATFORMS, tagPlatformItems } from '../shared/platform-sources.js';
+import { PLATFORMS, tagPlatformItems, batchSources } from '../shared/platform-sources.js';
+import { batchPage, batchState } from '../shared/batch-library.js';
 import { textItemsSchema } from '../shared/text-schema.js';
 import { request, mutate } from './api.js';
 import { escape as e, icon } from './ui.js';
 
 const fieldQuestion=/^(起始月未知|扣款日未知|补记截止月或持续循环方式|记账日期未说明|金额或币种待确认|金额无效)/;
-export function mountTextRecords(container,{categories,currentDay,draftKey,local=false,lock,onSaved,onCategoriesChanged=()=>{},onViewBills,initialBatchId=null,initialSource=''}) {
+export function mountTextRecords(container,{categories,currentDay,draftKey,local=false,lock,onSaved,onCategoriesChanged=()=>{},onViewBills,initialBatchId=null,initialSource='',onStartSource=null}) {
  let disposed=false,busy=false,batch=null,items=[],original='',slots=[],preview=null,pending=null,view='compose',receipt=null,rawValue='',deletePrompt=false,conflict=false;
  let source=PLATFORMS.includes(initialSource)?initialSource:'';
+ let listData=null,listTicket=0,newPrompt=false,savedContents='';
+ const contents=()=>JSON.stringify({original_text:original,items});
+ const library={source:initialSource||'',status:'all',q:'',page:0};
+ try{const saved=JSON.parse(sessionStorage.getItem(`${draftKey}:library`)||'null');if(saved){if(['all','review','done','paused'].includes(saved.status))library.status=saved.status;if(typeof saved.source==='string'&&saved.source.length<=32)library.source=saved.source;if(typeof saved.q==='string')library.q=saved.q.slice(0,200);if(Number.isSafeInteger(saved.page)&&saved.page>=0)library.page=saved.page;}}catch{/* Optional display preferences cannot block accounting. */}
  let precisions={},duplicateItems=new Set(),focusAfter=false,choiceFocus=null,itemErrors=new Map();
- try {const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(saved&&!initialBatchId){({batch,items,original,slots,pending}=saved);rawValue=saved.rawValue??original;precisions=saved.precisions||{};source=saved.source??source;view=items.length?'review':'compose';}}catch{sessionStorage.removeItem(draftKey);}
+ try {const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');if(!saved&&!initialBatchId){const input=JSON.parse(sessionStorage.getItem(`${draftKey}:input`)||'null');if(input){rawValue=input.rawValue||'';source=input.source??source;}}if(saved&&!initialBatchId){({batch,items,original,slots,pending}=saved);rawValue=saved.rawValue??original;precisions=saved.precisions||{};savedContents=saved.savedContents||'';source=saved.source??source;view=items.length?'review':'compose';}}catch{sessionStorage.removeItem(draftKey);}
  container.className='text-flow';
- container.innerHTML='<div id="text-flow-heading"></div><div id="text-status" role="status" aria-live="polite"></div><div id="text-batch-list"></div><div id="text-work"></div><div id="text-preview"></div><div id="text-actions" class="flow-actions"></div>';
+ container.innerHTML='<div id="text-flow-heading"></div><div id="text-status" role="status" aria-live="polite"></div><div id="text-work"></div><div id="text-batch-list"></div><div id="text-preview"></div><div id="text-actions" class="flow-actions"></div>';
  const heading=container.querySelector('#text-flow-heading'),status=container.querySelector('#text-status'),list=container.querySelector('#text-batch-list'),work=container.querySelector('#text-work'),result=container.querySelector('#text-preview'),actions=container.querySelector('#text-actions');
  function message(text,tone=''){status.textContent=text;status.className=tone;}
- function persist(){if(disposed)return;try{sessionStorage.setItem(draftKey,JSON.stringify({batch,items,original,rawValue,slots,pending,precisions,source}));}catch{message('浏览器无法保留草稿，请保存后再离开。','error');}}
+ function persist(){if(disposed)return;try{sessionStorage.setItem(draftKey,JSON.stringify({batch,items,original,rawValue,slots,pending,precisions,source,savedContents}));if(view==='compose'&&!items.length)sessionStorage.setItem(`${draftKey}:input`,JSON.stringify({rawValue,source}));}catch{message('浏览器无法保留草稿，请保存后再离开。','error');}}
  function suggestionHtml(item){
   const hint=item.category_hint;if(!hint)return '';
   const active=categories.filter(c=>c.type===item.type&&!c.archived),recommended=active.filter(c=>hint.recommended_ids.includes(c.id));
@@ -38,18 +43,32 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
  }
  function itemIssue(id,text){itemErrors.set(id,text);const feedback=work.querySelector(`[data-item-id="${id}"] .candidate-feedback`);if(feedback){feedback.textContent=text;feedback.classList.add('has-error');}}
  function refreshCandidateFeedback(){const plan=localPlan();for(const item of items){const card=work.querySelector(`[data-item-id="${item.id}"]`);if(!card)continue;const row=plan.rows.find(r=>r.item.id===item.id),feedback=card.querySelector('.candidate-feedback');feedback.textContent=feedbackText(item,row);feedback.classList.toggle('has-error',itemErrors.has(item.id)||Boolean(row?.missing.length));card.querySelector('.candidate-amount').textContent=item.amount_minor?money(item.amount_minor):'待填金额';card.querySelector('.candidate-top h3').firstChild.textContent=item.title;card.querySelector('.confirm-one').lastChild.textContent=`确认${row?.entries.length>1?` ${row.entries.length} 笔`:''}`;}}
- function controls(){container.querySelectorAll('button,input,select,textarea').forEach(el=>{el.disabled=busy||Boolean(pending);});container.querySelector('[data-text-action=retry]')?.toggleAttribute('disabled',busy);for(const id of lockedIds())container.querySelector(`[data-item-id="${id}"] fieldset`)?.setAttribute('disabled','');lock(busy);}
+ function controls(){container.querySelectorAll('button,input,select,textarea').forEach(el=>{el.disabled=busy||Boolean(pending)||el.dataset.unavailable==='true';});container.querySelector('[data-text-action=retry]')?.toggleAttribute('disabled',busy);for(const id of lockedIds())container.querySelector(`[data-item-id="${id}"] fieldset`)?.setAttribute('disabled','');lock(busy);}
  function progressHtml(progress){return `<section class="batch-progress" aria-label="批次进度"><div><span class="source-badge">${e(progress.source)}</span><strong>已确认 ${progress.confirmed_items} / ${progress.total_items} 项</strong></div><progress max="${Math.max(1,progress.total_items)}" value="${progress.confirmed_items}" aria-label="确认进度"></progress><p>本批：${e(progress.first_title)} → ${e(progress.last_title)}</p>${progress.next_title?`<p class="resume-hint">${progress.continue_after?`连续记到：${e(progress.continue_after)}；`:'从第一项开始核对；'}下一项：${e(progress.next_title)}</p>`:'<p class="resume-hint">本批全部已记录，可以继续往前翻。</p>'}${progress.has_gaps?'<p class="pending-note">中间还有未确认项，请从下一项继续。</p>':''}${progress.deleted_entries?`<p class="pending-note">${progress.deleted_entries} 笔已移入回收站，不会自动补记。</p>`:''}</section>`;}
  function dateField(item){const precision=precisions[item.id]||(item.occurred_on?.length===10?'day':'month');return `<label>日期精度<select data-field="date_precision"><option value="month" ${precision==='month'?'selected':''}>只记月份</option><option value="day" ${precision==='day'?'selected':''}>精确到日</option></select></label><label>${precision==='month'?'记账月份':'记账日期'}<input type="${precision==='month'?'month':'date'}" max="${precision==='month'?currentDay.slice(0,7):currentDay}" data-field="occurred_on" value="${e(item.occurred_on||'')}"/></label>`;}
+ function continuationHtml(){
+  const group=listData?.platforms?.find(g=>g.source===source),row=group?.latest;
+  if(!row)return '';
+  const p=row.progress,resume=group.resume;
+  return `<section class="compose-continuation" aria-label="${e(source)}续记位置"><div><strong>${e(source)} · 上次记到这里</strong>${resume?`<button class="text-button" data-text-action="open" data-id="${e(resume.id)}">继续待核对 ${icon('right',14)}</button>`:''}</div><p>${e(p.first_title)} <span>……</span> ${e(p.last_title)}</p><small>${p.continue_after?`连续记到：${e(p.continue_after)}`:'本批尚未连续确认'}${p.next_title?` · 下一项：${e(p.next_title)}`:' · 本批已处理'}${p.has_gaps?' · 中间有未确认项':''}${p.deleted_entries?' · 有删除记录，不自动补记':''}${row.status==='paused'?' · 已暂停':''}</small></section>`;
+ }
+ function renderList(){
+  if(!listData)return;
+  const page=batchPage(listData.batches,library);library.page=page.page;try{sessionStorage.setItem(`${draftKey}:library`,JSON.stringify(library));}catch{/* Optional display preference only. */}
+  const sources=[...new Set(listData.platforms.map(g=>g.source))];
+  const labels={review:'待核对',done:'已记完',paused:'暂停'};
+  list.innerHTML=`<section class="batch-library" aria-label="查找记账批次"><div class="card-heading"><h3>记账批次</h3><small>${page.count} 批${library.source?` · ${e(library.source)}`:''}</small></div><div class="batch-status-filters" aria-label="批次状态">${[['all','全部'],['review','待核对'],['done','已记完'],['paused','暂停']].map(([key,label])=>`<button type="button" data-text-action="library-status" data-status="${key}" aria-pressed="${library.status===key}">${label}</button>`).join('')}</div><div class="batch-source-filters" aria-label="批次平台"><button type="button" data-text-action="library-source" data-source="" aria-pressed="${!library.source}">全部平台</button>${sources.map(name=>`<button type="button" data-text-action="library-source" data-source="${e(name)}" aria-pressed="${library.source===name}">${e(name)}</button>`).join('')}</div><form data-batch-search class="batch-search"><label><span class="sr-only">搜索批次商品或原文</span><input name="batch-q" aria-label="搜索批次商品或原文" maxlength="200" placeholder="找商品或口述内容" value="${e(library.q)}"/></label><button type="button" aria-label="搜索批次" data-text-action="library-search">${icon('search',18)}</button>${library.q?'<button type="button" aria-label="清除批次搜索" data-text-action="library-clear">'+icon('close',16)+'</button>':''}</form><div class="batch-library-rows">${page.batches.length?page.batches.map(b=>{const p=b.progress||batchProgress(b);return `<button class="text-batch-row" data-text-action="open" data-id="${e(b.id)}"><span><strong>${e(p.source)} · ${p.confirmed_items}/${p.total_items} 项</strong><small>${e(p.first_title)} …… ${e(p.last_title)}</small><small>${p.recorded_at?`${e(recordDateLabel(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date(p.recorded_at))))}记过；`:''}${p.next_title?`下一项：${e(p.next_title)}`:'本批已处理'}${p.has_gaps?' · 中间有未确认项':''}${p.deleted_entries?' · 有删除记录':''}</small></span><span class="status-pill ${batchState(b)==='paused'?'paused':batchState(b)==='done'?'saved':''}">${labels[batchState(b)]}</span>${icon('right',16)}</button>`;}).join(''):'<p class="batch-library-empty" role="status">没有符合条件的批次，试试其他平台或条件。</p>'}</div>${page.pages>1?`<div class="batch-pagination"><button type="button" data-text-action="library-prev" data-unavailable="${!page.page}" ${!page.page?'disabled':''}>上一页</button><span>${page.page+1} / ${page.pages} 页</span><button type="button" data-text-action="library-next" data-unavailable="${page.page+1===page.pages}" ${page.page+1===page.pages?'disabled':''}>下一页</button></div>`:''}</section>`;
+  controls();
+ }
  function render(){
   heading.innerHTML=`<div class="flow-heading"><span class="step-number">${view==='result'?icon('check',20):icon('receipt',20)}</span><div><h3>${view==='compose'?'把收支告诉我':view==='result'?'这批已记录':'逐条核对，确认一条记一条'}</h3><p>${view==='compose'?'先理解、再确认；没说日子就只记月份':view==='result'?'已由服务器确认保存':'绿色按钮保存本项，其他条目保留'}</p></div></div>`;
   list.hidden=view!=='compose';work.replaceChildren();result.replaceChildren();actions.replaceChildren();deletePrompt=false;
   if(view==='compose'){
-   work.innerHTML=`<div class="input-zone"><div class="source-picker" aria-label="本批来源"><span>本批来源</span><div>${['',...PLATFORMS].map(name=>`<button type="button" data-text-action="source" data-source="${e(name)}" aria-pressed="${name===source}">${e(name||'自动识别')}</button>`).join('')}</div></div><label class="text-input-label">记账文字<textarea id="text-raw" rows="4" maxlength="10000" placeholder="午餐 35 元；上个月打车 18 元">${e(rawValue)}</textarea></label><p class="read-only-note">支持明确的文字格式；复杂口述继续在聊天线程理解。</p></div>`;
+   work.innerHTML=`<div class="input-zone">${continuationHtml()}<div class="source-picker" aria-label="本批来源"><span>本批来源</span><div>${['',...PLATFORMS].map(name=>`<button type="button" data-text-action="source" data-source="${e(name)}" aria-pressed="${name===source}">${e(name||'自动识别')}</button>`).join('')}</div></div><label class="text-input-label">记账文字<textarea id="text-raw" rows="4" maxlength="10000" placeholder="午餐 35 元；上个月打车 18 元">${e(rawValue)}</textarea></label><p class="read-only-note">支持明确的文字格式；复杂口述继续在聊天线程理解。</p></div>`;
    actions.innerHTML='<button class="button primary" data-text-action="parse">下一步 · 核对</button>';
   }else if(view==='result'){
    result.innerHTML=`<section class="flow-success" role="status"><span class="success-mark">${icon('checks',32)}</span><h3>已入账 · ${local?'本地已保存':'云端已保存'}</h3><strong class="preview-total money">${receipt.expense_minor&&receipt.income_minor?`支出 ${money(receipt.expense_minor)}<br>收入 ${money(receipt.income_minor)}`:`${receipt.expense_minor?'支出':'收入'} ${money(receipt.expense_minor||receipt.income_minor)}`}</strong><p>${receipt.count} 笔</p><p>${e(receipt.from)}${receipt.from!==receipt.to?` 至 ${e(receipt.to)}`:''}</p>${receipt.from?.length===7||receipt.to?.length===7?'<p>只记月份 · 日期未指定</p>':''}</section>${receipt.progress?progressHtml(receipt.progress):''}`;
-   actions.innerHTML='<button class="button secondary" data-text-action="new">再记一批</button><button class="button primary" data-text-action="view-bills">查看账单</button>';
+   actions.innerHTML=`<button class="button primary" data-text-action="new">${source?`继续${e(source)} · 再记一批`:'再记一批'}</button><button class="button secondary" data-text-action="view-bills">查看账单</button><div class="next-platforms" aria-label="换个平台继续记"><small>换个平台继续记</small>${PLATFORMS.filter(name=>name!==source).map(name=>`<button type="button" data-text-action="next-source" data-source="${e(name)}">${e(name)}</button>`).join('')}</div>`;
   }else if(view==='preview'){
    const plan=preview;
    result.innerHTML=`<section class="text-preview-card"><h3>将新增 ${plan.count} 笔</h3><strong class="preview-total money">${money(plan.expense_minor||plan.income_minor)}</strong><p>支出 ${money(plan.expense_minor)} · 收入 ${money(plan.income_minor)}</p><div class="preview-list">${plan.entries.map(i=>`<p><span>${e(recordDateLabel(i.occurred_on))} · ${e(i.note)}</span><b class="money">${money(i.amount_minor)}</b></p>`).join('')}</div>${plan.pending_count?`<p class="pending-note">另有 ${plan.pending_count} 项待补全，不会入账</p>`:''}${plan.duplicates?.length?`<p class="field-error">${plan.duplicates.length} 个日期已有同额账目。</p><label class="checkbox-label"><input type="checkbox" id="text-ack-duplicates"/>这是另外发生的收支</label>`:''}</section>`;
@@ -65,8 +84,9 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
    actions.innerHTML=`<button class="button secondary" data-text-action="save">存为草稿</button><button class="button secondary" data-text-action="preview">核对 ${plan.count} 笔账目</button><button class="text-button" data-text-action="back-list">批次列表</button><button class="text-button" data-text-action="new">新一批</button>${batch?`<button class="text-button" data-text-action="${batch.status==='paused'?'resume':'pause'}">${batch.status==='paused'?'恢复':'暂停'}</button>${!slots.length?'<button class="text-button delete-draft" data-text-action="delete">删除草稿</button>':''}`:''}`;
   }
   if(conflict)actions.insertAdjacentHTML('beforeend','<button class="button secondary" data-text-action="reload-batch">载入最新批次</button>');
+  if(newPrompt)actions.innerHTML='<div class="new-batch-prompt" role="status"><strong>还有未确认内容</strong><p>先保存这批草稿，再开始下一批。不会提前入账。</p><div><button class="button secondary" data-text-action="cancel-new">继续核对</button><button class="button primary" data-text-action="save-new">存草稿并继续</button></div></div>';
   if(pending)actions.innerHTML='<button class="button primary" data-text-action="retry">核对保存结果</button>';
-  controls();
+  renderList();controls();
  }
  function readItems(monthOnlyId=null){
   for(const item of items){const card=work.querySelector(`[data-item-id="${item.id}"]`);if(!card||lockedIds().has(item.id))continue;
@@ -89,15 +109,20 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
   }
   textItemsSchema.parse(items);persist();
  }
- function selectBatch(b){itemErrors.clear();batch=b;items=b.items;slots=b.slots||[];original=b.original_text;rawValue=original;preview=null;conflict=false;precisions={};view='review';message(b.status==='paused'?'此批次已暂停，恢复后才能继续确认。':'');persist();render();}
- async function loadList(){try{
-   const data=await request('/text-batches');if(disposed)return;
-   list.innerHTML=data.batches.length?`<h3>记账批次 · 下次从这里继续</h3>${data.batches.map(b=>{const p=b.progress||batchProgress(b);return `<button class="text-batch-row" data-text-action="open" data-id="${e(b.id)}"><span><strong>${e(p.source)} · ${p.confirmed_items}/${p.total_items} 项</strong><small>${e(p.first_title)} → ${e(p.last_title)}</small><small>${p.recorded_at?`${e(recordDateLabel(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai'}).format(new Date(p.recorded_at))))}记过；`:''}${p.next_title?`下一项：${e(p.next_title)}`:'本批已记录'}${p.has_gaps?' · 中间有未确认项':''}</small></span><span class="status-pill ${b.status==='paused'?'paused':p.confirmed_items===p.total_items&&p.total_items?'saved':''}">${b.status==='paused'?'已暂停':b.pending_count?'待补全':p.confirmed_items===p.total_items&&p.total_items?'已记录':'待确认'}</span>${icon('right',16)}</button>`;}).join('')}`:'';
-   if(initialBatchId){const id=initialBatchId;initialBatchId=null;const found=data.batches.find(b=>b.id===id);if(found)selectBatch(found);else message('该批次已不存在，请刷新列表。','error');}
+ function selectBatch(b){newPrompt=false;const sources=[...new Set(batchSources(b).map(x=>x.source))];source=sources.length===1&&PLATFORMS.includes(sources[0])?sources[0]:'';itemErrors.clear();batch=b;items=b.items;slots=b.slots||[];original=b.original_text;rawValue=original;preview=null;conflict=false;precisions={};view='review';savedContents=contents();message(b.status==='paused'?'此批次已暂停，恢复后才能继续确认。':'');persist();render();}
+ async function loadList(){const ticket=++listTicket;try{
+   const data=await request('/text-batches');if(disposed||ticket!==listTicket)return;listData=data;renderList();
+   if(initialBatchId){const id=initialBatchId;initialBatchId=null;const found=(await request(`/text-batches/${id}`)).batch;if(disposed)return;selectBatch(found);}
+   else if(view==='compose'){const zone=work.querySelector('.compose-continuation');if(zone)zone.remove();work.querySelector('.input-zone')?.insertAdjacentHTML('afterbegin',continuationHtml());}
    controls();
-  }catch(error){if(!disposed)list.innerHTML=`<p class="field-error">文字记录暂未取得：${e(error.message)}</p><button class="button secondary" data-text-action="list-retry">重试</button>`;}}
+  }catch(error){if(!disposed&&ticket===listTicket)list.innerHTML=`<p class="field-error">文字记录暂未取得：${e(error.message)}</p><button class="button secondary" data-text-action="list-retry">重试</button>`;}}
+ async function beginNew(nextSource=source){
+  newPrompt=false;
+  if(onStartSource){view='result';onStartSource(nextSource);return;}
+  itemErrors.clear();batch=null;items=[];original='';rawValue='';slots=[];preview=null;view='compose';receipt=null;precisions={};source=nextSource;duplicateItems.clear();conflict=false;message('');sessionStorage.removeItem(draftKey);render();await loadList();
+ }
  async function send(path,body,method='POST',meta={}){const op=pending||{...meta,path,body,method,key:crypto.randomUUID()};pending=op;persist();controls();const value=await mutate(op.path,op.body,{method:op.method,key:op.key});pending=null;persist();return value;}
- async function save(){readItems();const body={original_text:original,items};const value=await send(batch?`/text-batches/${batch.id}`:'/text-batches',batch?{...body,version:batch.version}:body,batch?'PATCH':'POST');batch=value.batch;items=batch.items;if(value.repeated){const latest=(await request('/text-batches')).batches.find(b=>b.id===batch.id);if(latest){batch=latest;items=latest.items;slots=latest.slots||[];}}persist();}
+ async function save(){readItems();const body={original_text:original,items};const value=await send(batch?`/text-batches/${batch.id}`:'/text-batches',batch?{...body,version:batch.version}:body,batch?'PATCH':'POST');batch=value.batch;items=batch.items;savedContents=contents();if(value.repeated){const latest=(await request(`/text-batches/${batch.id}`)).batch;if(latest){batch=latest;items=latest.items;slots=latest.slots||[];}}persist();}
  async function refreshAfterWrite(){try{await onSaved();}catch{message('保存已完成，账单暂未刷新；请重新打开查看。','error');}}
  function applyConfirmation(value,plan){slots.push(...plan.entries.map((entry,index)=>({item_id:entry.item_id,occurred_on:entry.occurred_on,entry_id:value.entry_ids[index],created_at:value.recorded_at})));batch.version=value.version;batch.status='active';persist();}
  async function showSuccess(value){receipt={...value,progress:batch?batchProgress(batch,slots):null};view='result';batch=null;items=[];slots=[];preview=null;original='';rawValue='';sessionStorage.removeItem(draftKey);message('');render();await refreshAfterWrite();}
@@ -116,17 +141,25 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
   }
   if(disposed)return;
   if(localPlan().rows.every(r=>!r.missing.length&&!r.entries.length)){
-   try{const latest=(await request('/text-batches')).batches.find(b=>b.id===batch.id);if(!latest)throw new Error('批次不存在');batch=latest;slots=latest.slots;const active=slots.filter(s=>!s.deleted_at),dates=active.map(s=>s.current_occurred_on).sort();const sum=type=>active.filter(s=>s.type===type).reduce((n,s)=>n+s.amount_minor,0);await showSuccess({...value,count:active.length,expense_minor:sum('expense'),income_minor:sum('income'),from:dates[0]||value.from,to:dates.at(-1)||value.to});}
+   try{const latest=(await request(`/text-batches/${batch.id}`)).batch;if(!latest)throw new Error('批次不存在');batch=latest;slots=latest.slots;const active=slots.filter(s=>!s.deleted_at),dates=active.map(s=>s.current_occurred_on).sort();const sum=type=>active.filter(s=>s.type===type).reduce((n,s)=>n+s.amount_minor,0);await showSuccess({...value,count:active.length,expense_minor:sum('expense'),income_minor:sum('income'),from:dates[0]||value.from,to:dates.at(-1)||value.to});}
    catch{await showSuccess(value);message('本次已保存；批次合计暂未取得，请刷新账单核对。','error');}
   }else{const top=scroller?.scrollTop||0;render();if(scroller)scroller.scrollTop=top;focusAfter=true;await refreshAfterWrite();}
  }
  async function handle(event){const button=event.target.closest('[data-text-action]');if(!button||button.disabled||busy)return;const action=button.dataset.textAction;if(pending&&action!=='retry')return;busy=true;controls();
   try{
-   if(action==='source'){rawValue=work.querySelector('#text-raw').value;source=button.dataset.source;persist();render();}
-   if(action==='parse'){itemErrors.clear();rawValue=work.querySelector('#text-raw').value;original=rawValue;items=tagPlatformItems(parseTextRecords(original,currentDay,categories),source);batch=null;slots=[];precisions={};preview=null;view='review';message('');persist();render();}
-   if(action==='new'){itemErrors.clear();batch=null;items=[];original='';rawValue='';slots=[];preview=null;view='compose';receipt=null;precisions={};duplicateItems.clear();conflict=false;message('');sessionStorage.removeItem(draftKey);render();await loadList();}
+   if(action==='source'){rawValue=work.querySelector('#text-raw').value;source=button.dataset.source;library.source=source;library.page=0;persist();render();}
+   if(action==='parse'){itemErrors.clear();rawValue=work.querySelector('#text-raw').value;const nextOriginal=rawValue,nextItems=tagPlatformItems(parseTextRecords(nextOriginal,currentDay,categories),source);original=nextOriginal;items=nextItems;sessionStorage.removeItem(`${draftKey}:input`);batch=null;slots=[];precisions={};preview=null;view='review';message('');persist();render();}
+   if(action==='new'){if(view!=='result'&&items.length)readItems();if(view!=='result'&&items.length&&localPlan().rows.some(r=>r.missing.length||r.entries.length)&&!(batch&&savedContents===contents())){newPrompt=true;render();}else{sessionStorage.removeItem(draftKey);await beginNew();}}
+   if(action==='cancel-new'){newPrompt=false;render();}
+   if(action==='save-new'){await save();await refreshAfterWrite();sessionStorage.removeItem(draftKey);await beginNew();}
+   if(action==='next-source'){sessionStorage.removeItem(draftKey);await beginNew(button.dataset.source);}
+   if(action==='library-status'){library.status=button.dataset.status;library.page=0;renderList();}
+   if(action==='library-source'){library.source=button.dataset.source;library.page=0;renderList();}
+   if(action==='library-search'){library.q=list.querySelector('[name=batch-q]').value.trim();library.page=0;renderList();}
+   if(action==='library-clear'){library.q='';library.page=0;renderList();}
+   if(action==='library-prev'||action==='library-next'){library.page+=action==='library-next'?1:-1;renderList();}
    if(action==='back-list'){view='compose';message('');render();await loadList();}
-   if(action==='open'||action==='reload-batch'){const data=await request('/text-batches');const b=data.batches.find(b=>b.id===(action==='open'?button.dataset.id:batch?.id));if(!b)throw new Error('记录已不存在，请刷新列表');selectBatch(b);}
+   if(action==='open'||action==='reload-batch'){const b=(await request(`/text-batches/${action==='open'?button.dataset.id:batch?.id}`)).batch;if(!b)throw new Error('记录已不存在，请刷新列表');selectBatch(b);}
    if(action==='choose-category'){readItems();const item=items.find(i=>i.id===button.dataset.item),cat=categories.find(c=>c.id===button.dataset.category&&c.type===item.type&&!c.archived);if(!cat)throw new Error('分类已变化，请重新打开核对');item.category_id=cat.id;item.category_hint.resolved=true;itemErrors.delete(item.id);preview=null;persist();message('');renderChoice(item.id);}
    if(action==='create-category'){readItems();const item=items.find(i=>i.id===button.dataset.item);const value=await send('/categories/resolve',{name:item.category_hint.name,type:item.type},'POST',{item_id:item.id});applyCreatedCategory(value,item.id);}
    if(action==='confirm-item'){itemErrors.delete(button.dataset.item);await confirmItem(button.dataset.item);}
@@ -151,6 +184,7 @@ export function mountTextRecords(container,{categories,currentDay,draftKey,local
    preview=null;message('');persist();if(['cycle_precision','date_precision','range_mode','resolve_questions','category_id'].includes(event.target.dataset.field))render();else refreshCandidateFeedback();
   }catch(error){itemIssue(event.target.closest('[data-item-id]').dataset.itemId,error.message);message(error.message,'error');}}}
  function input(event){if(event.target.id==='text-raw'){rawValue=event.target.value;persist();}}
- container.addEventListener('click',handle);container.addEventListener('change',change);container.addEventListener('input',input);render();loadList();
- return ()=>{if(view!=='result')persist();disposed=true;container.removeEventListener('click',handle);container.removeEventListener('change',change);container.removeEventListener('input',input);container.replaceChildren();};
+ const submit=event=>{if(event.target.matches('[data-batch-search]')){event.preventDefault();handle({target:event.target.querySelector('[data-text-action=library-search]')});}};
+ container.addEventListener('submit',submit);container.addEventListener('click',handle);container.addEventListener('change',change);container.addEventListener('input',input);render();loadList();
+ return ()=>{if(view!=='result')persist();disposed=true;container.removeEventListener('submit',submit);container.removeEventListener('click',handle);container.removeEventListener('change',change);container.removeEventListener('input',input);container.replaceChildren();};
 }
