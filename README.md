@@ -37,3 +37,5 @@
 2026-10-12 第一批研究改进已上线：手机版 B 平台切换、显式筛选标签、当前期间快捷返回、独立“再记一笔”草稿。76 项自动化测试及 206 项双引擎端到端通过，线上隔离账本写读清理完成；真实 iPhone/国内网络仍待验收。详见 [实际验收记录](web-cloudflare/docs/research-20261012/acceptance.md)。
 
 2026-10-13 第二批续记改进已上线：批次平台/状态/商品查找与分页、首尾续记位置、记完直接继续同平台或换平台、未保存候选/文字保护，以及快速导航修复。79 项单元/集成和 224 项双引擎 E2E 全通过，线上合成账本验收及清理完成。详见 [验收记录](web-cloudflare/docs/continuation-workspace-acceptance-20261013.md)。
+
+2026-10-13 最新进展：用户已选只做 Cloudflare 免费额度的虚构模型评测。42次固定接口调用，基础模型完整核心题5/25，较新模型改进组合只测6题、6/6，尚未接网站或真实历史。关闭按钮可靠性修复经完整集成和双引擎E2E通过后已发布；免费评测、安全边界和当前验收见 [模型实测](web-cloudflare/docs/semantic-intake-20261013/free-evaluation.md)及[交付记录](web-cloudflare/docs/semantic-intake-20261013/acceptance.md)。

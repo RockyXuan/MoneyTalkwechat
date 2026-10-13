@@ -6,7 +6,7 @@
 
 ## 最小运行路径
 
-2026-10-11 平台进度板复用文字批次的“平台 · 商品”标题、原序 items 和 slots；列表接口增加派生 platforms，不新增表或备份版本。混合批次分组展示但不复制账目；分类来自已生成账目的当前 category_id。所有保留批次参与分组，超过 100 批仍遵守现有显式上限错误，不悄悄截断。平台只是录入口径，不能用来源卡合计支付平台与电商平台金额，避免重复消费概念。查看 [执行方案](../web-cloudflare/docs/platform-board-plan-20261011.md)。
+2026-10-11 平台进度板复用文字批次的“平台 · 商品”标题、原序 items 和 slots；列表接口增加派生 platforms，不新增表或备份版本。混合批次分组展示但不复制账目；分类来自已生成账目的当前 category_id。所有保留批次参与分组，超过 500 批仍遵守现有显式上限错误，不悄悄截断。平台只是录入口径，不能用来源卡合计支付平台与电商平台金额，避免重复消费概念。查看 [执行方案](../web-cloudflare/docs/platform-board-plan-20261011.md)。
 
 浏览器 → 同源 `/api` → Worker → D1。静态文件由 Workers Static Assets 托管。前端为原生 HTML/CSS/JavaScript，经 Vite 构建；不依赖 Taro、React、NestJS、Coze 或 Supabase。Chart.js 只加载柱状、折线和饼图需要的模块，图表代码在统计页按需加载；Lucide 仅打包使用的 SVG。字体使用系统字体，资源随应用提供。
 
@@ -24,7 +24,7 @@
 
 - users、ledgers：身份、拥有者、当前账本；账本有 importing/ready 状态。
 - categories：稳定 ID、收支类型、名称、色板标识、图标、排序、停用状态、版本；2026-10-11 增加私有口述别称 aliases_json，仅作为建议依据。
-- entries：稳定 ID、ledger_id、正整数金额分、收支方向、分类、YYYY-MM-DD 记账日、备注、版本、UTC 创建/更新时间、删除时间。
+- entries：稳定 ID、ledger_id、正整数金额分、收支方向、分类、YYYY-MM / YYYY-MM-DD 记账日期、备注、版本、UTC 创建/更新时间、删除时间。
 - operations：同一用户、账本、提交标识的请求摘要和结果，用于重试去重。
 - restores：备份内容摘要、预期条数、恢复进度、完成状态及是否可复用。
 
@@ -75,3 +75,5 @@ CSV 可导出当前筛选或全部有效账目；不受账单分页限制，文�
 复用分类模型存别称，不增加外部 AI 服务或个人名词硬编码。候选可携带 category_hint（原口述分类名、同账本同类型推荐 ID、是否已选择）。分类管理可修改和删除别称；同名有效分类优先，别称产生可见建议，不自动入账。未选择的建议在服务端也阻止生成账目。新增 /api/categories/resolve 复用分类唯一索引、提交结果日志与事务，同名并发与重试不重复创建，停用分类不自动恢复。
 
 备份含别称或建议时使用 v4；v1–v3 继续恢复。迁移 0004 仅增加默认空数组字段，不改现有消费。恢复保存别称、候选选择状态和引用，完成后继续核对内容摘要。私有关系与原文不写入 Git 或外部模型。参见 [执行方案](../web-cloudflare/docs/category-suggestions-plan-20261011.md)。
+
+2026-10-13 模型边界更新（准备中）：仅Cloudflare免费额度内的虚构REST评测，网页/Worker未导入semantic-proposal模块、未配置AI/Workflows绑定。Qwen3-30B完整核心题未通过；Qwen3.8-27B改进组合只验证6个指定题。金额、引文、未知日期与分类校验复用Zod和既有数据规则；模型不拥有账本工具。拟用受保护D1任务和经免费资源实测的Workflows恢复长任务，推理步骤不默认重试，不用waitUntil冒充可靠队列，未执行相关迁移。见 [实际评测与架构出口](../web-cloudflare/docs/semantic-intake-20261013/free-evaluation.md)。
