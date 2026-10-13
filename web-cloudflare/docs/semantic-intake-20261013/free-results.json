@@ -1,0 +1,305 @@
+{
+  "synthetic_only": true,
+  "paid_calls": 0,
+  "requests": 42,
+  "reported_neurons": 6690.946856498718,
+  "test_budget": 8000,
+  "shared_account_daily_remaining": "not measured",
+  "model_feature_enabled": false,
+  "phases": [
+    {
+      "phase": "free-api-v1",
+      "scope": "targeted subset",
+      "requests": 3,
+      "initial_pass": 0,
+      "replayed_pass": 0,
+      "neurons": 77.02423858642578,
+      "latency_seconds": {
+        "min": 3.604,
+        "median": 4.927,
+        "max": 6.799
+      },
+      "cases": [
+        {
+          "id": "SEM01",
+          "pass": false,
+          "seconds": 6.799
+        },
+        {
+          "id": "SEM02",
+          "pass": false,
+          "seconds": 3.604
+        },
+        {
+          "id": "SEM03",
+          "pass": false,
+          "seconds": 4.927
+        }
+      ]
+    },
+    {
+      "phase": "free-api-v2",
+      "scope": "targeted subset",
+      "requests": 3,
+      "initial_pass": 1,
+      "replayed_pass": 1,
+      "neurons": 79.33368682861328,
+      "latency_seconds": {
+        "min": 3.737,
+        "median": 4.588,
+        "max": 5.601
+      },
+      "cases": [
+        {
+          "id": "SEM01",
+          "pass": false,
+          "seconds": 5.601
+        },
+        {
+          "id": "SEM02",
+          "pass": true,
+          "seconds": 3.737
+        },
+        {
+          "id": "SEM03",
+          "pass": false,
+          "seconds": 4.588
+        }
+      ]
+    },
+    {
+      "phase": "free-api-v3",
+      "scope": "25 core",
+      "requests": 25,
+      "initial_pass": 5,
+      "replayed_pass": 5,
+      "neurons": 1088.6754484176636,
+      "latency_seconds": {
+        "min": 2.194,
+        "median": 4.653,
+        "max": 90.558
+      },
+      "cases": [
+        {
+          "id": "SEM01",
+          "pass": true,
+          "seconds": 4.154
+        },
+        {
+          "id": "SEM02",
+          "pass": true,
+          "seconds": 3.847
+        },
+        {
+          "id": "SEM03",
+          "pass": false,
+          "seconds": 5.492
+        },
+        {
+          "id": "SEM04",
+          "pass": true,
+          "seconds": 3.288
+        },
+        {
+          "id": "SEM05",
+          "pass": false,
+          "seconds": 6.969
+        },
+        {
+          "id": "SEM06",
+          "pass": false,
+          "seconds": 2.944
+        },
+        {
+          "id": "SEM07",
+          "pass": false,
+          "seconds": 3.54
+        },
+        {
+          "id": "SEM08",
+          "pass": false,
+          "seconds": 2.659
+        },
+        {
+          "id": "SEM09",
+          "pass": false,
+          "seconds": 3.832
+        },
+        {
+          "id": "SEM10",
+          "pass": false,
+          "seconds": 14.043
+        },
+        {
+          "id": "SEM11",
+          "pass": false,
+          "seconds": 24.68
+        },
+        {
+          "id": "SEM12",
+          "pass": false,
+          "seconds": 8.431
+        },
+        {
+          "id": "SEM13",
+          "pass": false,
+          "seconds": 4.118
+        },
+        {
+          "id": "SEM14",
+          "pass": false,
+          "seconds": 8.139
+        },
+        {
+          "id": "SEM15",
+          "pass": false,
+          "seconds": 3.015
+        },
+        {
+          "id": "SEM16",
+          "pass": true,
+          "seconds": 3.185
+        },
+        {
+          "id": "SEM17",
+          "pass": false,
+          "seconds": 5.248
+        },
+        {
+          "id": "SEM18",
+          "pass": false,
+          "seconds": 6.266
+        },
+        {
+          "id": "SEM19",
+          "pass": false,
+          "seconds": 4.999
+        },
+        {
+          "id": "SEM20",
+          "pass": false,
+          "seconds": 5.821
+        },
+        {
+          "id": "SEM21",
+          "pass": false,
+          "seconds": 10.56
+        },
+        {
+          "id": "SEM22",
+          "pass": false,
+          "seconds": 3.154
+        },
+        {
+          "id": "SEM23",
+          "pass": false,
+          "seconds": 4.653
+        },
+        {
+          "id": "SEM24",
+          "pass": true,
+          "seconds": 2.194
+        },
+        {
+          "id": "SEM25",
+          "pass": false,
+          "seconds": 90.558
+        }
+      ]
+    },
+    {
+      "phase": "free-qwen38-v3",
+      "scope": "targeted subset",
+      "requests": 5,
+      "initial_pass": 3,
+      "replayed_pass": 4,
+      "neurons": 2249.022674560547,
+      "latency_seconds": {
+        "min": 23.631,
+        "median": 31.947,
+        "max": 66.426
+      },
+      "cases": [
+        {
+          "id": "SEM01",
+          "pass": true,
+          "seconds": 66.426
+        },
+        {
+          "id": "SEM03",
+          "pass": true,
+          "seconds": 25.529
+        },
+        {
+          "id": "SEM05",
+          "pass": true,
+          "seconds": 23.631
+        },
+        {
+          "id": "SEM07",
+          "pass": false,
+          "seconds": 31.947
+        },
+        {
+          "id": "SEM12",
+          "pass": true,
+          "seconds": 51.763
+        }
+      ]
+    },
+    {
+      "phase": "free-qwen38-v4",
+      "scope": "targeted subset",
+      "requests": 6,
+      "initial_pass": 6,
+      "replayed_pass": 6,
+      "neurons": 3196.8908081054688,
+      "latency_seconds": {
+        "min": 23.786,
+        "median": 65.094,
+        "max": 71.299
+      },
+      "cases": [
+        {
+          "id": "SEM07",
+          "pass": true,
+          "seconds": 23.786
+        },
+        {
+          "id": "SEM11",
+          "pass": true,
+          "seconds": 70.754
+        },
+        {
+          "id": "SEM12",
+          "pass": true,
+          "seconds": 71.299
+        },
+        {
+          "id": "SEM13",
+          "pass": true,
+          "seconds": 64.882
+        },
+        {
+          "id": "SEM19",
+          "pass": true,
+          "seconds": 65.306
+        },
+        {
+          "id": "SEM20",
+          "pass": true,
+          "seconds": 24.956
+        }
+      ]
+    }
+  ],
+  "remaining_v4_cases": [
+    "SEM21",
+    "SEM22",
+    "SEM01",
+    "SEM03",
+    "SEM05"
+  ],
+  "extended_cases_status": "not sent; long-input task/token/output strategy not implemented",
+  "scoring_scope": "strict proposal validation and expected listed fields, not all-field accuracy or general model ranking"
+}

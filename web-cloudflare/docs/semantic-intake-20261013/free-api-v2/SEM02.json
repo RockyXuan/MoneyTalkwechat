@@ -1,0 +1,237 @@
+{
+  "case": "SEM02",
+  "model_requested": "@cf/qwen/qwen3-30b-a3b-fp8",
+  "prompt_version": "synthetic-free-v2",
+  "fixture_sha256": "951f174ecaa8797cb24e4f49d0c4d4a9f8a443bfd22b0095c77451a5ecb56eb2",
+  "max_tokens": 4096,
+  "reserved_neurons": 170,
+  "plan_verified": "Free $0; dashboard",
+  "synthetic_only": true,
+  "http_status": 200,
+  "cf_ray": "a49eb3fd0c91fd2d-SIN",
+  "envelope": {
+    "result": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "annotations": null,
+            "audio": null,
+            "content": "\n\n{\n  \"version\": 1,\n  \"complete\": true,\n  \"items\": [\n    {\n      \"id\": \"shopping\",\n      \"title\": \"笔袋\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"笔袋原价32\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"实付27\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"又加了3元邮费\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"sum\",\n        \"terms\": [\n          {\n            \"value\": \"27\",\n            \"evidence\": {\n              \"quote\": \"实付27\",\n              \"occurrence\": 0\n            }\n          },\n          {\n            \"value\": \"3\",\n            \"evidence\": {\n              \"quote\": \"又加了3元邮费\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"30\"\n      },\n      \"category\": {\n        \"id\": \"shopping\",\n        \"suggested_name\": \"购物\",\n        \"alternatives\": [\"shopping\"]\n      },\n      \"date\": {\n        \"kind\": \"unspecified\",\n        \"value\": null,\n        \"evidence\": []\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    }\n  ],\n  \"ignored\": []\n}",
+            "function_call": null,
+            "reasoning": "\n\n",
+            "reasoning_content": "\n\n",
+            "refusal": null,
+            "role": "assistant"
+          },
+          "routed_experts": null,
+          "stop_reason": null,
+          "token_ids": null
+        }
+      ],
+      "created": 1791898270,
+      "ec_transfer_params": null,
+      "id": "chatcmpl-b8723a95-5478-4840-85d9-294026c04757",
+      "kv_transfer_params": null,
+      "metrics": null,
+      "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "object": "chat.completion",
+      "prompt_logprobs": null,
+      "prompt_text": null,
+      "prompt_token_ids": null,
+      "response": {
+        "complete": true,
+        "ignored": [],
+        "items": [
+          {
+            "amount": {
+              "method": "sum",
+              "stated_total": "30",
+              "terms": [
+                {
+                  "evidence": {
+                    "occurrence": 0,
+                    "quote": "实付27"
+                  },
+                  "value": "27"
+                },
+                {
+                  "evidence": {
+                    "occurrence": 0,
+                    "quote": "又加了3元邮费"
+                  },
+                  "value": "3"
+                }
+              ]
+            },
+            "category": {
+              "alternatives": [
+                "shopping"
+              ],
+              "id": "shopping",
+              "suggested_name": "购物"
+            },
+            "currency": "CNY",
+            "date": {
+              "evidence": [],
+              "kind": "unspecified",
+              "value": null
+            },
+            "evidence": [
+              {
+                "occurrence": 0,
+                "quote": "笔袋原价32"
+              },
+              {
+                "occurrence": 0,
+                "quote": "实付27"
+              },
+              {
+                "occurrence": 0,
+                "quote": "又加了3元邮费"
+              }
+            ],
+            "id": "shopping",
+            "questions": [],
+            "recurrence": {
+              "charge_day": null,
+              "cycle": "single",
+              "evidence": [],
+              "ongoing": false,
+              "start_month": null,
+              "through_month": null
+            },
+            "source": null,
+            "title": "笔袋",
+            "type": "expense"
+          }
+        ],
+        "version": 1
+      },
+      "service_tier": null,
+      "tool_calls": [],
+      "usage": {
+        "prompt_tokens": 1989,
+        "completion_tokens": 372,
+        "total_tokens": 2361,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 20.534908294677734
+      }
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+  },
+  "evaluation": {
+    "content": "\n\n{\n  \"version\": 1,\n  \"complete\": true,\n  \"items\": [\n    {\n      \"id\": \"shopping\",\n      \"title\": \"笔袋\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"笔袋原价32\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"实付27\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"又加了3元邮费\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"sum\",\n        \"terms\": [\n          {\n            \"value\": \"27\",\n            \"evidence\": {\n              \"quote\": \"实付27\",\n              \"occurrence\": 0\n            }\n          },\n          {\n            \"value\": \"3\",\n            \"evidence\": {\n              \"quote\": \"又加了3元邮费\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"30\"\n      },\n      \"category\": {\n        \"id\": \"shopping\",\n        \"suggested_name\": \"购物\",\n        \"alternatives\": [\"shopping\"]\n      },\n      \"date\": {\n        \"kind\": \"unspecified\",\n        \"value\": null,\n        \"evidence\": []\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    }\n  ],\n  \"ignored\": []\n}",
+    "usage": {
+      "prompt_tokens": 1989,
+      "completion_tokens": 372,
+      "total_tokens": 2361,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "neurons": 20.534908294677734
+    },
+    "completion_id": "chatcmpl-b8723a95-5478-4840-85d9-294026c04757",
+    "proposal": {
+      "version": 1,
+      "original_text": "笔袋原价32，实付27，又加了3元邮费，你合在一笔记30就好。",
+      "anchor_day": "2026-10-13",
+      "items": [
+        {
+          "id": "shopping",
+          "title": "笔袋",
+          "type": "expense",
+          "source": null,
+          "evidence": [
+            {
+              "start": 0,
+              "end": 6,
+              "quote": "笔袋原价32"
+            },
+            {
+              "start": 7,
+              "end": 11,
+              "quote": "实付27"
+            },
+            {
+              "start": 12,
+              "end": 19,
+              "quote": "又加了3元邮费"
+            }
+          ],
+          "currency": "CNY",
+          "amount": {
+            "method": "sum",
+            "terms": [
+              {
+                "value": "27",
+                "evidence": {
+                  "quote": "实付27",
+                  "occurrence": 0
+                }
+              },
+              {
+                "value": "3",
+                "evidence": {
+                  "quote": "又加了3元邮费",
+                  "occurrence": 0
+                }
+              }
+            ],
+            "stated_total": "30"
+          },
+          "category": {
+            "id": "shopping",
+            "suggested_name": "购物",
+            "alternatives": [
+              "shopping"
+            ]
+          },
+          "date": {
+            "kind": "unspecified",
+            "value": null,
+            "evidence": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          },
+          "questions": [
+            "月份默认本月，日期未指定"
+          ],
+          "amount_minor": 3000,
+          "occurred_on": "2026-10",
+          "status": "proposal",
+          "requires_confirmation": true
+        }
+      ],
+      "ignored": [],
+      "status": "proposal",
+      "saved_entries": 0
+    },
+    "score": {
+      "pass": true,
+      "checked": [
+        "没有误增循环候选",
+        "单笔数量",
+        "第1笔/title",
+        "第1笔/amount_minor",
+        "expense整数分合计",
+        "只提出候选，保存笔数为零"
+      ],
+      "failures": [],
+      "architectural_invariants": []
+    }
+  },
+  "seconds": 3.737
+}

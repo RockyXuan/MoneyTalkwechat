@@ -70,6 +70,13 @@ test('monthly unknown starting date remains unresolved; missing charge day is al
  const out=validateSemanticProposal(proposal(i),context(raw));assert.equal(out.items[0].recurrence.start_month,null);assert.ok(out.items[0].questions.includes('起始月待确认'));
  i.recurrence.ongoing=true;assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/范围冲突/);
 });
+test('unknown date may cite the actual statement of uncertainty, but cannot acquire a guessed date',()=>{
+ const raw='杯子58元，哪天忘了';const i=item('杯子58元');i.date={kind:'unknown',value:null,evidence:[ref('哪天忘了')]};
+ const out=validateSemanticProposal(proposal(i),context(raw));assert.equal(out.items[0].occurred_on,null);assert.ok(out.items[0].questions.includes('日期待确认'));
+ i.date.value='2026-10-13';assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/未知日期/);
+ i.date.value=null;i.date.evidence=[ref('编造的未知说明')];assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/引文/);
+ i.date.kind='unspecified';i.date.evidence=[ref('哪天忘了')];assert.throws(()=>validateSemanticProposal(proposal(i),context(raw)),/未知日期/);
+});
 test('partial, invalid or oversized output cannot create an apparently complete draft',()=>{
  assert.throws(()=>validateSemanticProposal({...proposal(item()),complete:false},context()));
  assert.throws(()=>validateSemanticProposal('{"items":[',context()));

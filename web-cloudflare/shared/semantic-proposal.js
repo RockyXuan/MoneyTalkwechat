@@ -99,7 +99,7 @@ export function validateSemanticProposal(output, context) {
     i.date.evidence.forEach(r => locate(context.raw, r));
     let date = i.date.value;
     if (i.date.kind === 'unspecified' || i.date.kind === 'unknown') {
-      if (date !== null || i.date.evidence.length) throw Error('未知日期不能被模型补成确定日期');
+      if (date !== null || (i.date.kind === 'unspecified' && i.date.evidence.length)) throw Error('未知日期不能被模型补成确定日期');
       date = i.date.kind === 'unspecified' ? context.anchor_day.slice(0, 7) : null;
       questions.push(i.date.kind === 'unspecified' ? '月份默认本月，日期未指定' : '日期待确认');
     } else if (!date || !validRecordDate(date) || !i.date.evidence.length) throw Error('日期或日期引文无效');

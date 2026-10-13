@@ -42,6 +42,15 @@ test('LONG08 product and source names remain intact; currency symbols cannot sil
  await open(page);await action(page,'text-records').click();await page.locator('#text-raw').fill('支付宝 · 合成有机花生糖20元');await textAction(page,'parse').click();await expect(page.locator('.text-candidate h3')).toContainText('支付宝 · 合成有机花生糖');await page.locator('.confirm-one').click();await expect(page.locator('.flow-success')).toContainText('20.00');await textAction(page,'new').click();await page.locator('#text-raw').fill('合成服务$20');await textAction(page,'parse').click();await expect(page.locator('[data-field=amount_minor]')).toHaveValue('');await page.locator('.confirm-one').click();await expect(page.locator('.candidate-feedback')).toContainText('金额');expect((await ledger.call('/entries')).totals.expense_minor).toBe(2000);await textAction(page,'new').click();await textAction(page,'save-new').click();await expect(page.locator('#text-raw')).toBeVisible();
 });
 
+for(const width of [390,1440])test(`LONG10 ${width} close visibly waits for saved-draft refresh, then one click closes and reopens intact`,async({page,ledger})=>{
+ await page.setViewportSize({width,height:950});await open(page);await action(page,'text-records').click();await page.locator('#text-raw').fill('合成关闭验证0.03元');await textAction(page,'parse').click();
+ let release,started;const barrier=new Promise(r=>release=r),ready=new Promise(r=>started=r);
+ await page.route('**/api/text-batches?view=board',async route=>{started();await barrier;await route.continue();});
+ await textAction(page,'save').click();await ready;await expect(page.locator('#text-status')).toContainText('草稿已保存');
+ const dismiss=action(page,'close-dialog',page.locator('#dialog'));await expect(dismiss).toBeDisabled();await expect(page.locator('#dialog')).toHaveAttribute('data-locked','true');expect((await ledger.call('/entries')).totals.count).toBe(0);
+ release();await expect(dismiss).toBeEnabled();await close(page);await page.unroute('**/api/text-batches?view=board');await page.reload();await action(page,'text-records').click();await expect(page.locator('.text-candidate')).toHaveCount(1);await expect(page.locator('[data-field=amount_minor]')).toHaveValue('0.03');expect((await ledger.call('/text-batches')).batches[0].items[0].amount_minor).toBe(3);
+});
+
 for(const width of [390,1440])test(`LONG09 ${width} new batch with identical words is another purchase, retry remains safe`,async({page,ledger})=>{
  await page.setViewportSize({width,height:950});await open(page);await action(page,'text-records').click();
  const source='分类餐饮，淘宝 · 合成午餐0.01元';await page.locator('#text-raw').fill(source);await textAction(page,'parse').click();

@@ -1,0 +1,167 @@
+{
+  "case": "SEM03",
+  "model_requested": "@cf/qwen/qwen3-30b-a3b-fp8",
+  "prompt_version": "synthetic-free-v2",
+  "fixture_sha256": "f521d64bb7fd86e35919982ee5f9ec8d3cd75334cd9ccb478e8fd967e5251363",
+  "max_tokens": 4096,
+  "reserved_neurons": 170,
+  "plan_verified": "Free $0; dashboard",
+  "synthetic_only": true,
+  "http_status": 200,
+  "cf_ray": "a49eb414f9fb4102-SIN",
+  "envelope": {
+    "result": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "annotations": null,
+            "audio": null,
+            "content": "\n\n{\n  \"version\": 1,\n  \"complete\": true,\n  \"items\": [\n    {\n      \"id\": \"kids\",\n      \"title\": \"孩子的绘本\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"孩子的绘本62\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"刚才绘本我报错了，实际61\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"exact\",\n        \"terms\": [\n          {\n            \"value\": \"61\",\n            \"evidence\": {\n              \"quote\": \"刚才绘本我报错了，实际61\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"61\"\n      },\n      \"category\": {\n        \"id\": \"kids\",\n        \"suggested_name\": null,\n        \"alternatives\": [\"禾禾\"]\n      },\n      \"date\": {\n        \"kind\": \"unspecified\",\n        \"value\": null,\n        \"evidence\": []\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    },\n    {\n      \"id\": \"shopping\",\n      \"title\": \"卡片机\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"卡片机95\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"exact\",\n        \"terms\": [\n          {\n            \"value\": \"95\",\n            \"evidence\": {\n              \"quote\": \"卡片机95\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"95\"\n      },\n      \"category\": {\n        \"id\": \"shopping\",\n        \"suggested_name\": null,\n        \"alternatives\": []\n      },\n      \"date\": {\n        \"kind\": \"unspecified\",\n        \"value\": null,\n        \"evidence\": []\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    }\n  ],\n  \"ignored\": []\n}",
+            "function_call": null,
+            "reasoning": "\n\n",
+            "reasoning_content": "\n\n",
+            "refusal": null,
+            "role": "assistant"
+          },
+          "routed_experts": null,
+          "stop_reason": null,
+          "token_ids": null
+        }
+      ],
+      "created": 1791898274,
+      "ec_transfer_params": null,
+      "id": "chatcmpl-f0378bff-c31b-4f37-9536-1a16e4ae761e",
+      "kv_transfer_params": null,
+      "metrics": null,
+      "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "object": "chat.completion",
+      "prompt_logprobs": null,
+      "prompt_text": null,
+      "prompt_token_ids": null,
+      "response": {
+        "complete": true,
+        "ignored": [],
+        "items": [
+          {
+            "amount": {
+              "method": "exact",
+              "stated_total": "61",
+              "terms": [
+                {
+                  "evidence": {
+                    "occurrence": 0,
+                    "quote": "刚才绘本我报错了，实际61"
+                  },
+                  "value": "61"
+                }
+              ]
+            },
+            "category": {
+              "alternatives": [
+                "禾禾"
+              ],
+              "id": "kids",
+              "suggested_name": null
+            },
+            "currency": "CNY",
+            "date": {
+              "evidence": [],
+              "kind": "unspecified",
+              "value": null
+            },
+            "evidence": [
+              {
+                "occurrence": 0,
+                "quote": "孩子的绘本62"
+              },
+              {
+                "occurrence": 0,
+                "quote": "刚才绘本我报错了，实际61"
+              }
+            ],
+            "id": "kids",
+            "questions": [],
+            "recurrence": {
+              "charge_day": null,
+              "cycle": "single",
+              "evidence": [],
+              "ongoing": false,
+              "start_month": null,
+              "through_month": null
+            },
+            "source": null,
+            "title": "孩子的绘本",
+            "type": "expense"
+          },
+          {
+            "amount": {
+              "method": "exact",
+              "stated_total": "95",
+              "terms": [
+                {
+                  "evidence": {
+                    "occurrence": 0,
+                    "quote": "卡片机95"
+                  },
+                  "value": "95"
+                }
+              ]
+            },
+            "category": {
+              "alternatives": [],
+              "id": "shopping",
+              "suggested_name": null
+            },
+            "currency": "CNY",
+            "date": {
+              "evidence": [],
+              "kind": "unspecified",
+              "value": null
+            },
+            "evidence": [
+              {
+                "occurrence": 0,
+                "quote": "卡片机95"
+              }
+            ],
+            "id": "shopping",
+            "questions": [],
+            "recurrence": {
+              "charge_day": null,
+              "cycle": "single",
+              "evidence": [],
+              "ongoing": false,
+              "start_month": null,
+              "through_month": null
+            },
+            "source": null,
+            "title": "卡片机",
+            "type": "expense"
+          }
+        ],
+        "version": 1
+      },
+      "service_tier": null,
+      "tool_calls": [],
+      "usage": {
+        "prompt_tokens": 1986,
+        "completion_tokens": 563,
+        "total_tokens": 2549,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 26.341712951660156
+      }
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+  },
+  "evaluation": {
+    "validation_error": "[\n  {\n    \"origin\": \"string\",\n    \"code\": \"invalid_format\",\n    \"format\": \"regex\",\n    \"pattern\": \"/^[A-Za-z0-9_-]{1,100}$/\",\n    \"path\": [\n      \"items\",\n      0,\n      \"category\",\n      \"alternatives\",\n      0\n    ],\n    \"message\": \"Invalid string: must match pattern /^[A-Za-z0-9_-]{1,100}$/\"\n  }\n]"
+  },
+  "seconds": 4.588
+}

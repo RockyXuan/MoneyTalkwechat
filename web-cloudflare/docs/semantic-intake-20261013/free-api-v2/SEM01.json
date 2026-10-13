@@ -1,0 +1,205 @@
+{
+  "case": "SEM01",
+  "model_requested": "@cf/qwen/qwen3-30b-a3b-fp8",
+  "prompt_version": "synthetic-free-v2",
+  "fixture_sha256": "7795de5d1c4d6eb9487baa254997eb114ca1598460a2a10000829406c5e7a77c",
+  "max_tokens": 4096,
+  "reserved_neurons": 170,
+  "plan_verified": "Free $0; dashboard",
+  "synthetic_only": true,
+  "http_status": 200,
+  "cf_ray": "a49eb3d98a8cdc19-SIN",
+  "envelope": {
+    "result": {
+      "id": "chatcmpl-e5342a76-7f3e-49bc-83ad-db7a320b164d",
+      "object": "chat.completion",
+      "created": 1791898264,
+      "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "\n\n{\n  \"version\": 1,\n  \"complete\": true,\n  \"items\": [\n    {\n      \"id\": \"shopping\",\n      \"title\": \"茶叶\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"茶叶原价59\",\n          \"occurrence\": 0\n        },\n        {\n          \"quote\": \"我用了券付43.8\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"subtract\",\n        \"terms\": [\n          {\n            \"value\": \"59\",\n            \"evidence\": {\n              \"quote\": \"茶叶原价59\",\n              \"occurrence\": 0\n            }\n          },\n          {\n            \"value\": \"43.8\",\n            \"evidence\": {\n              \"quote\": \"我用了券付43.8\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"43.8\"\n      },\n      \"category\": {\n        \"id\": \"shopping\",\n        \"suggested_name\": \"购物\",\n        \"alternatives\": [\"shopping\"]\n      },\n      \"date\": {\n        \"kind\": \"explicit\",\n        \"value\": \"2026-10-12\",\n        \"evidence\": [\n          {\n            \"quote\": \"昨天\",\n            \"occurrence\": 0\n          }\n        ]\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    },\n    {\n      \"id\": \"shopping\",\n      \"title\": \"雨伞\",\n      \"type\": \"expense\",\n      \"source\": null,\n      \"evidence\": [\n        {\n          \"quote\": \"雨伞19.9\",\n          \"occurrence\": 0\n        }\n      ],\n      \"currency\": \"CNY\",\n      \"amount\": {\n        \"method\": \"exact\",\n        \"terms\": [\n          {\n            \"value\": \"19.9\",\n            \"evidence\": {\n              \"quote\": \"雨伞19.9\",\n              \"occurrence\": 0\n            }\n          }\n        ],\n        \"stated_total\": \"19.9\"\n      },\n      \"category\": {\n        \"id\": \"shopping\",\n        \"suggested_name\": \"购物\",\n        \"alternatives\": [\"shopping\"]\n      },\n      \"date\": {\n        \"kind\": \"explicit\",\n        \"value\": \"2026-10-12\",\n        \"evidence\": [\n          {\n            \"quote\": \"昨天\",\n            \"occurrence\": 0\n          }\n        ]\n      },\n      \"recurrence\": {\n        \"cycle\": \"single\",\n        \"start_month\": null,\n        \"through_month\": null,\n        \"ongoing\": false,\n        \"charge_day\": null,\n        \"evidence\": []\n      },\n      \"questions\": []\n    }\n  ],\n  \"ignored\": [\n    {\n      \"evidence\": [\n        {\n          \"quote\": \"等等我看下\",\n          \"occurrence\": 0\n        }\n      ],\n      \"reason\": \"闲聊\"\n    },\n    {\n      \"evidence\": [\n        {\n          \"quote\": \"其他先不报了\",\n          \"occurrence\": 0\n        }\n      ],\n      \"reason\": \"未明确消费\"\n    }\n  ]\n}",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": "\n\n",
+            "reasoning_content": "\n\n"
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "usage": {
+        "prompt_tokens": 1997,
+        "completion_tokens": 762,
+        "total_tokens": 2759,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 32.45706558227539
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null,
+      "response": {
+        "version": 1,
+        "complete": true,
+        "items": [
+          {
+            "id": "shopping",
+            "title": "茶叶",
+            "type": "expense",
+            "source": null,
+            "evidence": [
+              {
+                "quote": "茶叶原价59",
+                "occurrence": 0
+              },
+              {
+                "quote": "我用了券付43.8",
+                "occurrence": 0
+              }
+            ],
+            "currency": "CNY",
+            "amount": {
+              "method": "subtract",
+              "terms": [
+                {
+                  "value": "59",
+                  "evidence": {
+                    "quote": "茶叶原价59",
+                    "occurrence": 0
+                  }
+                },
+                {
+                  "value": "43.8",
+                  "evidence": {
+                    "quote": "我用了券付43.8",
+                    "occurrence": 0
+                  }
+                }
+              ],
+              "stated_total": "43.8"
+            },
+            "category": {
+              "id": "shopping",
+              "suggested_name": "购物",
+              "alternatives": [
+                "shopping"
+              ]
+            },
+            "date": {
+              "kind": "explicit",
+              "value": "2026-10-12",
+              "evidence": [
+                {
+                  "quote": "昨天",
+                  "occurrence": 0
+                }
+              ]
+            },
+            "recurrence": {
+              "cycle": "single",
+              "start_month": null,
+              "through_month": null,
+              "ongoing": false,
+              "charge_day": null,
+              "evidence": []
+            },
+            "questions": []
+          },
+          {
+            "id": "shopping",
+            "title": "雨伞",
+            "type": "expense",
+            "source": null,
+            "evidence": [
+              {
+                "quote": "雨伞19.9",
+                "occurrence": 0
+              }
+            ],
+            "currency": "CNY",
+            "amount": {
+              "method": "exact",
+              "terms": [
+                {
+                  "value": "19.9",
+                  "evidence": {
+                    "quote": "雨伞19.9",
+                    "occurrence": 0
+                  }
+                }
+              ],
+              "stated_total": "19.9"
+            },
+            "category": {
+              "id": "shopping",
+              "suggested_name": "购物",
+              "alternatives": [
+                "shopping"
+              ]
+            },
+            "date": {
+              "kind": "explicit",
+              "value": "2026-10-12",
+              "evidence": [
+                {
+                  "quote": "昨天",
+                  "occurrence": 0
+                }
+              ]
+            },
+            "recurrence": {
+              "cycle": "single",
+              "start_month": null,
+              "through_month": null,
+              "ongoing": false,
+              "charge_day": null,
+              "evidence": []
+            },
+            "questions": []
+          }
+        ],
+        "ignored": [
+          {
+            "evidence": [
+              {
+                "quote": "等等我看下",
+                "occurrence": 0
+              }
+            ],
+            "reason": "闲聊"
+          },
+          {
+            "evidence": [
+              {
+                "quote": "其他先不报了",
+                "occurrence": 0
+              }
+            ],
+            "reason": "未明确消费"
+          }
+        ]
+      },
+      "tool_calls": []
+    },
+    "success": true,
+    "errors": [],
+    "messages": []
+  },
+  "evaluation": {
+    "validation_error": "模型项目身份重复"
+  },
+  "seconds": 5.601
+}
