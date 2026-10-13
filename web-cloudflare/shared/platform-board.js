@@ -1,6 +1,6 @@
 import { batchSources, PRIMARY_PLATFORMS } from './platform-sources.js';
 import { batchProgress } from './batch-progress.js';
-import { compileTextItems } from './text-records.js';
+import { compileDraftItems } from './text-records.js';
 import { today } from './format.js';
 
 // A long spoken message remains one visible range even when saved in small drafts.
@@ -12,7 +12,7 @@ export function platformBoard(batches){
   for(const [source,items] of split){
    if(!groups.has(source))groups.set(source,new Map());
    const ids=new Set(items.map(i=>i.id)),slots=(batch.slots||[]).filter(s=>ids.has(s.item_id));
-   const plan=items.length===batch.items.length&&batch.pending_count!==undefined?{pending_count:batch.pending_count,count:batch.due_count}:compileTextItems(items,today(),slots);
+   const plan=items.length===batch.items.length&&batch.pending_count!==undefined?{pending_count:batch.pending_count,count:batch.due_count}:compileDraftItems(items,today(),slots);
    const key=batch.intake?.id||batch.id,rows=groups.get(source);if(!rows.has(key))rows.set(key,[]);rows.get(key).push({batch,items,slots,plan});
   }
  }

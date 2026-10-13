@@ -9,6 +9,11 @@ function dates(text) {
   return [...text.matchAll(new RegExp(`(?<!\\d)(${dateToken})\\s*(?:年|-)\\s*(\\d{1,2})\\s*(?:月|-)(?:\\s*(\\d{1,2})\\s*[日号]?)?`, 'g'))].map(m => ({ text:m[0], index:m.index, year:Number(m[1]) < 100 ? 2000 + Number(m[1]) : Number(m[1]), month:Number(m[2]), day:m[3] ? Number(m[3]) : null }));
 }
 const monthOf = d => `${d.year}-${String(d.month).padStart(2,'0')}`;
+function hasPrice(text){
+ let masked=text;for(const date of dates(text))masked=masked.replace(date.text,'');
+ masked=masked.replace(/\d{2,4}\s*年|(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
+ return /[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
+}
 // Keep source spans so segmentation never loses punctuation, whitespace or trailing text.
 function textClauses(raw) {
   const clauses=[];
@@ -19,14 +24,13 @@ function textClauses(raw) {
       chunks.push({start:at,end:sentence.index+comma.index});at=sentence.index+comma.index+comma[0].length;
     }
     chunks.push({start:at,end:sentence.index+sentence[0].length});
+    let laterPriced=false;for(let i=chunks.length-1;i>=0;i--){chunks[i].priced=hasPrice(raw.slice(chunks[i].start,chunks[i].end));chunks[i].later_priced=laterPriced;laterPriced=chunks[i].priced||laterPriced;}
     for(const span of chunks) {
       const chunk=raw.slice(span.start,span.end).trim();if(!chunk)continue;
-      let masked=chunk;for(const d of dates(chunk))masked=masked.replace(d.text,'');
-      masked=masked.replace(/\d{2,4}\s*年|(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
-      const priced=/[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
+      const priced=span.priced;
       const context=titleSource(chunk)?chunk.replace(/^\s*[^·：:]+?\s*[·：:]\s*/,''):chunk;
-      const header=!priced&&/^(?:从|今天|今日|昨日|昨天|前天|上个月|本月|\d{2,4}年|分类|归到|归入)/.test(context);
-      if(header&&sentenceHasPrice&&/^(?:从|截至|截止)/.test(context)){clauses.at(-1).end=span.end;continue;}
+      const header=!priced&&/^(?:从|今天|今日|昨日|昨天|前天|上个月|本月|\d{2,4}年|分类|归到|归入|每月|每个月|每季度|每年|每周|每天|每两|隔月|月付|年付|季付)/.test(context);
+      if(header&&sentenceHasPrice&&!span.later_priced&&/^(?:从|截至|截止|每月|每个月|每季度|每年|每周|每天|每两|隔月|月付|年付|季付)/.test(context)){clauses.at(-1).end=span.end;continue;}
       if(priced)sentenceHasPrice=true;
       if(header){prefix=prefix?{start:prefix.start,end:span.end}:span;continue;}
       if(prefix&&!priced){prefix.end=span.end;continue;}
@@ -61,8 +65,8 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
     let masked = raw;
     for (const d of foundDates) masked = masked.replace(d.text,' '.repeat(d.text.length));
     masked = masked.replace(/\d{2,4}\s*年/g,'').replace(/(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');
-    const amounts = [...masked.matchAll(/(?<![\d.])(?:[¥￥]\s*)?([+-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(元|块|人民币|美元|美金|港币))?/g)];
-    if (amounts.length === 1 && !/美元|美金|港币|USD|HKD|欧元|EUR/.test(raw)) {
+    const amounts = [...masked.matchAll(/(?<![\d.])(?:[¥￥$€£]\s*)?([+-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(元|块|人民币|美元|美金|港币))?/g)];
+    if (amounts.length === 1 && !/美元|美金|港币|USD|HKD|欧元|EUR|[$€£]/.test(raw)) {
       try { item.amount_minor=parseAmount(amounts[0][1]); } catch { item.questions.push('金额无效，需要重新确认'); }
     } else item.questions.push(amounts.length > 1 ? '有多个数字或金额，需拆成独立项目并核对' : '金额或币种待确认');
     if (/可能|大概|忘了|不记得|不确定/.test(raw)) item.questions.push('原文包含不确定信息，请核对相关字段');
@@ -71,7 +75,7 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
       const d=foundDates.find(d=>d.day);
       if (d) item.occurred_on=`${monthOf(d)}-${String(d.day).padStart(2,'0')}`;
       else if (/前天/.test(raw)) item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-172800000).toISOString().slice(0,10);
-      else if (/昨天/.test(raw)) item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-86400000).toISOString().slice(0,10);
+      else if (/昨天|昨日/.test(raw)) item.occurred_on=new Date(Date.parse(`${currentDay}T00:00:00Z`)-86400000).toISOString().slice(0,10);
       else if (/今天|今日/.test(raw)) item.occurred_on=currentDay;
       if (!item.occurred_on && foundDates.length) item.occurred_on=monthOf(foundDates[0]);
       if (!item.occurred_on && /上上月|上个月|上月/.test(raw)) item.occurred_on=shiftMonth(currentDay.slice(0,7),raw.includes('上上月')?-2:-1);
@@ -94,9 +98,16 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
 
       if (!item.through_month && !item.ongoing) item.questions.push('补记截止月或持续循环方式待确认');
     }
-    let title=raw.split(/[,，]/).find(part=>{let core=part;for(const d of dates(part))core=core.replace(d.text,'');core=core.replace(/(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');return /[+-]?\d/.test(core)&&! /^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(part);})||raw.split(/[,，]/)[0];
+    let title=raw.split(/[,，](?!\d{3}(?:[.,元]|$))/).find(part=>{let core=part;for(const d of dates(part))core=core.replace(d.text,'');core=core.replace(/(?:每月|每个月)?\s*\d{1,2}\s*[日号]/g,'');return /[+-]?\d/.test(core)&&! /^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(part);})||raw.split(/[,，]/)[0];
     for (const d of foundDates) title=title.replace(d.text,'');
-    title=title.replace(/(?:每月|每个月)\s*\d{1,2}\s*[日号]/g,'').replace(/上个月|上月|本月|这个月|去年|前年|每个月|每月|每季度|每年|月付|年付|季付|今天|昨天|前天|先帮我|帮我|记录|记一下|记一笔|支出|收入|每|花了|花|付了|付|有|元|块|人民币|工资到账|收到|从|开始/g,'').replace(/[¥￥]?\s*[+-]?\d+(?:,\d{3})*(?:\.\d+)?/g,'').replace(/^[的\s]+|[的\s]+$/g,'').trim();
+    title=title.replace(/(?:每月|每个月)\s*\d{1,2}\s*[日号]/g,'');
+    // Remove syntax around the actual quote, never individual characters from goods.
+    // “花生糖”, “有机”, “元气”, “方块”, and “支付宝” must retain their names.
+    title=title.replace(/^(?:(?:上个月|上月|本月|这个月|去年|前年|每个月|每月|每季度|每年|月付|年付|季付|今天|今日|昨天|昨日|前天|先帮我|帮我|记一下|记一笔|支出|收入|工资到账|收到)\s*)+/,'');
+    if(foundDates.length)title=title.replace(/^从\s*(?:开始\s*)?/,'');
+    title=title.replace(/^(?:记录(?=[\s:：])|开始(?=[\s,，]))\s*[:：]?\s*/,'');
+    if(amounts.length===1){title=title.replace(/(?:花了?|付了?|有)(?=\s*[¥￥$€£]?\s*[+-]?\d)/g,'').replace(amounts[0][0],'');}
+    title=title.replace(/^[的\s]+|[的\s]+$/g,'').trim();
     if(spoken?.token)title=title.replace(spoken.token,'').trim();
     item.title=title.slice(0,80) || (item.type==='income'?'收入待命名':'项目待命名');
     if (item.type==='income') item.category_id=/工资/.test(raw)?'salary':/奖金/.test(raw)?'bonus':'other-income';
@@ -129,7 +140,10 @@ export function parseTextIntake(raw,currentDay=today(),categories=null,{inheritP
   }
   return {segments,count:items.length,anchor_day:currentDay};
 }
-export function compileTextItems(items, currentDay=today(), slots=[]) {
+export class TextBatchLimitError extends Error {constructor(){super('本批超过 120 笔，请逐条确认或按范围分批');}}
+// Reading a draft must never be subject to the limit on a single write.
+export const compileDraftItems=(items,currentDay=today(),slots=[])=>compileTextItems(items,currentDay,slots,{enforceBatchLimit:false});
+export function compileTextItems(items, currentDay=today(), slots=[], {enforceBatchLimit=true}={}) {
   const done = new Set(slots.map(s=>`${s.item_id}|${s.occurred_on}`));
   const rows=items.filter(i=>i.selected).map(item=>{
     const missing=[...item.questions], entries=[];
@@ -163,6 +177,6 @@ export function compileTextItems(items, currentDay=today(), slots=[]) {
     return {item, missing:[...new Set(missing)], entries:missing.length?[]:entries};
   });
   const entries=rows.flatMap(r=>r.entries.map(e=>({...e,type:r.item.type,amount_minor:r.item.amount_minor,category_id:r.item.category_id,note:r.item.title})));
-  if(entries.length>120) throw new Error('本批超过 120 笔，请按范围分批');
+  if(enforceBatchLimit&&entries.length>120)throw new TextBatchLimitError();
   return {rows,entries,count:entries.length,expense_minor:exactSum(entries.filter(e=>e.type==='expense').map(e=>e.amount_minor)),income_minor:exactSum(entries.filter(e=>e.type==='income').map(e=>e.amount_minor)),pending_count:rows.filter(r=>r.missing.length).length};
 }

@@ -35,8 +35,12 @@ export async function validateCategory(db, ledgerId, input, previous = null) {
   const cat = await first(db, 'SELECT * FROM categories WHERE ledger_id=? AND id=?', [ledgerId, input.category_id]);
   if (!cat || cat.type !== input.type || (cat.archived && previous?.category_id !== cat.id)) throw new ApiError(400, 'INVALID_CATEGORY', '请选择当前账本中对应类型的有效分类');
 }
-export async function operation(db, user, ledgerId, key, requestValue, response, writes, condition = null) {
+export function requiredOperationKey(key) {
   if (!key || !/^[A-Za-z0-9_-]{16,100}$/.test(key)) throw new ApiError(400, 'IDEMPOTENCY_KEY_REQUIRED', '缺少有效的提交标识，请刷新页面后重试');
+  return key;
+}
+export async function operation(db, user, ledgerId, key, requestValue, response, writes, condition = null) {
+  requiredOperationKey(key);
   const hash = await digest(requestValue);
   const lookup = async () => {
     const old = await first(db, 'SELECT * FROM operations WHERE user_id=? AND ledger_id=? AND key=?', [user.id, ledgerId, key]);

@@ -475,9 +475,9 @@ test('long intake creates all drafts atomically, retries once, preserves cloud c
  const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);assert.equal((await req('/api/restores/preview',{user,method:'POST',body:{...backup,version:4}})).data.valid,false);
  const manifest={fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0,text_batches:backup.text_batches,text_slots:backup.text_slots};const job=(await budgetRequest('/api/restores',{user,method:'POST',body:manifest})).data;
  assert.equal((await budgetRequest(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal(await digest(backupContent((await req('/api/backup',{user,ledger:job.id})).data)),preview.fingerprint);
- assert.equal((await req('/api/text-intakes',{user,ledger:job.id,method:'POST',body})).data.repeated,true);assert.equal((await req('/api/session',{user})).data.ledger.id,session.ledger.id);
+ assert.equal((await req('/api/text-intakes',{user,ledger:job.id,method:'POST',body,key})).data.repeated,true);assert.equal((await req('/api/session',{user})).data.ledger.id,session.ledger.id);
  const bad={...body,segments:[body.segments[0],{...body.segments[1],items:[{...body.segments[1].items[0],amount_minor:-1}]}]};assert.equal((await req('/api/text-intakes',{user,method:'POST',body:bad})).status,400);assert.equal((await req('/api/text-batches',{user})).data.batches.length,2);
- const old=db;await db.prepare('UPDATE text_batches SET version=version+1 WHERE ledger_id=? AND id=?').bind(session.ledger.id,made.data.batches[0].id).run();assert.equal((await req('/api/text-intakes',{user,method:'POST',body})).data.batches.find(b=>b.id===made.data.batches[0].id).version,2);assert.equal(db,old);
+ const old=db;await db.prepare('UPDATE text_batches SET version=version+1 WHERE ledger_id=? AND id=?').bind(session.ledger.id,made.data.batches[0].id).run();assert.equal((await req('/api/text-intakes',{user,method:'POST',body,key})).data.batches.find(b=>b.id===made.data.batches[0].id).version,2);assert.equal(db,old);
 });
 test('120 recurring entries preview and confirm stay below free query budget; slot restore is complete and idempotent',async()=>{
  const user='recurring-budget';await req('/api/session',{user});const {parseTextRecords}=await import('../shared/text-records.js');const items=parseTextRecords('从2016年1月开始，每月合成循环0.01元，补记到2025年12月','2026-10-13');items[0].category_id='food';
@@ -487,4 +487,32 @@ test('120 recurring entries preview and confirm stay below free query budget; sl
  const stored=await db.prepare('SELECT manifest_json FROM restores WHERE ledger_id=?').bind(job.id).first();assert.ok(!JSON.parse(stored.manifest_json).text_slots);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM restore_slot_chunks WHERE ledger_id=?').bind(job.id).first()).n,1);
  assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,409);for(let at=0;at<120;at+=50)await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries.slice(at,at+50)}});
  assert.equal((await budgetRequest(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM restore_slot_chunks WHERE ledger_id=?').bind(job.id).first()).n,0);assert.equal((await req('/api/backup',{user,ledger:job.id})).data.text_slots.length,120);
+});
+
+test('oversized recurring drafts cannot block ledger reads and confirm in bounded parts',async()=>{
+ const user='oversized-draft';await req('/api/session',{user});const {parseTextRecords}=await import('../shared/text-records.js');const raw='从2016年1月开始每月合成甲0.01元，补记到2025年12月；从2016年1月开始每月合成乙0.02元，补记到2025年12月';const items=parseTextRecords(raw,'2026-10-13').map(i=>({...i,category_id:'food'}));const created=await req('/api/text-batches',{user,method:'POST',body:{original_text:raw,items}});assert.equal(created.status,201);const b=created.data.batch;
+ assert.equal((await req('/api/text-batches',{user})).status,200);assert.equal((await req('/api/text-batches?view=board',{user})).status,200);assert.equal((await req(`/api/text-batches/${b.id}`,{user})).data.batch.due_count,240);
+ const oversized=await req(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{}});assert.equal(oversized.status,400);assert.equal(oversized.data.error.code,'TEXT_BATCH_TOO_LARGE');assert.equal((await req('/api/entries',{user})).data.totals.count,0);
+ const first=(await budgetRequest(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{item_ids:['item-1']}})).data;assert.equal(first.count,120);const saved=await budgetRequest(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:first.preview_hash,item_ids:['item-1']}});assert.equal(saved.status,200);
+ const second=(await req(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{}})).data;assert.equal(second.count,120);assert.equal((await req(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body:{version:2,preview_hash:second.preview_hash}})).status,200);assert.equal((await req('/api/entries',{user})).data.totals.count,240);assert.equal((await req('/api/entries',{user})).data.totals.expense_minor,360);assert.equal((await req('/api/text-batches?view=board',{user})).status,200);
+});
+
+// Separate purchases can legitimately have identical words, month and amount.
+test('new intentions preserve identical purchases; same-key retries and restore preserve exactly two',async()=>{
+ const user='identical-purchases';await req('/api/session',{user});const {parseTextIntake}=await import('../shared/text-records.js');
+ const parsed=parseTextIntake('2026年9月，分类餐饮，淘宝 · 合成午餐0.01元','2026-10-13',demoBackup().categories);
+ const body=parsed.segments[0];const key=crypto.randomUUID();
+ const first=await req('/api/text-batches',{user,method:'POST',body,key});
+ const again=await req('/api/text-batches',{user,method:'POST',body,key});assert.equal(again.data.batch.id,first.data.batch.id);
+ const second=await req('/api/text-batches',{user,method:'POST',body});assert.notEqual(second.data.batch.id,first.data.batch.id);
+ assert.equal((await req('/api/text-batches',{user,method:'POST',body:{...body,original_text:body.original_text+'。'},key})).status,409);
+ for(const b of [first.data.batch,second.data.batch]){const plan=(await req(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{}})).data;const saved=await req(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:plan.preview_hash,acknowledge_duplicates:true}});assert.equal(saved.data.count,1);}
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.entries.length,2);assert.equal(backup.text_batches.length,2);
+ const check=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:check.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:2,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ assert.equal((await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries}})).status,200);
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal(await digest(backupContent((await req('/api/backup',{user,ledger:job.id})).data)),check.fingerprint);
+ const intakeBody={segments:parsed.segments,anchor_day:parsed.anchor_day};const intakeKey=crypto.randomUUID();
+ const a=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody,key:intakeKey})).data;const replay=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody,key:intakeKey})).data;assert.equal(a.batches[0].id,replay.batches[0].id);
+ const other=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody})).data;assert.notEqual(a.batches[0].id,other.batches[0].id);assert.notEqual(a.batches[0].intake.id,other.batches[0].intake.id);
+ assert.equal((await req('/api/entries',{user})).data.totals.expense_minor,2);
 });

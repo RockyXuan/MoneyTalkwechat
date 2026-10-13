@@ -43,3 +43,22 @@ test('trailing recurring date details stay on the original item; a chosen platfo
 test('platform-prefixed calendar headers remain part of one recurring item and explicit source beats chosen fallback',()=>{
  const p=parseTextIntake('微信 · 从2016年1月开始，每月合成循环0.01元，补记到2025年12月',day,null,{inheritPlatform:false});assert.equal(p.count,1);const item=p.segments[0].items[0];assert.equal(item.title,'微信 · 合成循环');assert.equal(item.start_month,'2016-01');assert.equal(item.through_month,'2025-12');assert.equal(compileTextItems([item],day).count,120);
 });
+
+test('a cycle-only prefix never creates a single expense with an unknown start; trailing cycles and next-item ranges stay attached correctly',()=>{
+ for(const raw of ['每月15日，合成云服务68元，先记到2026年1月','每月，合成云服务68元，先记到2026年1月','每周，合成午餐35元']){const p=parseTextIntake(raw,day);assert.equal(p.count,1);assert.notEqual(p.segments[0].items[0].cycle,'single');assert.equal(compileTextItems(p.segments[0].items,day).count,0);}
+ const trailing=parseTextIntake('合成云服务68元，每月，从2025年1月开始，补记到2026年1月',day);assert.equal(trailing.count,1);assert.equal(compileTextItems(trailing.segments[0].items,day).count,13);
+ const mixed=parseTextIntake('合成午餐35元，从2025年1月开始，每月15日，合成云服务68元，先记到2026年1月',day);assert.equal(mixed.count,2);const [meal,cycle]=mixed.segments[0].items;assert.equal(meal.cycle,'single');assert.equal(meal.occurred_on,'2026-10');assert.equal(cycle.cycle,'monthly');assert.equal(cycle.start_month,'2025-01');assert.equal(compileTextItems([cycle],day).count,13);
+});
+
+test('drafts above the write limit remain readable and groupable while bulk confirmation stays blocked',async()=>{
+ const {compileDraftItems,TextBatchLimitError}=await import('../shared/text-records.js');const {platformBoard}=await import('../shared/platform-board.js');const items=parseTextIntake('从2016年1月开始每月合成甲0.01元，补记到2025年12月；从2016年1月开始每月合成乙0.02元，补记到2025年12月',day).segments[0].items;
+ assert.throws(()=>compileTextItems(items,day),TextBatchLimitError);const plan=compileDraftItems(items,day);assert.equal(plan.count,240);assert.equal(plan.expense_minor,360);assert.equal(platformBoard([{id:'large-draft',items,slots:[],status:'pending',original_text:'合成订阅',created_at:'2026-10-13T00:00:00Z'}]).find(g=>g.source==='口述记录').review_batches,1);
+});
+
+test('product titles retain meaningful characters and model numbers; explicit foreign currency stays pending',()=>{
+ for(const name of ['合成有机花生糖','合成元气积木方块','合成记录本','从零开始的合成记录本'])assert.equal(parseTextIntake(name+'20元',day).segments[0].items[0].title,name);
+ const source=parseTextIntake('支付宝 · 合成有机花生糖20元',day).segments[0].items[0];assert.equal(source.title,'支付宝 · 合成有机花生糖');assert.equal(source.amount_minor,2000);
+ assert.equal(parseTextIntake('合成元气礼盒1,410元',day).segments[0].items[0].title,'合成元气礼盒');const model=parseTextIntake('合成电脑64GB1380元',day).segments[0].items[0];assert.ok(model.title.includes('64GB'));assert.equal(compileTextItems([model],day).count,0);
+ for(const symbol of ['$','€','£'])assert.equal(compileTextItems(parseTextIntake('合成服务'+symbol+'20',day).segments[0].items,day).count,0);
+ const yesterday=parseTextIntake('昨日合成元气饮料20元',day).segments[0].items[0];assert.equal(yesterday.occurred_on,'2026-10-12');assert.equal(yesterday.title,'合成元气饮料');
+});

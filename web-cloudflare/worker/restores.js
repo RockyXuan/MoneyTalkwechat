@@ -65,7 +65,7 @@ export function registerRestores(app) {
     if (old) return c.json(old);
     const id = crypto.randomUUID(), now = stamp();
     const batchRows=[];
-    for(const b of manifest.text_batches||[])batchRows.push([id,b.id,b.original_text,JSON.stringify(b.items),b.status,await digest(b.intake?{root:b.intake.id,index:b.intake.index}:{original_text:b.original_text,items:b.items.map(({id,...i})=>i)}),b.version,b.created_at,b.updated_at,b.intake?JSON.stringify(b.intake):null]);
+    for(const b of manifest.text_batches||[])batchRows.push([id,b.id,b.original_text,JSON.stringify(b.items),b.status,await digest(b.intake?{root:b.intake.id,index:b.intake.index}:{route:'restore-text',id:b.id}),b.version,b.created_at,b.updated_at,b.intake?JSON.stringify(b.intake):null]);
     const batchWrites=jsonInsert(db,'text_batches',['ledger_id','id','original_text','items_json','status','fingerprint','version','created_at','updated_at','intake_json'],batchRows);
     const slotChunks=[];for(let i=0;i<(manifest.text_slots||[]).length;i+=1000)slotChunks.push([id,i/1000,JSON.stringify(manifest.text_slots.slice(i,i+1000))]);
     const storedManifest=await compactManifest(manifest);
