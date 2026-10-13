@@ -1,0 +1,57 @@
+{
+  "kind": "public-playground smoke, not a pinned API benchmark",
+  "requested_model": "@cf/qwen/qwen3-30b-a3b-fp8",
+  "displayed_model": "glm-4.7-flash",
+  "model_identity_verified": false,
+  "expected": {
+    "items": 4,
+    "ready_expense_minor": 18200,
+    "must_include_amount_minor": 10800
+  },
+  "observed": {
+    "items": [
+      {
+        "title": "孩子的绘本",
+        "type": "expense",
+        "amount_minor": 5600,
+        "category_id": "kids",
+        "occurred_on": "2026-10-12",
+        "cycle": null,
+        "start_month": null,
+        "through_month": null,
+        "questions": []
+      },
+      {
+        "title": "今天午餐",
+        "type": "expense",
+        "amount_minor": 1800,
+        "category_id": "food",
+        "occurred_on": "2026-10-13",
+        "cycle": null,
+        "start_month": null,
+        "through_month": null,
+        "questions": []
+      },
+      {
+        "title": "云存储",
+        "type": "expense",
+        "amount_minor": 6800,
+        "category_id": "other",
+        "occurred_on": "2026-10-13",
+        "cycle": "monthly",
+        "start_month": null,
+        "through_month": "2026-01",
+        "questions": [
+          "起始月是对应哪个月？"
+        ]
+      }
+    ],
+    "ready_expense_minor": 7400
+  },
+  "passes": false,
+  "issues": [
+    "missing 108 yuan purchase",
+    "displayed model reverted; cannot attribute result to requested Qwen model",
+    "recurring candidate supplied specific current day although day unspecified"
+  ]
+}
