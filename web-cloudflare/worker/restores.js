@@ -1,7 +1,8 @@
+import { TEXT_BATCH_LIMIT, TEXT_SLOT_LIMIT } from '../shared/text-limits.js';
 import { z } from 'zod';
 import { backupSchema, backupCategory, backupEntry, validateBackup, backupContent, canonical, digest } from '../shared/domain.js';
 import { textBatchSchema, textSlotSchema } from '../shared/text-schema.js';
-import { batchInsert } from './text-records.js';
+import { jsonInsert } from './json-insert.js';
 import { ApiError } from './auth.js';
 import { all, first, statement, stamp, ownedLedger, exportBackup, categoryRow } from './store.js';
 
@@ -19,6 +20,11 @@ function bulkInsert(db, table, columns, rows, ignore = false, importingLedger = 
   }
   return statements;
 }
+async function compactManifest(manifest){
+ if(manifest.text_content_hash)return manifest;
+ const {text_batches,text_slots,...rest}=manifest;
+ return {...rest,text_content_hash:await digest({text_batches:text_batches||[],text_slots:text_slots||[]})};
+}
 async function jobFor(c, id) {
   await ownedLedger(c.env.DB, c.get('user').id, id, true);
   const job = await first(c.env.DB, 'SELECT * FROM restores WHERE ledger_id=? AND owner_id=?', [id, c.get('user').id]);
@@ -34,16 +40,16 @@ export function registerRestores(app) {
   app.post('/api/restores', async c => {
     const manifest = z.object({
       fingerprint: z.string().regex(/^[0-9a-f]{64}$/), ledger: backupSchema.shape.ledger,
-      text_batches:z.array(textBatchSchema).max(100).optional(),text_slots:z.array(textSlotSchema).max(12000).optional(),
+      text_batches:z.array(textBatchSchema).max(TEXT_BATCH_LIMIT).optional(),text_slots:z.array(textSlotSchema).max(TEXT_SLOT_LIMIT).optional(),
       categories: z.array(backupCategory).max(100), entry_count: z.number().int().min(0).max(50000),
     }).strict().parse(await c.req.json());
-    const check = validateBackup({ format: 'moneytalk-backup', version: 4, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
+    const check = validateBackup({ format: 'moneytalk-backup', version: 5, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
     const db = c.env.DB, owner = c.get('user').id;
     const previous = async () => {
       const job = await first(db, 'SELECT * FROM restores WHERE owner_id=? AND fingerprint=? AND reusable=1', [owner, manifest.fingerprint]);
       if (!job) return null;
-      if (canonical(JSON.parse(job.manifest_json)) !== canonical(manifest)) throw new ApiError(409, 'RESTORE_MISMATCH', '该恢复任务的文件内容已变化');
+      if (canonical(await compactManifest(JSON.parse(job.manifest_json))) !== canonical(await compactManifest(manifest))) throw new ApiError(409, 'RESTORE_MISMATCH', '该恢复任务的文件内容已变化');
       if (job.completed_at) {
         const ledger = await ownedLedger(db, owner, job.ledger_id);
         const current = await exportBackup(db, ledger);
@@ -58,13 +64,17 @@ export function registerRestores(app) {
     const old = await previous();
     if (old) return c.json(old);
     const id = crypto.randomUUID(), now = stamp();
-    const batchWrites=[];
-    for(const b of manifest.text_batches||[])batchWrites.push(batchInsert(db,id,b,await digest({original_text:b.original_text,items:b.items.map(({id,...i})=>i)})));
+    const batchRows=[];
+    for(const b of manifest.text_batches||[])batchRows.push([id,b.id,b.original_text,JSON.stringify(b.items),b.status,await digest(b.intake?{root:b.intake.id,index:b.intake.index}:{original_text:b.original_text,items:b.items.map(({id,...i})=>i)}),b.version,b.created_at,b.updated_at,b.intake?JSON.stringify(b.intake):null]);
+    const batchWrites=jsonInsert(db,'text_batches',['ledger_id','id','original_text','items_json','status','fingerprint','version','created_at','updated_at','intake_json'],batchRows);
+    const slotChunks=[];for(let i=0;i<(manifest.text_slots||[]).length;i+=1000)slotChunks.push([id,i/1000,JSON.stringify(manifest.text_slots.slice(i,i+1000))]);
+    const storedManifest=await compactManifest(manifest);
     try {
       await db.batch([
         statement(db, 'INSERT INTO ledgers(id,owner_id,name,currency,timezone,status,created_at) VALUES(?,?,?,?,?,\'importing\',?)', [id, owner, manifest.ledger.name, manifest.ledger.currency, manifest.ledger.timezone, now]),
-        statement(db, 'INSERT INTO restores(ledger_id,owner_id,fingerprint,expected_entries,expected_categories,manifest_json,created_at) VALUES(?,?,?,?,?,?,?)', [id, owner, manifest.fingerprint, manifest.entry_count, manifest.categories.length, JSON.stringify(manifest), now]),
+        statement(db, 'INSERT INTO restores(ledger_id,owner_id,fingerprint,expected_entries,expected_categories,manifest_json,created_at) VALUES(?,?,?,?,?,?,?)', [id, owner, manifest.fingerprint, manifest.entry_count, manifest.categories.length, JSON.stringify(storedManifest), now]),
         ...batchWrites,
+        ...jsonInsert(db,'restore_slot_chunks',['ledger_id','chunk_index','slots_json'],slotChunks),
         ...bulkInsert(db, 'categories', ['ledger_id', 'id', 'name', 'type', 'color_key', 'icon', 'sort_order', 'archived', 'aliases_json'], manifest.categories.map(x => [id, x.id, x.name, x.type, x.color_key, x.icon, x.sort_order, Number(x.archived), JSON.stringify(x.aliases||[])])),
       ]);
     } catch (error) {
@@ -80,7 +90,7 @@ export function registerRestores(app) {
     const db = c.env.DB;
     const cats = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived FROM categories WHERE ledger_id=?', [job.ledger_id])).map(categoryRow);
     const manifest = JSON.parse(job.manifest_json);
-    const check = validateBackup({ format: 'moneytalk-backup', version: 4, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
+    const check = validateBackup({ format: 'moneytalk-backup', version: 5, exported_at: stamp(), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
     const oldRows = await all(db, `SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? AND id IN (${entries.map(() => '?').join(',')})`, [job.ledger_id, ...entries.map(e => e.id)]);
     const old = new Map(oldRows.map(e => [e.id, e]));
@@ -103,16 +113,19 @@ export function registerRestores(app) {
     const job = await jobFor(c, c.req.param('id'));
     const ledger = await ownedLedger(c.env.DB, c.get('user').id, job.ledger_id, true);
     const manifest=JSON.parse(job.manifest_json);
-    if(!job.completed_at&&(manifest.text_slots||[]).length){
+    const savedChunks=await all(c.env.DB,'SELECT slots_json FROM restore_slot_chunks WHERE ledger_id=? ORDER BY chunk_index',[job.ledger_id]);
+    const restoreSlots=manifest.text_slots||savedChunks.flatMap(row=>JSON.parse(row.slots_json));
+    if(!job.completed_at&&restoreSlots.length){
       const count=await first(c.env.DB,'SELECT COUNT(*) AS n FROM entries WHERE ledger_id=?',[job.ledger_id]);
       if(count.n!==job.expected_entries)throw new ApiError(409,'RESTORE_INCOMPLETE','记录未齐，循环标识暂不恢复');
-      await c.env.DB.batch(bulkInsert(c.env.DB,'text_slots',['ledger_id','batch_id','item_id','occurred_on','entry_id'],manifest.text_slots.map(s=>[job.ledger_id,s.batch_id,s.item_id,s.occurred_on,s.entry_id]),true,job.ledger_id));
+      await c.env.DB.batch(jsonInsert(c.env.DB,'text_slots',['ledger_id','batch_id','item_id','occurred_on','entry_id'],restoreSlots.map(s=>[job.ledger_id,s.batch_id,s.item_id,s.occurred_on,s.entry_id]),{ignore:true,condition:{sql:"EXISTS(SELECT 1 FROM ledgers WHERE id=? AND status='importing')",values:[job.ledger_id]}}));
     }
     const backup = await exportBackup(c.env.DB, ledger);
     const validation = validateBackup(backup);
     if (!validation.valid || backup.entries.length !== job.expected_entries || backup.categories.length !== job.expected_categories || await digest(backupContent(backup)) !== job.fingerprint) throw new ApiError(409, 'RESTORE_INCOMPLETE', '恢复数据尚未完整或内容不一致，请使用同一备份继续恢复');
     const finished = await c.env.DB.batch([
       statement(c.env.DB, 'UPDATE ledgers SET status=\'ready\' WHERE id=? AND EXISTS(SELECT 1 FROM restores WHERE ledger_id=? AND write_version=?)', [job.ledger_id, job.ledger_id, job.write_version]),
+      statement(c.env.DB,'DELETE FROM restore_slot_chunks WHERE ledger_id=? AND EXISTS(SELECT 1 FROM restores WHERE ledger_id=? AND write_version=?)',[job.ledger_id,job.ledger_id,job.write_version]),
       statement(c.env.DB, 'UPDATE restores SET completed_at=COALESCE(completed_at,?) WHERE ledger_id=? AND write_version=?', [stamp(), job.ledger_id, job.write_version]),
     ]);
     if (!finished[0].meta.changes) throw new ApiError(409, 'RESTORE_CHANGED', '恢复数据仍在写入，请稍后再次校验');

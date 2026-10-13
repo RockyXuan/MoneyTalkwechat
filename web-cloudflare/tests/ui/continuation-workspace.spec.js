@@ -42,9 +42,9 @@ test('CONT04 browsing another batch never loses an unparsed compose draft; old b
 });
 for(const width of [390,1440])test(`CONT05 ${width} navigation pressed during async refresh completes once and retains keyboard focus`,async({page})=>{
  await page.setViewportSize({width,height:950});await open(page);let release,started;const barrier=new Promise(resolve=>release=resolve),ready=new Promise(resolve=>started=resolve);
- await page.route('**/api/text-batches',async route=>{started();await barrier;await route.continue();});
+ await page.route('**/api/text-batches?view=board',async route=>{started();await barrier;await route.continue();});
  const nav=width<768?'.mobile-nav':'.sidebar nav';await page.locator(`${nav} [data-route=settings]`).click();await ready;
  const target=page.locator(`${nav} [data-route=record]`),box=await target.boundingBox();await target.focus();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
  const rendered=page.evaluate(()=>new Promise(resolve=>{const observer=new MutationObserver(()=>{observer.disconnect();resolve();});observer.observe(document.getElementById('app'),{childList:true});}));
- release();await rendered;await page.mouse.up();await expect(page).toHaveURL(/\/record/);await expect(page.locator(`${nav} [data-route=record]`)).toHaveAttribute('aria-current','page');await page.unroute('**/api/text-batches');await expect(page.locator('.page-record')).toBeVisible();const keyboard=page.locator(`${nav} [data-route=stats]`);await keyboard.focus();await keyboard.press('Enter');await expect(page).toHaveURL(/\/stats/);await expect(keyboard).toHaveAttribute('aria-current','page');await expect(page.locator('.ranking-card')).toBeVisible();await expect(keyboard).toBeFocused();
+ release();await rendered;await page.mouse.up();await expect(page).toHaveURL(/\/record/);await expect(page.locator(`${nav} [data-route=record]`)).toHaveAttribute('aria-current','page');await page.unroute('**/api/text-batches?view=board');await expect(page.locator('.page-record')).toBeVisible();const keyboard=page.locator(`${nav} [data-route=stats]`);await keyboard.focus();await keyboard.press('Enter');await expect(page).toHaveURL(/\/stats/);await expect(keyboard).toHaveAttribute('aria-current','page');await expect(page.locator('.ranking-card')).toBeVisible();await expect(keyboard).toBeFocused();
 });

@@ -101,7 +101,7 @@ async function load({ quiet = false } = {}) {
     const [categories, recent, current, textSummary] = await Promise.all([
       request('/categories'), request('/entries?limit=6'),
       page === 'stats' ? request(`/stats?${queryString(periodRange(s.month, s.period, s.session.today))}`) : page === 'bills' ? request(`/entries?${queryString(billQuery())}`) : Promise.resolve(null),
-      request('/text-batches'),
+      request('/text-batches?view=board'),
     ]);
     if (ticket !== epoch) return;
     s.categories = categories.categories; s.recent = recent; s.textSummary=textSummary;

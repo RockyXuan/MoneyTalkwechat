@@ -447,17 +447,44 @@ test('platform progress uses confirmed entries and current categories, deletion 
  assert.deepEqual((await req('/api/text-batches',{user,ledger:job.id})).data.platforms,await board());
 });
 
-test('batch history reads 100 batches with two scoped data queries and single batch lookup preserves permissions',async()=>{
+test('batch history reads 500 batches with two scoped data queries and single batch lookup preserves permissions',async()=>{
  const user='history-read-budget';const sess=(await req('/api/session',{user})).data;
  const {parseTextRecords}=await import('../shared/text-records.js');const {batchInsert}=await import('../worker/text-records.js');
  const items=parseTextRecords('淘宝 · 合成旧商品0.01元','2026-10-13').map(i=>({...i,category_id:'food'}));
- const now=new Date().toISOString();await db.batch(Array.from({length:100},(_,i)=>batchInsert(db,sess.ledger.id,{id:`history-${i}`,original_text:`淘宝 · 合成旧商品${i}`,items,status:'pending',version:1,created_at:now,updated_at:now},`fixture-${i}`)));
+ const now=new Date().toISOString();await db.batch(Array.from({length:500},(_,i)=>batchInsert(db,sess.ledger.id,{id:`history-${i}`,original_text:`淘宝 · 合成旧商品${i}`,items,status:'pending',version:1,created_at:now,updated_at:now},`fixture-${i}`)));
  const originalDb=db;let batchReads=0,slotReads=0;
  db={prepare(sql){if(sql.startsWith('SELECT * FROM text_batches'))batchReads++;if(sql.includes('FROM text_slots s JOIN entries'))slotReads++;return originalDb.prepare(sql);},batch:statements=>originalDb.batch(statements)};
  let data;try{data=(await req('/api/text-batches',{user})).data;}finally{db=originalDb;}
- assert.equal(data.batches.length,100);assert.equal(data.reminder_count,100);assert.equal(batchReads,1);assert.equal(slotReads,1);assert.equal(data.platforms.find(p=>p.source==='淘宝').batches.length,100);
+ assert.equal(data.batches.length,500);assert.equal(data.reminder_count,500);assert.equal(batchReads,1);assert.equal(slotReads,1);assert.equal(data.platforms.find(p=>p.source==='淘宝').batches.length,500);
  const current=(await req('/api/text-batches/history-0',{user})).data.batch;assert.equal(current.items[0].title,items[0].title);assert.equal(current.pending_count,0);assert.equal(current.due_count,1);
  assert.equal((await req('/api/text-batches/history-0',{user:'bob'})).status,404);
  assert.equal((await req('/api/text-batches',{user,method:'POST',body:{original_text:'合成超过边界',items}})).data.error.code,'TEXT_LIMIT');
- const backup=(await req('/api/backup',{user})).data;assert.equal(backup.text_batches.length,100);assert.equal((await req('/api/restores/preview',{user,method:'POST',body:backup})).data.valid,true);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.text_batches.length,500);const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const manifest={fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0,text_batches:backup.text_batches,text_slots:backup.text_slots};const job=await budgetRequest('/api/restores',{user,method:'POST',body:manifest});assert.equal(job.status,201);assert.equal((await budgetRequest(`/api/restores/${job.data.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal((await req('/api/backup',{user,ledger:job.data.id})).data.text_batches.length,500);assert.equal((await req('/api/text-batches',{user,ledger:job.data.id})).data.platforms.find(p=>p.source==='淘宝').batches.length,500);
+});
+
+async function budgetRequest(path,options){const original=db;let queries=0;db={prepare(sql){queries++;return original.prepare(sql);},batch:s=>original.batch(s)};try{const result=await req(path,options);assert.ok(queries<50,`${path} prepares ${queries} queries, exceeds free invocation budget`);return {...result,queries};}finally{db=original;}}
+test('long intake creates all drafts atomically, retries once, preserves cloud context and backup restore',async()=>{
+ const user='long-intake';const session=(await req('/api/session',{user})).data;const {parseTextIntake}=await import('../shared/text-records.js');
+ const raw='  2026年9月，分类餐饮，'+Array.from({length:41},()=> '淘宝 · 合成商品0.01元').join('；\n')+'。\n';const parsed=parseTextIntake(raw,'2026-10-13',[...demoBackup().categories]);
+ const body={segments:parsed.segments,anchor_day:parsed.anchor_day};const key=crypto.randomUUID(),made=await budgetRequest('/api/text-intakes',{user,method:'POST',body,key});assert.equal(made.status,201);assert.equal(made.data.batches.length,2);
+ assert.deepEqual((await req('/api/text-intakes',{user,method:'POST',body,key})).data.batches,made.data.batches);assert.equal((await req('/api/entries',{user})).data.totals.count,0);
+ const list=(await req('/api/text-batches',{user})).data.batches;assert.equal(list.length,2);assert.equal(list[0].intake.total,2);assert.equal(list.find(b=>b.intake.index===1).items[0].occurred_on,'2026-09');
+ assert.equal((await req(`/api/text-batches/${made.data.batches[0].id}`,{user:'other-intake'})).status,404);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,5);assert.equal([...backup.text_batches].sort((a,b)=>a.intake.index-b.intake.index).map(b=>b.original_text).join(''),raw);
+ const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);assert.equal((await req('/api/restores/preview',{user,method:'POST',body:{...backup,version:4}})).data.valid,false);
+ const manifest={fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0,text_batches:backup.text_batches,text_slots:backup.text_slots};const job=(await budgetRequest('/api/restores',{user,method:'POST',body:manifest})).data;
+ assert.equal((await budgetRequest(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal(await digest(backupContent((await req('/api/backup',{user,ledger:job.id})).data)),preview.fingerprint);
+ assert.equal((await req('/api/text-intakes',{user,ledger:job.id,method:'POST',body})).data.repeated,true);assert.equal((await req('/api/session',{user})).data.ledger.id,session.ledger.id);
+ const bad={...body,segments:[body.segments[0],{...body.segments[1],items:[{...body.segments[1].items[0],amount_minor:-1}]}]};assert.equal((await req('/api/text-intakes',{user,method:'POST',body:bad})).status,400);assert.equal((await req('/api/text-batches',{user})).data.batches.length,2);
+ const old=db;await db.prepare('UPDATE text_batches SET version=version+1 WHERE ledger_id=? AND id=?').bind(session.ledger.id,made.data.batches[0].id).run();assert.equal((await req('/api/text-intakes',{user,method:'POST',body})).data.batches.find(b=>b.id===made.data.batches[0].id).version,2);assert.equal(db,old);
+});
+test('120 recurring entries preview and confirm stay below free query budget; slot restore is complete and idempotent',async()=>{
+ const user='recurring-budget';await req('/api/session',{user});const {parseTextRecords}=await import('../shared/text-records.js');const items=parseTextRecords('从2016年1月开始，每月合成循环0.01元，补记到2025年12月','2026-10-13');items[0].category_id='food';
+ const b=(await req('/api/text-batches',{user,method:'POST',body:{original_text:items[0].raw,items}})).data.batch;const preview=await budgetRequest(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{}});assert.equal(preview.data.count,120);
+ const key=crypto.randomUUID(),body={version:1,preview_hash:preview.data.preview_hash};const saved=await budgetRequest(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body,key});assert.equal(saved.status,200);assert.equal(saved.data.count,120);assert.equal(saved.data.expense_minor,120);assert.deepEqual((await req(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body,key})).data,saved.data);
+ const backup=(await req('/api/backup',{user})).data,check=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;const manifest={fingerprint:check.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:120,text_batches:backup.text_batches,text_slots:backup.text_slots};const job=(await budgetRequest('/api/restores',{user,method:'POST',body:manifest})).data;
+ const stored=await db.prepare('SELECT manifest_json FROM restores WHERE ledger_id=?').bind(job.id).first();assert.ok(!JSON.parse(stored.manifest_json).text_slots);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM restore_slot_chunks WHERE ledger_id=?').bind(job.id).first()).n,1);
+ assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,409);for(let at=0;at<120;at+=50)await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries.slice(at,at+50)}});
+ assert.equal((await budgetRequest(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM restore_slot_chunks WHERE ledger_id=?').bind(job.id).first()).n,0);assert.equal((await req('/api/backup',{user,ledger:job.id})).data.text_slots.length,120);
 });

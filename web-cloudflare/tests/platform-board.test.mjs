@@ -30,3 +30,9 @@ test('flat source choice persists through existing title contract, explicit othe
  const i=parseTextRecords('合成甲1元；京东 · 合成乙2元','2026-10-11');const tagged=tagPlatformItems(i,'淘宝');assert.equal(tagged[0].title,'淘宝 · 合成甲');assert.equal(tagged[1].title,'京东 · 合成乙');assert.equal(i[0].title,'合成甲');
  assert.throws(()=>tagPlatformItems([{title:'长'.repeat(80)}],'淘宝'),/超过 80/);
 });
+
+test('one spoken intake spans drafts but platform range and exact next draft remain continuous',async()=>{
+ const {parseTextIntake}=await import('../shared/text-records.js');const p=parseTextIntake(Array.from({length:41},(_,i)=>`淘宝 · 合成${String.fromCharCode(0x4e00+i)}0.01元`).join('；'),'2026-10-13');const now='2026-10-13T00:00:00.000Z';const batches=p.segments.map((s,index)=>({id:`part-${index}`,...s,status:'pending',created_at:now,intake:{id:'spoken-group',index,total:2,anchor_day:'2026-10-13'},slots:[]}));
+ let board=platformBoard([...batches].reverse()).find(g=>g.source==='淘宝');assert.equal(board.batches.length,1);assert.equal(board.latest.progress.total_items,41);assert.equal(board.resume.id,'part-0');assert.equal(board.latest.progress.first_title,'合成一');assert.equal(board.latest.progress.last_title,'合成丨');
+ batches[0].slots=batches[0].items.map(i=>({item_id:i.id,entry_id:`saved-${i.id}`,occurred_on:i.occurred_on,created_at:now,category_id:'food'}));batches[0].status='active';board=platformBoard(batches).find(g=>g.source==='淘宝');assert.equal(board.resume.id,'part-1');assert.equal(board.latest.progress.continuous_items,40);assert.equal(board.latest.progress.next_title,'合成丨');
+});
