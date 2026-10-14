@@ -5,7 +5,7 @@ import { semanticProposalSchema, semanticMessages, validateSemanticProposal } fr
 const canonicalItem = semanticProposalSchema.shape.items.element;
 const single = { cycle: 'single', start_month: null, through_month: null, ongoing: false, charge_day: null, evidence: [] };
 const unspecified = { kind: 'unspecified', value: null, evidence: [] };
-const compactItem = canonicalItem.omit({ id: true }).extend({
+export const compactItem = canonicalItem.omit({ id: true }).extend({
   date: canonicalItem.shape.date.optional(),
   recurrence: canonicalItem.shape.recurrence.optional(),
   questions: canonicalItem.shape.questions.optional(),

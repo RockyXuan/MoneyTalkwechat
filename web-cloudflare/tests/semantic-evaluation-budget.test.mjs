@@ -8,11 +8,13 @@ s=importlib.util.spec_from_file_location('ev','scripts/evaluate-cloudflare-free.
 import types,os
 os.environ['WRANGLER_WRITE_LOGS']='true'
 def fake_run(args,**kwargs):
- assert args[-3:]==['auth','token','--json']
  assert kwargs['capture_output'] is True
  assert kwargs['env']['WRANGLER_WRITE_LOGS']=='false'
  assert kwargs['env']['WRANGLER_SEND_METRICS']=='false'
- return types.SimpleNamespace(stdout=json.dumps({'type':'oauth','token':'fictional-only'}))
+ assert kwargs['env']['CI']=='true'
+ if args[-2:]==['whoami','--json']: return types.SimpleNamespace(returncode=0,stdout='{}')
+ assert args[-3:]==['auth','token','--json']
+ return types.SimpleNamespace(returncode=0,stdout=json.dumps({'type':'oauth','token':'fictional-only'}))
 m.subprocess.run=fake_run
 assert m.read_auth()['token']=='fictional-only'
 with tempfile.TemporaryDirectory() as tmp:
@@ -30,6 +32,23 @@ with tempfile.TemporaryDirectory() as tmp:
  (p/'SEM01.json').write_text(json.dumps(response));assert m.budget_used(p.parent,'2026-10-13')==301
  response['envelope']['result']['usage']['neurons']=-1
  (p/'SEM01.json').write_text(json.dumps(response));assert m.budget_used(p.parent,'2026-10-13')==200
+ denied={'http_status':401,'provider_error':{'success':False,'result':None,'errors':[{'code':10000,'message':'Authentication error'}]}}
+ (p/'SEM01.json').write_text(json.dumps(denied));assert m.budget_used(p.parent,'2026-10-13')==0
+ assert m.budget_used(p.parent,'2026-10-14')==0
+ for bad in [{**denied,'http_status':403},{**denied,'provider_error':{}},{**denied,'provider_error':{**denied['provider_error'],'result':{'usage':{}}}}]:
+  (p/'SEM01.json').write_text(json.dumps(bad));assert m.budget_used(p.parent,'2026-10-13')==200
+ ended={'http_status':408,'finished_at':'2026-10-13T12:02:00+00:00','provider_error':{'success':False,'result':{},'errors':[{'code':3046,'message':'AiError: AiError: Request timeout (aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa)'}]}}
+ (p/'SEM01.json').write_text(json.dumps(ended));assert m.budget_used(p.parent,'2026-10-13')==200
+ assert m.budget_used(p.parent,'2026-10-14')==0
+ for bad in [{**ended,'finished_at':None},{**ended,'provider_error':{}},{**ended,'http_status':200}]:
+  (p/'SEM01.json').write_text(json.dumps(bad));assert m.budget_used(p.parent,'2026-10-14')==200
+ calls=[]
+ def unavailable(args,**kwargs):
+  calls.append(args);return types.SimpleNamespace(returncode=1,stdout='private-do-not-print',stderr='private-do-not-print')
+ m.subprocess.run=unavailable
+ try:m.read_auth();raise AssertionError('failed login must stop')
+ except RuntimeError as e:assert 'private' not in str(e)
+ assert len(calls)==1 and calls[0][-2:]==['whoami','--json']
  print('budget invariants passed')`;
  assert.match(execFileSync('python3',['-c',code],{cwd:new URL('..',import.meta.url),encoding:'utf8',env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'}}),/budget invariants passed/);
 });

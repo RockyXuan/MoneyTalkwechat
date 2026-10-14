@@ -80,3 +80,23 @@ test('messy fixtures are fictional, cover inferred categories and have independe
   assert.equal(r.body.max_completion_tokens,11264);
  }
 });
+test('an authentication refusal is an untested model question, never an accuracy failure',()=>{
+ const tmp=mkdtempSync(join(tmpdir(),'moneytalk-auth-report-'));
+ try{
+  const folder=join(tmp,'free-qwen38-v5');mkdirSync(folder);
+  writeFileSync(join(folder,'SEM25.json'),JSON.stringify({case:'SEM25',http_status:401,synthetic_only:true,
+   model_requested:COMPARISON_MODEL,prompt_version:'synthetic-free-v5',
+   provider_error:{success:false,result:null,errors:[{code:10000,message:'Authentication error'}]}}));
+  writeFileSync(join(folder,'reservations.json'),JSON.stringify({attempts:[{case:'SEM25',utc:'2026-10-14T01:00:00Z'}]}));
+  const r=buildCoreReport(tmp,'synthetic-free-v5');
+  assert.equal(r.attempted,0);assert.deepEqual(r.failed,[]);assert.ok(r.untested.includes('SEM25'));
+  assert.equal(r.rows.find(row=>row.id==='SEM25').requested,true);assert.equal(r.core_pass,false);
+ }finally{rmSync(tmp,{recursive:true});}
+});
+test('direct-answer comparison preserves the exact compact prompt and guards, only requests official template control',()=>{
+ const f=goldenSuite.cases[0],low=evaluationRequest(f,goldenSuite,'synthetic-free-v5',COMPARISON_MODEL),direct=evaluationRequest(f,goldenSuite,'synthetic-free-v6',COMPARISON_MODEL);
+ assert.deepEqual(direct.body.messages,low.body.messages);assert.equal(direct.body.max_completion_tokens,low.body.max_completion_tokens);
+ assert.deepEqual(direct.body.chat_template_kwargs,{enable_thinking:false});assert.equal(direct.body.reasoning_effort,undefined);
+ assert.equal(direct.body.store,false);assert.equal(direct.body.tool_choice,'none');
+ assert.throws(()=>evaluationRequest(f,goldenSuite,'synthetic-free-v6'));
+});

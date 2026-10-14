@@ -13,6 +13,30 @@ COMPARISON_MODEL = '@cf/qwen/qwen3.8-27b'
 SUITE = ROOT / 'docs/semantic-intake-20261013/golden-cases.json'
 CAP = 9500  # Aggregate UTC-day reservation ceiling; retain 500 below the official Free limit.
 
+def confirmed_auth_rejection(record):
+    error = record.get('provider_error', {})
+    return (record.get('http_status') == 401 and isinstance(error, dict) and
+            error.get('success') is False and 'result' in error and error['result'] is None and
+            error.get('errors') == [{'code': 10000, 'message': 'Authentication error'}])
+
+def terminal_provider_failure(record):
+    """An explicit Cloudflare server completion, not a lost connection or unknown client timeout.
+    Usage is still unknown: charge the full bound through the server response's UTC day.
+    """
+    error=record.get('provider_error', {})
+    errors=error.get('errors') if isinstance(error, dict) else None
+    stamp=record.get('finished_at')
+    if not isinstance(error,dict) or not isinstance(errors,list) or len(errors)!=1 or not isinstance(errors[0],dict) or not isinstance(stamp,str): return False
+    try:
+        ended=datetime.datetime.fromisoformat(stamp)
+        if ended.utcoffset()!=datetime.timedelta(0) or not stamp.endswith('+00:00'): return False
+    except ValueError: return False
+    message=errors[0].get('message')
+    return (record.get('http_status')==408 and error.get('success') is False and
+            error.get('result') in (None, {}) and isinstance(errors,list) and len(errors)==1 and
+            errors[0].get('code')==3046 and
+            isinstance(message,str) and bool(re.fullmatch(r'AiError: AiError: Request timeout \([a-f0-9-]{36}\)',message)))
+
 def budget_used(folder, utc_day=None):
     """Known completed usage settles reservation; unknown outcomes keep the full bound.
     This is this evaluator's cost ceiling, not the account-wide remaining allowance.
@@ -26,6 +50,10 @@ def budget_used(folder, utc_day=None):
             response = statefile.parent / (attempt['case'] + '.json')
             if response.exists():
                 record = json.loads(response.read_text())
+                # This exact API authentication refusal never entered model inference.
+                # Other errors/timeout/unknown bodies retain their entire reservation.
+                if confirmed_auth_rejection(record): continue
+                if terminal_provider_failure(record) and record['finished_at'][:10] < utc_day: continue
                 result = record.get('envelope', {}).get('result', {})
                 usage = result.get('usage', {})
                 model = result.get('model')
@@ -47,8 +75,13 @@ def node(code, payload):
     return json.loads(p.stdout)
 
 def read_auth():
+    protected_env={**os.environ,'WRANGLER_WRITE_LOGS':'false','WRANGLER_SEND_METRICS':'false','CI':'true'}
+    health=subprocess.run([str(ROOT / 'node_modules/.bin/wrangler'), 'whoami', '--json'],
+                          cwd=ROOT, capture_output=True, text=True, env=protected_env)
+    if health.returncode: raise RuntimeError('Existing Wrangler login could not be refreshed; no inference sent')
     p = subprocess.run([str(ROOT / 'node_modules/.bin/wrangler'), 'auth', 'token', '--json'],
-                       cwd=ROOT, capture_output=True, text=True, env={**os.environ,'WRANGLER_WRITE_LOGS':'false','WRANGLER_SEND_METRICS':'false'})
+                       cwd=ROOT, capture_output=True, text=True, env=protected_env)
+    if p.returncode: raise RuntimeError('Wrangler credential retrieval failed; credentials not printed')
     try: auth = json.loads(p.stdout)
     except Exception: raise RuntimeError('Wrangler authentication unavailable; credentials not printed')
     if auth.get('type') not in ('oauth', 'api_token'): raise RuntimeError('Bearer auth required')
@@ -68,7 +101,7 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
     version = 'synthetic-free-v4'
     if '--prompt' in args:
         pos = args.index('--prompt')
-        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5'): raise RuntimeError('Invalid fixed prompt version')
+        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5', 'v6', 'v7', 'v8'): raise RuntimeError('Invalid fixed prompt version')
         version = 'synthetic-free-' + args[pos + 1]; del args[pos:pos + 2]
     messy = '--messy' in args
     if messy:
@@ -136,11 +169,14 @@ catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
         except Exception as e:
             record['transport_error'] = type(e).__name__  # Unknown outcome keeps reserved budget.
         record['seconds'] = round(time.monotonic() - t, 3)
+        record['finished_at']=datetime.datetime.now(datetime.timezone.utc).isoformat()
         target.write_text(json.dumps(record, ensure_ascii=False, indent=2))
         ev = record.get('evaluation', {})
         print(f['id'], record.get('http_status'), record['seconds'],
               'PASS' if ev.get('score', {}).get('pass') else str(ev.get('validation_error', ev.get('score', {}).get('failures', 'API failed')))[:180], flush=True)
         if record.get('http_status') != 200: break  # No repeated auth/quota/transport calls.
+        if record.get('envelope', {}).get('result', {}).get('model') != model:
+            print('Model identity mismatch; no further call sent', flush=True); break
 
 if __name__ == '__main__':
     try: main()
