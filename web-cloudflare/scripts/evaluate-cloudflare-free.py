@@ -4,7 +4,7 @@ Run from web-cloudflare with Node 22 on PATH. Requires a freshly observed Free p
 in /private/tmp/moneytalk-free-plan-proof.json. Auth is obtained from official Wrangler
 in memory; never print subprocess stdout/stderr containing credentials.
 """
-import datetime, fcntl, hashlib, json, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
+import base64, datetime, fcntl, hashlib, json, math, os, pathlib, re, subprocess, sys, time, urllib.request, urllib.error
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ACCOUNT = '1b2d1ae28fa06087cb07499650768745'
@@ -54,13 +54,16 @@ def budget_used(folder, utc_day=None):
                 # Other errors/timeout/unknown bodies retain their entire reservation.
                 if confirmed_auth_rejection(record): continue
                 if terminal_provider_failure(record) and record['finished_at'][:10] < utc_day: continue
-                result = record.get('envelope', {}).get('result', {})
-                usage = result.get('usage', {})
+                envelope=record.get('envelope')
+                envelope=envelope if isinstance(envelope,dict) else {}
+                result=envelope.get('result');result=result if isinstance(result,dict) else {}
+                usage=result.get('usage');usage=usage if isinstance(usage,dict) else {}
                 model = result.get('model')
-                if record.get('http_status') == 200 and model in (BASE_MODEL, COMPARISON_MODEL):
+                if record.get('http_status') == 200 and envelope.get('success') is True and model in (BASE_MODEL, COMPARISON_MODEL):
                     inp, out = usage.get('prompt_tokens'), usage.get('completion_tokens')
                     neurons = usage.get('neurons')
-                    if all(isinstance(n, (int, float)) and not isinstance(n, bool) and n >= 0 for n in (inp, out, neurons)):
+                    if (all(isinstance(n,int) and not isinstance(n,bool) and n>=0 for n in (inp,out)) and
+                        isinstance(neurons,(int,float)) and not isinstance(neurons,bool) and math.isfinite(neurons) and neurons>=0):
                         if attempt.get('utc','')[:10] < utc_day: continue  # Known previous-day calls don't consume today's reset quota.
                         rates = (40909, 290909) if model == COMPARISON_MODEL else (4625, 30475)
                         estimate = (inp * rates[0] + out * rates[1]) / 1e6
@@ -70,18 +73,28 @@ def budget_used(folder, utc_day=None):
 
 def node(code, payload):
     p = subprocess.run(['node', '--input-type=module', '-e', code], cwd=ROOT,
-                       input=json.dumps(payload, ensure_ascii=False), text=True, capture_output=True)
+                       input=json.dumps(payload, ensure_ascii=False), text=True, capture_output=True, timeout=60)
     if p.returncode: raise RuntimeError('local evaluator failed')
     return json.loads(p.stdout)
 
 def read_auth():
     protected_env={**os.environ,'WRANGLER_WRITE_LOGS':'false','WRANGLER_SEND_METRICS':'false','CI':'true'}
-    health=subprocess.run([str(ROOT / 'node_modules/.bin/wrangler'), 'whoami', '--json'],
-                          cwd=ROOT, capture_output=True, text=True, env=protected_env)
-    if health.returncode: raise RuntimeError('Existing Wrangler login could not be refreshed; no inference sent')
-    p = subprocess.run([str(ROOT / 'node_modules/.bin/wrangler'), 'auth', 'token', '--json'],
-                       cwd=ROOT, capture_output=True, text=True, env=protected_env)
-    if p.returncode: raise RuntimeError('Wrangler credential retrieval failed; credentials not printed')
+    def official(command, label):
+        try:
+            result=subprocess.run([str(ROOT / 'node_modules/.bin/wrangler'), *command],
+                                  cwd=ROOT, capture_output=True, text=True, env=protected_env, timeout=60)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(label + ' timed out locally; no inference sent or credentials printed') from None
+        except OSError:
+            raise RuntimeError(label + ' could not start locally; no inference sent or credentials printed') from None
+        if result.returncode:
+            # Only allowlisted error classes leave memory; never echo CLI output or tokens.
+            raw=(result.stdout or '')+'\n'+(result.stderr or '')
+            reason='local executable failure' if 'spawn ENOEXEC' in raw else 'network failure' if 'fetch failed' in raw else 'existing login unavailable' if any(v in raw.lower() for v in ('not authenticated','authentication error','invalid_grant')) else 'official preflight failure'
+            raise RuntimeError(label + ' failed (' + reason + '); no inference sent or credentials printed')
+        return result
+    official(['whoami', '--json'], 'Wrangler login health check')
+    p=official(['auth', 'token', '--json'], 'Wrangler credential retrieval')
     try: auth = json.loads(p.stdout)
     except Exception: raise RuntimeError('Wrangler authentication unavailable; credentials not printed')
     if auth.get('type') not in ('oauth', 'api_token'): raise RuntimeError('Bearer auth required')
@@ -101,7 +114,7 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
     version = 'synthetic-free-v4'
     if '--prompt' in args:
         pos = args.index('--prompt')
-        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5', 'v6', 'v7', 'v8'): raise RuntimeError('Invalid fixed prompt version')
+        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'): raise RuntimeError('Invalid fixed prompt version')
         version = 'synthetic-free-' + args[pos + 1]; del args[pos:pos + 2]
     messy = '--messy' in args
     if messy:
@@ -134,6 +147,8 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
 import fs from 'node:fs';const p=JSON.parse(fs.readFileSync(0,'utf8'));
 try {console.log(JSON.stringify(evaluateEnvelope(p.envelope,p.fixture,p.suite,p.model,p.version)));}
 catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
+    stream_code="""import {decodeSemanticStream} from './scripts/semantic-stream.mjs';import fs from 'node:fs';
+const p=JSON.parse(fs.readFileSync(0,'utf8'));try{const raw=new TextDecoder('utf-8',{fatal:true}).decode(Buffer.from(p.base64,'base64'));console.log(JSON.stringify({envelope:decodeSemanticStream(raw,p.model)}));}catch(e){console.log(JSON.stringify({error:e.message}));}"""
     for f in selected:
         target = outdir / (f['id'] + '.json')
         if target.exists() or f['id'] in [a['case'] for a in state['attempts']]:
@@ -154,14 +169,35 @@ catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
         request = urllib.request.Request(f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/ai/run/{model}',
             data=json.dumps(req['body'], ensure_ascii=False).encode(), method='POST',
             headers={'Authorization': 'Bearer ' + auth['token'], 'Content-Type': 'application/json'})
+        target.write_text(json.dumps(record, ensure_ascii=False, indent=2))  # Freeze request before sending; crash keeps the full reservation.
         try:
             with urllib.request.urlopen(request, timeout=180) as r:
                 record['http_status'] = r.status
                 record['cf_ray'] = r.headers.get('cf-ray')
-                raw = r.read(2 * 1024 * 1024 + 1)
-                if len(raw) > 2 * 1024 * 1024: raise RuntimeError('provider response too large')
-                record['envelope'] = json.loads(raw)
-            record['evaluation'] = node(score_code, {'envelope': record['envelope'], 'fixture': f, 'suite': suite, 'model':model, 'version': version})
+                if req['body'].get('stream'):
+                    if not r.headers.get('content-type','').lower().startswith('text/event-stream'): raise RuntimeError('provider did not return SSE')
+                    raw=bytearray()
+                    try:
+                        while True:
+                            if time.monotonic()-t>360: raise TimeoutError('stream wall-clock limit')
+                            chunk=r.read1(4096)
+                            if not chunk: break
+                            raw.extend(chunk)
+                            if len(raw)>8*1024*1024: raise RuntimeError('provider response too large')
+                    finally:
+                        record['stream_base64']=base64.b64encode(raw).decode('ascii')
+                        record['stream_sha256']=hashlib.sha256(raw).hexdigest()
+                    decoded=node(stream_code, {'base64':record['stream_base64'],'model':model})
+                    if 'error' in decoded:
+                        record['stream_validation_error']=decoded['error']
+                    else: record['envelope']=decoded['envelope']
+                else:
+                    raw = r.read(2 * 1024 * 1024 + 1)
+                    if len(raw) > 2 * 1024 * 1024: raise RuntimeError('provider response too large')
+                    record['envelope'] = json.loads(raw)
+            record['provider_and_decode_seconds']=round(time.monotonic()-t,3)
+            if 'envelope' in record:
+                record['evaluation'] = node(score_code, {'envelope': record['envelope'], 'fixture': f, 'suite': suite, 'model':model, 'version': version})
         except urllib.error.HTTPError as e:
             record['http_status'] = e.code
             try: record['provider_error'] = json.loads(e.read(8192))
@@ -175,6 +211,10 @@ catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
         print(f['id'], record.get('http_status'), record['seconds'],
               'PASS' if ev.get('score', {}).get('pass') else str(ev.get('validation_error', ev.get('score', {}).get('failures', 'API failed')))[:180], flush=True)
         if record.get('http_status') != 200: break  # No repeated auth/quota/transport calls.
+        if record.get('transport_error'):
+            print('Transport or local decoding incomplete; no further call sent', flush=True); break
+        if record.get('stream_validation_error'):
+            print('Stream protocol validation failed; no further call sent', flush=True); break
         if record.get('envelope', {}).get('result', {}).get('model') != model:
             print('Model identity mismatch; no further call sent', flush=True); break
 

@@ -33,6 +33,9 @@ test('31st and leap day never roll to another month; explicit month-end policy i
  const p=compileTextItems([{...item,short_month:'last_day'}],now);assert.deepEqual(p.entries.map(e=>e.occurred_on),['2024-01-31','2024-02-29','2024-03-31']);
 });
 test('ongoing cycles include only elapsed dates; quarterly and yearly count whole occurrences',()=>{
+ const monthly=rule({start_month:'2026-09',through_month:null,ongoing:true,charge_day:15});
+ assert.deepEqual(compileTextItems([monthly],'2026-10-14').entries.map(e=>e.occurred_on),['2026-09-15']);
+ assert.deepEqual(compileTextItems([monthly],'2026-10-15').entries.map(e=>e.occurred_on),['2026-09-15','2026-10-15']);
  assert.equal(compileTextItems([rule({start_month:'2026-09',through_month:null,ongoing:true,charge_day:15})],now).count,1);
  assert.equal(compileTextItems([rule({cycle:'quarterly',start_month:'2025-01',through_month:'2026-01'})],now).count,5);
  assert.equal(compileTextItems([rule({cycle:'yearly',start_month:'2024-02',through_month:'2026-02',charge_day:29})],now).count,0);

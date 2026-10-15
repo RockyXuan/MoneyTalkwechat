@@ -237,7 +237,13 @@
         "recurring_source": "合成服务站",
         "recurring_type": "expense",
         "charge_day": null,
-        "ongoing": false
+        "ongoing": false,
+        "recurring_records": [
+          {
+            "title": "云盘",
+            "category_id": "other"
+          }
+        ]
       },
       "risks": [
         "独立同额订单",

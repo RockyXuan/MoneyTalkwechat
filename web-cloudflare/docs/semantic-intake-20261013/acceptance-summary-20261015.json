@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-15T01:10:12.014034+00:00",
+  "base_commit": "f0b394abeaf53b9abbc2cae06b3ec8d9db05ad4d",
+  "synthetic_only": true,
+  "unit_api_integration": {
+    "command": "pnpm check && pnpm test",
+    "passed": 143,
+    "failed": 0,
+    "log": "/private/tmp/moneytalk-20261015-final-integration.log"
+  },
+  "full_release_command": {
+    "command": "pnpm verify:release",
+    "unit_api_passed_before_final_evaluation_only_assertions": 142,
+    "e2e_passed": 256,
+    "log": "/private/tmp/moneytalk-20261015-release-verified-clock.log"
+  },
+  "e2e": {
+    "stats": {
+      "startTime": "2026-10-15T00:59:07.028Z",
+      "duration": 590215.373,
+      "expected": 256,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "projects": {
+      "chromium-mobile": 128,
+      "webkit-mobile": 128
+    },
+    "retry": 0,
+    "controls_main": 49,
+    "controls_text": 33,
+    "missing_controls": []
+  },
+  "initial_e2e": {
+    "passed": 254,
+    "failed": 2,
+    "case": "TEXT08 continuing rule, details editing, pause/resume and new batch",
+    "cause": "Old assertion froze a one-charge September count; on Shanghai 2026-10-15 the correct persisted occurrences were September 15 and October 15. Test now independently checks the live server day and persisted exact dates/amounts.",
+    "evidence": "/private/tmp/moneytalk-20261015-first-e2e-failures/"
+  },
+  "model_fixture_raw_and_expected_unchanged": true,
+  "independent_model_audit": "full-field-audit-v2; additional recurring service title/order/explicit category checks",
+  "runtime_assets_sha256": {
+    "text-record-ui-BMhkQofB.js": "05dd498a73d847f5351e03b86d302cec44ed056e83c363bc46eaa504a5f91191",
+    "index-DUFo_DJ4.css": "d675d033365b88c4ad6c93bbca0c11aefd31bf8cd16d3b73bdca890f0ec209bc",
+    "index-BFEenxtW.js": "29555831d16c54784cb196402949f2cecfe7e720bf0f4ee7a725b01d17e90f04",
+    "charts-CFcUh5pp.js": "c4d98bb1b88629497f7391cc3edf4ffcdcf2e35741f6f825b03ec14e62d72f49"
+  },
+  "production_deployed_this_turn": false,
+  "production_ledger_touched": false,
+  "website_ai_enabled": false,
+  "physical_iphone_verified_this_turn": false,
+  "mainland_network_verified_this_turn": false
+}

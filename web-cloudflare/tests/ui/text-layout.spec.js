@@ -50,6 +50,12 @@ test('TEXT07–10 unknown start stays draft, reopen, delete cancel and confirm',
 });
 
 test('TEXT08 continuing rule, details editing, pause/resume and new batch', async ({ page, ledger }) => {
+  // The live server's Shanghai day determines which monthly charges have elapsed.
+  // Do not freeze September's one-charge expectation after October 15 has arrived.
+  const { today: serverDay } = await ledger.call('/session');
+  const [year, month, day] = serverDay.split('-').map(Number);
+  const elapsed = Math.max(0, (year - 2026) * 12 + month - 9 + (day >= 15 ? 1 : 0));
+  const expectedDates = Array.from({ length: elapsed }, (_, n) => new Date(Date.UTC(2026, 8 + n, 15)).toISOString().slice(0, 10));
   await open(page);
   await compose(page, 'UI虚构订阅每月 0.01 元，从 2026 年 9 月到 2026 年 9 月，每月 15 日扣款');
   await page.locator('.text-candidate summary').click();
@@ -59,7 +65,10 @@ test('TEXT08 continuing rule, details editing, pause/resume and new batch', asyn
   await expect(page.locator('[data-field="through_month"]')).toHaveCount(0);
   await textAction(page, 'preview').click();
   await textAction(page, 'confirm').click();
-  await expect(page.locator('.flow-success')).toContainText('1 笔');
+  await expect(page.locator('.flow-success')).toContainText(`${elapsed} 笔`);
+  const saved = (await ledger.call('/entries?q=UI修改订阅')).entries;
+  expect(saved.map(e => e.occurred_on).sort()).toEqual(expectedDates);
+  expect(saved.reduce((sum, e) => sum + e.amount_minor, 0)).toBe(elapsed);
   await textAction(page, 'new').click();
   await textAction(page, 'open').click();
   await expect(page.locator('.text-candidate')).toHaveCount(0);

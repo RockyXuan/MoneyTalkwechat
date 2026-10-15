@@ -100,3 +100,12 @@ test('direct-answer comparison preserves the exact compact prompt and guards, on
  assert.equal(direct.body.store,false);assert.equal(direct.body.tool_choice,'none');
  assert.throws(()=>evaluationRequest(f,goldenSuite,'synthetic-free-v6'));
 });
+
+test('independent recurring audit checks service names, ordering and explicitly stated category',()=>{
+ const make=(title,category='other')=>({title,category:{id:category},source:null,type:'expense',requires_confirmation:true,recurrence:{cycle:'monthly',charge_day:null,ongoing:false}});
+ const spec={records:[],recurring_count:2,recurring_source:null,recurring_type:'expense',recurring_records:[{title:'云盘',category_id:'other'},{title:'会员',category_id:'shopping'}]};
+ const p={saved_entries:0,items:[make('合成云盘'),make('合成会员','shopping')]};assert.equal(auditProposal(p,spec).pass,true);
+ assert.equal(auditProposal({...p,items:[...p.items].reverse()},spec).pass,false);
+ assert.equal(auditProposal({...p,items:[make('其他订阅'),p.items[1]]},spec).pass,false);
+ assert.equal(auditProposal({...p,items:[make('合成云盘','shopping'),p.items[1]]},spec).pass,false);
+});

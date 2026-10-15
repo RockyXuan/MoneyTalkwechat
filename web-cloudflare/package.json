@@ -35,6 +35,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260911.1",
     "@playwright/test": "1.63.0",
+    "eventsource-parser": "4.1.2",
     "miniflare": "5.20260911.0-alpha",
     "typescript": "7.0.2",
     "vite": "8.3.0",

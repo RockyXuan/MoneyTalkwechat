@@ -1,0 +1,738 @@
+{
+  "generated_at": "2026-10-15T01:10:12.071Z",
+  "versions": {
+    "v8": {
+      "generated_at": "2026-10-15T01:10:12.082Z",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "prompt_version": "synthetic-free-v8",
+      "audit_version": "full-field-audit-v2",
+      "total": 25,
+      "attempted": 1,
+      "passed": 1,
+      "untested": [
+        "SEM02",
+        "SEM03",
+        "SEM04",
+        "SEM05",
+        "SEM06",
+        "SEM07",
+        "SEM08",
+        "SEM09",
+        "SEM10",
+        "SEM11",
+        "SEM12",
+        "SEM13",
+        "SEM14",
+        "SEM15",
+        "SEM16",
+        "SEM17",
+        "SEM18",
+        "SEM19",
+        "SEM20",
+        "SEM21",
+        "SEM22",
+        "SEM23",
+        "SEM24",
+        "SEM25"
+      ],
+      "failed": [],
+      "fixed_combination": true,
+      "core_pass": false,
+      "website_ready": false,
+      "reason": "核心全通过仍需杂乱长段、分类复核及网站完整链路验收",
+      "rows": [
+        {
+          "id": "SEM01",
+          "requested": true,
+          "attempted": true,
+          "pass": true,
+          "attempts": [
+            {
+              "path": "free-qwen38-v8-full-core/SEM01.json",
+              "seconds": 102.169,
+              "pass": true,
+              "inferred": true,
+              "http_status": 200,
+              "failures": [],
+              "utc": "2026-10-15T00:28:16.181053+00:00",
+              "system_sha256": "dac31db4488a290053e9a5d59cc79614c0455cc032ad52a7e763c6d6299dc6bc",
+              "model": "@cf/qwen/qwen3.8-27b",
+              "settings": {
+                "temperature": 0,
+                "seed": 42,
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "SEM02",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM03",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM04",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM05",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM06",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM07",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM08",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM09",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM10",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM11",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM12",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM13",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM14",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM15",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM16",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM17",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM18",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM19",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM20",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM21",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM22",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM23",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM24",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM25",
+          "requested": true,
+          "attempted": false,
+          "pass": false,
+          "attempts": [
+            {
+              "path": "free-qwen38-v8-full-core/SEM25.json",
+              "seconds": 120.649,
+              "pass": false,
+              "inferred": false,
+              "http_status": 408,
+              "failures": [
+                "不是可核对的固定模型虚构响应"
+              ],
+              "utc": "2026-10-15T00:29:58.466943+00:00",
+              "system_sha256": "dac31db4488a290053e9a5d59cc79614c0455cc032ad52a7e763c6d6299dc6bc",
+              "settings": {
+                "temperature": 0,
+                "seed": 42,
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "v9": {
+      "generated_at": "2026-10-15T01:10:12.187Z",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "prompt_version": "synthetic-free-v9",
+      "audit_version": "full-field-audit-v2",
+      "total": 25,
+      "attempted": 2,
+      "passed": 1,
+      "untested": [
+        "SEM02",
+        "SEM03",
+        "SEM04",
+        "SEM05",
+        "SEM06",
+        "SEM07",
+        "SEM08",
+        "SEM09",
+        "SEM10",
+        "SEM11",
+        "SEM12",
+        "SEM13",
+        "SEM14",
+        "SEM15",
+        "SEM16",
+        "SEM17",
+        "SEM18",
+        "SEM19",
+        "SEM20",
+        "SEM21",
+        "SEM22",
+        "SEM23",
+        "SEM24"
+      ],
+      "failed": [
+        "SEM25"
+      ],
+      "fixed_combination": true,
+      "core_pass": false,
+      "website_ready": false,
+      "reason": "核心全通过仍需杂乱长段、分类复核及网站完整链路验收",
+      "rows": [
+        {
+          "id": "SEM01",
+          "requested": true,
+          "attempted": true,
+          "pass": true,
+          "attempts": [
+            {
+              "path": "free-qwen38-v9-full-core/SEM01.json",
+              "seconds": 16.806,
+              "pass": true,
+              "inferred": true,
+              "http_status": 200,
+              "failures": [],
+              "utc": "2026-10-15T00:35:23.564906+00:00",
+              "system_sha256": "dac31db4488a290053e9a5d59cc79614c0455cc032ad52a7e763c6d6299dc6bc",
+              "model": "@cf/qwen/qwen3.8-27b",
+              "settings": {
+                "temperature": 0,
+                "seed": 42,
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "SEM02",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM03",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM04",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM05",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM06",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM07",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM08",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM09",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM10",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM11",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM12",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM13",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM14",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM15",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM16",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM17",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM18",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM19",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM20",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM21",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM22",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM23",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM24",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM25",
+          "requested": true,
+          "attempted": true,
+          "pass": false,
+          "attempts": [
+            {
+              "path": "free-qwen38-v9-full-core/SEM25.json",
+              "seconds": 283.518,
+              "pass": false,
+              "inferred": true,
+              "http_status": 200,
+              "failures": [
+                "模型输出残缺或尝试工具调用"
+              ],
+              "utc": "2026-10-15T00:37:20.482353+00:00",
+              "system_sha256": "dac31db4488a290053e9a5d59cc79614c0455cc032ad52a7e763c6d6299dc6bc",
+              "model": "@cf/qwen/qwen3.8-27b",
+              "settings": {
+                "temperature": 0,
+                "seed": 42,
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "v10": {
+      "generated_at": "2026-10-15T01:10:12.187Z",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "prompt_version": "synthetic-free-v10",
+      "audit_version": "full-field-audit-v2",
+      "total": 25,
+      "attempted": 0,
+      "passed": 0,
+      "untested": [
+        "SEM01",
+        "SEM02",
+        "SEM03",
+        "SEM04",
+        "SEM05",
+        "SEM06",
+        "SEM07",
+        "SEM08",
+        "SEM09",
+        "SEM10",
+        "SEM11",
+        "SEM12",
+        "SEM13",
+        "SEM14",
+        "SEM15",
+        "SEM16",
+        "SEM17",
+        "SEM18",
+        "SEM19",
+        "SEM20",
+        "SEM21",
+        "SEM22",
+        "SEM23",
+        "SEM24",
+        "SEM25"
+      ],
+      "failed": [],
+      "fixed_combination": false,
+      "core_pass": false,
+      "website_ready": false,
+      "reason": "核心全通过仍需杂乱长段、分类复核及网站完整链路验收",
+      "rows": [
+        {
+          "id": "SEM01",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM02",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM03",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM04",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM05",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM06",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM07",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM08",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM09",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM10",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM11",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM12",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM13",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM14",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM15",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM16",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM17",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM18",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM19",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM20",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM21",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM22",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM23",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM24",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        },
+        {
+          "id": "SEM25",
+          "requested": false,
+          "attempted": false,
+          "pass": false,
+          "attempts": []
+        }
+      ]
+    }
+  },
+  "website_ai_enabled": false
+}

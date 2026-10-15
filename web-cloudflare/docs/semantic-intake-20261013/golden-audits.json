@@ -1,5 +1,5 @@
 {
-  "version": "full-field-audit-v1",
+  "version": "full-field-audit-v2",
   "notes": "Independent stricter expectations. Original raw/expected answers unchanged. Unspecified dates use the fixture anchor month. SEM11 September context continues to the next platform, matching current text intake inheritance. Classification accuracy enforced where user explicitly specifies it; inferred categories require separate review.",
   "cases": {
     "SEM01": {
@@ -340,7 +340,12 @@
       "recurring_source": null,
       "recurring_type": "expense",
       "charge_day": null,
-      "ongoing": false
+      "ongoing": false,
+      "recurring_records": [
+        {
+          "title": "存储"
+        }
+      ]
     },
     "SEM13": {
       "records": [],
@@ -348,7 +353,12 @@
       "recurring_source": null,
       "recurring_type": "expense",
       "charge_day": null,
-      "ongoing": false
+      "ongoing": false,
+      "recurring_records": [
+        {
+          "title": "月服务"
+        }
+      ]
     },
     "SEM25": {
       "records": [

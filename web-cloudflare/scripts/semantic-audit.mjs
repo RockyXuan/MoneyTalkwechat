@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { semanticContext, validateSemanticProposal } from '../shared/semantic-proposal.js';
 import { validateCompactProposal } from '../shared/semantic-wire.js';
+import { decodeSemanticStream } from './semantic-stream.mjs';
+import { validateDenseProposal } from '../shared/semantic-dense.js';
 import { validateGroupedProposal } from '../shared/semantic-groups.js';
 import { COMPARISON_MODEL, extractCompletion, scoreProposal, PROMPT_VERSION, evaluationRequest } from './semantic-evaluation.mjs';
 
@@ -33,6 +35,10 @@ export function auditProposal(proposal, spec) {
     for (const key of ['charge_day', 'ongoing']) if (key in spec) check(`完整循环${n + 1}/${key}`, got.recurrence[key] === spec[key]);
     check(`完整循环${n + 1}/source`, got.source === spec.recurring_source);
     check(`完整循环${n + 1}/type`, got.type === spec.recurring_type);
+    for(const [key,value] of Object.entries(spec.recurring_records?.[n] || {})){
+      const actual=key==='category_id'?got.category.id:key==='date'?got.occurred_on:got[key];
+      check(`完整循环${n+1}/${key}`,key==='title'?typeof actual==='string'&&value.split(/\s+/).every(t=>actual.includes(t)):actual===value);
+    }
   });
   check('候选零保存', proposal.saved_entries === 0 && proposal.items.every(i => i.requires_confirmation));
   return { pass: !failures.length, checked, failures };
@@ -52,18 +58,25 @@ export function replayEvidence(record, fixture, suite = goldenSuite, spec = audi
     if (JSON.stringify(record.request) !== JSON.stringify(evaluationRequest(fixture, suite, record.prompt_version, COMPARISON_MODEL).body)) throw Error('不是当前固定提示与参数组合，需保留原结果并独立复测');
     const context = semanticContext(fixture.raw, suite.anchor_day, [...suite.categories, ...(fixture.expected.category_override || [])]);
     if (record.request.messages?.[1]?.content !== JSON.stringify(context)) throw Error('实际发送原文或分类不一致');
-    const reasoning=['synthetic-free-v6','synthetic-free-v7','synthetic-free-v8'].includes(record.prompt_version) ? record.request.chat_template_kwargs?.enable_thinking===false && !('reasoning_effort' in record.request) : record.request.reasoning_effort==='low';
-    if (record.request.tools || record.request.stream !== false || record.request.store !== false || record.request.tool_choice !== 'none' || record.request.temperature !== 0 || record.request.seed !== 42 || !reasoning) throw Error('存储或工具边界或固定参数不符');
+    const reasoning=['synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? record.request.chat_template_kwargs?.enable_thinking===false && !('reasoning_effort' in record.request) : record.request.reasoning_effort==='low';
+    if (record.request.tools || (['synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? record.request.stream!==true || record.request.stream_options?.include_usage!==true : record.request.stream!==false) || record.request.store !== false || record.request.tool_choice !== 'none' || record.request.temperature !== 0 || record.request.seed !== 42 || !reasoning) throw Error('存储或工具边界或固定参数不符');
+    if(['synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version)){
+      if(typeof record.stream_base64!=='string')throw Error('缺少原始流证据');
+      const bytes=Buffer.from(record.stream_base64,'base64');
+      if(createHash('sha256').update(bytes).digest('hex')!==record.stream_sha256)throw Error('原始流快照校验失败');
+      const replayed=decodeSemanticStream(new TextDecoder('utf-8',{fatal:true}).decode(bytes),COMPARISON_MODEL);
+      if(JSON.stringify(replayed)!==JSON.stringify(record.envelope))throw Error('流内容与最终响应不一致');
+    }
     const completion = extractCompletion(record.envelope, COMPARISON_MODEL);
-    if (!['synthetic-free-v4', 'synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8'].includes(record.prompt_version)) throw Error('未知提示版本');
-    const proposal = record.prompt_version==='synthetic-free-v8' ? validateGroupedProposal(completion.content,context) : ['synthetic-free-v5','synthetic-free-v6','synthetic-free-v7'].includes(record.prompt_version) ? validateCompactProposal(completion.content, context) : validateSemanticProposal(completion.content, context);
+    if (!['synthetic-free-v4', 'synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version)) throw Error('未知提示版本');
+    const proposal = record.prompt_version==='synthetic-free-v10' ? validateDenseProposal(completion.content,context) : ['synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? validateGroupedProposal(completion.content,context) : ['synthetic-free-v5','synthetic-free-v6','synthetic-free-v7'].includes(record.prompt_version) ? validateCompactProposal(completion.content, context) : validateSemanticProposal(completion.content, context);
     const original = scoreProposal(proposal, fixture), audit = auditProposal(proposal, spec);
     return { pass: original.pass && audit.pass, original, audit, proposal };
   } catch (e) { return { pass: false, validation_error: e.message }; }
 }
 
 export function buildCoreReport(root = fileURLToPath(directory), version = PROMPT_VERSION) {
-  if (!['synthetic-free-v4','synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8'].includes(version)) throw Error('未知报告版本');
+  if (!['synthetic-free-v4','synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(version)) throw Error('未知报告版本');
   const prefix = 'free-qwen38-' + version.split('-').at(-1);
   const folders = readdirSync(root).filter(n => n === prefix || n.startsWith(prefix + '-'));
   const rows = goldenSuite.cases.filter(c => c.id.startsWith('SEM')).map(fixture => {
