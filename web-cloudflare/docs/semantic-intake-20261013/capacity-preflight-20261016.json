@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-10-16T00:52:54.735Z",
+  "version": "synthetic-free-v12",
+  "method": "offline request and bound only; not model acceptance",
+  "unknown_v10_long_reserve": 4112,
+  "rows": [
+    {
+      "id": "SCALE8000",
+      "input_characters": 8000,
+      "max_output_tokens": 11264,
+      "worst_reserve": 4747,
+      "within_evaluator_9500": true,
+      "real_model_tested": false
+    },
+    {
+      "id": "SCALE20000",
+      "input_characters": 20000,
+      "max_output_tokens": 11264,
+      "worst_reserve": 6220,
+      "within_evaluator_9500": true,
+      "real_model_tested": false
+    },
+    {
+      "id": "SCALE50000",
+      "input_characters": 50000,
+      "max_output_tokens": 11264,
+      "worst_reserve": 9901,
+      "within_evaluator_9500": false,
+      "real_model_tested": false
+    },
+    {
+      "id": "SCALE80ITEMS",
+      "input_characters": 1795,
+      "max_output_tokens": 24576,
+      "worst_reserve": 7826,
+      "within_evaluator_9500": true,
+      "real_model_tested": false
+    },
+    {
+      "id": "SCALE400ITEMS",
+      "input_characters": 7555,
+      "max_output_tokens": 131072,
+      "worst_reserve": 39330,
+      "within_evaluator_9500": false,
+      "real_model_tested": false
+    }
+  ]
+}

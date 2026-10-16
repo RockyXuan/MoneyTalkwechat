@@ -44,3 +44,8 @@ test('native Cloudflare per-token usage reconciles exactly with final wrapper; r
  assert.throws(()=>decodeSemanticStream(raw.replace(/data: \{"response":"","usage"[^\n]+\n\n/,'')));
  assert.throws(()=>decodeSemanticStream(raw.replace('data: [DONE]',frame(chunk({content:'late'}))+'data: [DONE]')));
 });
+
+test('observed Cloudflare network-loss stream is incomplete, not a completed model answer or settled usage',()=>{
+ const r=JSON.parse(fs.readFileSync(new URL('../docs/semantic-intake-20261013/free-qwen38-v10-full-core/SEM25.json',import.meta.url)));const raw=Buffer.from(r.stream_base64,'base64').toString('utf8');
+ assert.equal(r.http_status,200);assert.ok(raw.includes('$error: Error: Network connection lost.'));assert.ok(!raw.includes('data: [DONE]'));assert.equal(r.envelope,undefined);assert.throws(()=>decodeSemanticStream(raw));
+});

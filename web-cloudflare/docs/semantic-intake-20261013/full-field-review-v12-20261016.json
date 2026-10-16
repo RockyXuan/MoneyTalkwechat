@@ -1,0 +1,2140 @@
+{
+  "generated_at": "2026-10-16T03:38:56.004Z",
+  "synthetic_only": true,
+  "version": "synthetic-free-v12",
+  "run": "full-core",
+  "attempted": 21,
+  "passed": 17,
+  "rows": [
+    {
+      "case": "SEM01",
+      "stream_sha256": "4c607edbe0d5f2d9bdaf179a242f03abadfa97ebe2deaab4c70afeaf67c07030",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "茶叶",
+          "amount_minor": 4380,
+          "date": "2026-10-12",
+          "source": "淘宝",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "雨伞",
+          "amount_minor": 1990,
+          "date": "2026-10-12",
+          "source": "淘宝",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM02",
+      "stream_sha256": "aa6e2e49b9953e0476275e7e95a8491a8058301704f07bbaf707463eccc3b551",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "笔袋",
+          "amount_minor": 3000,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM03",
+      "stream_sha256": "2e9847d5becc477c8c563969d7f249373d065b87ed5df69a60cc945555faf7ee",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "绘本",
+          "amount_minor": 6100,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "kids",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "卡片机",
+          "amount_minor": 9500,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "kids",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM04",
+      "stream_sha256": "51233fb41018c7cc5554a4e2b787f04b1b5101f89f646965bb0cb5cd0885e29e",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "午餐",
+          "amount_minor": 1800,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "food",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM05",
+      "stream_sha256": "25bc5b361c8198dea246726ff73108cee1cbb60fa4eb47b6bf1c8f16cfff6439",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "咖啡",
+          "amount_minor": 1200,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "food",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM06",
+      "stream_sha256": "71f698ba82d78f77d06a7cdae2569454781b9a434a9f3bc6a7d771d5af67cb6c",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "拼图",
+          "amount_minor": 4700,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "kids",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM07",
+      "stream_sha256": "5c7afd7dd4985f068c2356639f5f08bb7db63dd58299cdc6b04bb0d0c87aae56",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "画笔",
+          "amount_minor": 1700,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": null,
+            "suggested_name": "小禾",
+            "alternatives": [
+              "kids"
+            ]
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM08",
+      "stream_sha256": "6c523531d707cc021de0b51eb6d74baa1914343c6956cff0b493179291f331f7",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "水彩",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "cola-existing",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM09",
+      "stream_sha256": "15cba91a6ce2ec27a847e7ae853d14a89cdee80deaf6fe4d884179e8a6dc9b6a",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "纸巾",
+          "amount_minor": 960,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "family",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "洗手液",
+          "amount_minor": 1240,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "family",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM10",
+      "stream_sha256": "5551b4758eeb55782eb6287f1639d35f27b9f0e48866b4c6705d2780a8ab72b3",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "完整第3项/title",
+        "完整第3项/amount_minor",
+        "完整第3项/date",
+        "完整第3项/source",
+        "完整第3项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "杯子",
+          "amount_minor": 5400,
+          "date": "2026-10-11",
+          "source": null,
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-12",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "午餐",
+          "amount_minor": 1800,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "food",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM11",
+      "stream_sha256": "906199e1c82954bb21f112c23259dc5cddf2d84ac697f74dcc2a532d6f3089d3",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "杯子",
+          "amount_minor": 5200,
+          "date": "2026-09",
+          "source": "淘宝",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "毛巾",
+          "amount_minor": 1000,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM12",
+      "stream_sha256": "94a5aeedaed9a90c7cf7c5133d4e943abb580cb1b17439a6b95d7eea716d0405",
+      "original_pass": true,
+      "full_field_pass": false,
+      "pass": false,
+      "failures": [
+        "完整循环1/source"
+      ],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整循环1/charge_day",
+        "完整循环1/ongoing",
+        "完整循环1/source",
+        "完整循环1/type",
+        "完整循环1/title",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "合成存储服务",
+          "amount_minor": 3700,
+          "date": null,
+          "source": "unknown",
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "monthly",
+            "start_month": null,
+            "through_month": "2025-12",
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": [
+              {
+                "quote": "合成存储服务每月37，先只补到2025年12月，起始月忘了，扣款日不用填",
+                "occurrence": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM13",
+      "stream_sha256": "03b1fcb76bd55ebce20418dbd18a990b7d89caee8c6aa57fda91d5a9d22eaaf7",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整循环1/charge_day",
+        "完整循环1/ongoing",
+        "完整循环1/source",
+        "完整循环1/type",
+        "完整循环1/title",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "合成月服务",
+          "amount_minor": 3700,
+          "date": "2025-06",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "monthly",
+            "start_month": "2025-06",
+            "through_month": "2025-09",
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": [
+              {
+                "quote": "2025年6月开始每个月37，到2025年9月，不继续往后，按月份就行。",
+                "occurrence": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM14",
+      "stream_sha256": "fe03fe030f2b1bc8304597e2066589e6398fbccccfe93a4f967c7cf03da63da6",
+      "original_pass": true,
+      "full_field_pass": false,
+      "pass": false,
+      "failures": [
+        "完整第1项/date",
+        "完整第2项/date",
+        "完整第3项/date"
+      ],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "完整第3项/title",
+        "完整第3项/amount_minor",
+        "完整第3项/date",
+        "完整第3项/source",
+        "完整第3项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "工资",
+          "amount_minor": 640000,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "salary",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "午餐",
+          "amount_minor": 2200,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "food",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "买菜",
+          "amount_minor": 3500,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "family",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM15",
+      "stream_sha256": "20910392ba85bcfe47f095ef06a1eb62db52cc965737dbbed2bcf9e3b2da0854",
+      "original_pass": true,
+      "full_field_pass": false,
+      "pass": false,
+      "failures": [
+        "完整第1项/source"
+      ],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "退回款项",
+          "amount_minor": 3300,
+          "date": "2026-10",
+          "source": "unknown",
+          "category": {
+            "id": "other-income",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM16",
+      "stream_sha256": "3e484cf9ab6266e41b15c0d84b661d748a0f2e8137234108849cf62fb48e596d",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "书",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM17",
+      "stream_sha256": "b3914dfb4364b49565ea49e5e2c97dbdfe37fc8af6b6cf3fb6c554f01ba24150",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-12",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "公交",
+          "amount_minor": 200,
+          "date": "2026-10-13",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM18",
+      "stream_sha256": "5a3128b34f2a3ed294c50f0aef87425feb6771593af869bcc5409c8c67725182",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "完整第3项/title",
+        "完整第3项/amount_minor",
+        "完整第3项/date",
+        "完整第3项/source",
+        "完整第3项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "第一件",
+          "amount_minor": 3500,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "第二件",
+          "amount_minor": 2500,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "第三件",
+          "amount_minor": 4000,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "other",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM19",
+      "stream_sha256": "02389f1eaf771818f5e74afb894d4993b7551b988025cff35cdea8b23d201802",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "杯子",
+          "amount_minor": null,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "毛巾",
+          "amount_minor": 1000,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "family",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM20",
+      "stream_sha256": "0cd5b230e248d6fad633a6fa7af5c95d96e083952b83b370038bb3285da2d311",
+      "original_pass": false,
+      "full_field_pass": false,
+      "pass": false,
+      "failures": [
+        "第1笔/title",
+        "完整第1项/title"
+      ],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "手机",
+          "amount_minor": 419900,
+          "date": "2026-10",
+          "source": null,
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    },
+    {
+      "case": "SEM25",
+      "stream_sha256": "ddd9a714b022372633ec999e0df47cff4f29c9ecb47dd87962133442e30fdf0b",
+      "original_pass": true,
+      "full_field_pass": true,
+      "pass": true,
+      "failures": [],
+      "checked": [
+        "完整单笔数量",
+        "完整循环数量",
+        "完整第1项/title",
+        "完整第1项/amount_minor",
+        "完整第1项/date",
+        "完整第1项/source",
+        "完整第1项/type",
+        "完整第1项/category_id",
+        "完整第2项/title",
+        "完整第2项/amount_minor",
+        "完整第2项/date",
+        "完整第2项/source",
+        "完整第2项/type",
+        "完整第2项/category_id",
+        "完整第3项/title",
+        "完整第3项/amount_minor",
+        "完整第3项/date",
+        "完整第3项/source",
+        "完整第3项/type",
+        "完整第3项/category_id",
+        "完整第4项/title",
+        "完整第4项/amount_minor",
+        "完整第4项/date",
+        "完整第4项/source",
+        "完整第4项/type",
+        "完整第4项/category_id",
+        "完整第5项/title",
+        "完整第5项/amount_minor",
+        "完整第5项/date",
+        "完整第5项/source",
+        "完整第5项/type",
+        "完整第5项/category_id",
+        "完整第6项/title",
+        "完整第6项/amount_minor",
+        "完整第6项/date",
+        "完整第6项/source",
+        "完整第6项/type",
+        "完整第6项/category_id",
+        "完整第7项/title",
+        "完整第7项/amount_minor",
+        "完整第7项/date",
+        "完整第7项/source",
+        "完整第7项/type",
+        "完整第7项/category_id",
+        "完整第8项/title",
+        "完整第8项/amount_minor",
+        "完整第8项/date",
+        "完整第8项/source",
+        "完整第8项/type",
+        "完整第8项/category_id",
+        "完整第9项/title",
+        "完整第9项/amount_minor",
+        "完整第9项/date",
+        "完整第9项/source",
+        "完整第9项/type",
+        "完整第9项/category_id",
+        "完整第10项/title",
+        "完整第10项/amount_minor",
+        "完整第10项/date",
+        "完整第10项/source",
+        "完整第10项/type",
+        "完整第10项/category_id",
+        "完整第11项/title",
+        "完整第11项/amount_minor",
+        "完整第11项/date",
+        "完整第11项/source",
+        "完整第11项/type",
+        "完整第11项/category_id",
+        "完整第12项/title",
+        "完整第12项/amount_minor",
+        "完整第12项/date",
+        "完整第12项/source",
+        "完整第12项/type",
+        "完整第12项/category_id",
+        "完整第13项/title",
+        "完整第13项/amount_minor",
+        "完整第13项/date",
+        "完整第13项/source",
+        "完整第13项/type",
+        "完整第13项/category_id",
+        "完整第14项/title",
+        "完整第14项/amount_minor",
+        "完整第14项/date",
+        "完整第14项/source",
+        "完整第14项/type",
+        "完整第14项/category_id",
+        "完整第15项/title",
+        "完整第15项/amount_minor",
+        "完整第15项/date",
+        "完整第15项/source",
+        "完整第15项/type",
+        "完整第15项/category_id",
+        "完整第16项/title",
+        "完整第16项/amount_minor",
+        "完整第16项/date",
+        "完整第16项/source",
+        "完整第16项/type",
+        "完整第16项/category_id",
+        "完整第17项/title",
+        "完整第17项/amount_minor",
+        "完整第17项/date",
+        "完整第17项/source",
+        "完整第17项/type",
+        "完整第17项/category_id",
+        "完整第18项/title",
+        "完整第18项/amount_minor",
+        "完整第18项/date",
+        "完整第18项/source",
+        "完整第18项/type",
+        "完整第18项/category_id",
+        "完整第19项/title",
+        "完整第19项/amount_minor",
+        "完整第19项/date",
+        "完整第19项/source",
+        "完整第19项/type",
+        "完整第19项/category_id",
+        "完整第20项/title",
+        "完整第20项/amount_minor",
+        "完整第20项/date",
+        "完整第20项/source",
+        "完整第20项/type",
+        "完整第20项/category_id",
+        "完整第21项/title",
+        "完整第21项/amount_minor",
+        "完整第21项/date",
+        "完整第21项/source",
+        "完整第21项/type",
+        "完整第21项/category_id",
+        "完整第22项/title",
+        "完整第22项/amount_minor",
+        "完整第22项/date",
+        "完整第22项/source",
+        "完整第22项/type",
+        "完整第22项/category_id",
+        "完整第23项/title",
+        "完整第23项/amount_minor",
+        "完整第23项/date",
+        "完整第23项/source",
+        "完整第23项/type",
+        "完整第23项/category_id",
+        "完整第24项/title",
+        "完整第24项/amount_minor",
+        "完整第24项/date",
+        "完整第24项/source",
+        "完整第24项/type",
+        "完整第24项/category_id",
+        "完整第25项/title",
+        "完整第25项/amount_minor",
+        "完整第25项/date",
+        "完整第25项/source",
+        "完整第25项/type",
+        "完整第25项/category_id",
+        "完整第26项/title",
+        "完整第26项/amount_minor",
+        "完整第26项/date",
+        "完整第26项/source",
+        "完整第26项/type",
+        "完整第26项/category_id",
+        "完整第27项/title",
+        "完整第27项/amount_minor",
+        "完整第27项/date",
+        "完整第27项/source",
+        "完整第27项/type",
+        "完整第27项/category_id",
+        "完整第28项/title",
+        "完整第28项/amount_minor",
+        "完整第28项/date",
+        "完整第28项/source",
+        "完整第28项/type",
+        "完整第28项/category_id",
+        "完整第29项/title",
+        "完整第29项/amount_minor",
+        "完整第29项/date",
+        "完整第29项/source",
+        "完整第29项/type",
+        "完整第29项/category_id",
+        "完整第30项/title",
+        "完整第30项/amount_minor",
+        "完整第30项/date",
+        "完整第30项/source",
+        "完整第30项/type",
+        "完整第30项/category_id",
+        "完整第31项/title",
+        "完整第31项/amount_minor",
+        "完整第31项/date",
+        "完整第31项/source",
+        "完整第31项/type",
+        "完整第31项/category_id",
+        "完整第32项/title",
+        "完整第32项/amount_minor",
+        "完整第32项/date",
+        "完整第32项/source",
+        "完整第32项/type",
+        "完整第32项/category_id",
+        "完整第33项/title",
+        "完整第33项/amount_minor",
+        "完整第33项/date",
+        "完整第33项/source",
+        "完整第33项/type",
+        "完整第33项/category_id",
+        "完整第34项/title",
+        "完整第34项/amount_minor",
+        "完整第34项/date",
+        "完整第34项/source",
+        "完整第34项/type",
+        "完整第34项/category_id",
+        "完整第35项/title",
+        "完整第35项/amount_minor",
+        "完整第35项/date",
+        "完整第35项/source",
+        "完整第35项/type",
+        "完整第35项/category_id",
+        "完整第36项/title",
+        "完整第36项/amount_minor",
+        "完整第36项/date",
+        "完整第36项/source",
+        "完整第36项/type",
+        "完整第36项/category_id",
+        "完整第37项/title",
+        "完整第37项/amount_minor",
+        "完整第37项/date",
+        "完整第37项/source",
+        "完整第37项/type",
+        "完整第37项/category_id",
+        "完整第38项/title",
+        "完整第38项/amount_minor",
+        "完整第38项/date",
+        "完整第38项/source",
+        "完整第38项/type",
+        "完整第38项/category_id",
+        "完整第39项/title",
+        "完整第39项/amount_minor",
+        "完整第39项/date",
+        "完整第39项/source",
+        "完整第39项/type",
+        "完整第39项/category_id",
+        "完整第40项/title",
+        "完整第40项/amount_minor",
+        "完整第40项/date",
+        "完整第40项/source",
+        "完整第40项/type",
+        "完整第40项/category_id",
+        "完整第41项/title",
+        "完整第41项/amount_minor",
+        "完整第41项/date",
+        "完整第41项/source",
+        "完整第41项/type",
+        "完整第41项/category_id",
+        "候选零保存"
+      ],
+      "items": [
+        {
+          "title": "商品一",
+          "amount_minor": 99,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丁",
+          "amount_minor": 2,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丂",
+          "amount_minor": 3,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品七",
+          "amount_minor": 4,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丄",
+          "amount_minor": 5,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丅",
+          "amount_minor": 6,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丆",
+          "amount_minor": 7,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品万",
+          "amount_minor": 8,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丈",
+          "amount_minor": 9,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品三",
+          "amount_minor": 10,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品上",
+          "amount_minor": 11,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品下",
+          "amount_minor": 12,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丌",
+          "amount_minor": 13,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品不",
+          "amount_minor": 14,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品与",
+          "amount_minor": 15,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丏",
+          "amount_minor": 16,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丐",
+          "amount_minor": 17,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丑",
+          "amount_minor": 18,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丒",
+          "amount_minor": 19,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品专",
+          "amount_minor": 20,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品且",
+          "amount_minor": 21,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丕",
+          "amount_minor": 22,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品世",
+          "amount_minor": 23,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丗",
+          "amount_minor": 24,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丘",
+          "amount_minor": 25,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丙",
+          "amount_minor": 26,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品业",
+          "amount_minor": 27,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丛",
+          "amount_minor": 28,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品东",
+          "amount_minor": 29,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丝",
+          "amount_minor": 30,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丞",
+          "amount_minor": 31,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丟",
+          "amount_minor": 32,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丠",
+          "amount_minor": 33,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品両",
+          "amount_minor": 34,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丢",
+          "amount_minor": 35,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丣",
+          "amount_minor": 36,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品两",
+          "amount_minor": 37,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品严",
+          "amount_minor": 38,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品並",
+          "amount_minor": 39,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丧",
+          "amount_minor": 40,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        },
+        {
+          "title": "商品丨",
+          "amount_minor": 41,
+          "date": "2026-09",
+          "source": "京东",
+          "category": {
+            "id": "shopping",
+            "suggested_name": null,
+            "alternatives": []
+          },
+          "recurrence": {
+            "cycle": "single",
+            "start_month": null,
+            "through_month": null,
+            "ongoing": false,
+            "charge_day": null,
+            "evidence": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-10-16T03:44:55.782127+00:00",
+  "synthetic_only": true,
+  "deployed": false,
+  "production_ledger_accessed": false,
+  "website_ai_enabled": false,
+  "baseline_commit": "8f83a89ebd6ffee337aa1c6971c787923941f167",
+  "free_model_calls_this_UTC_day": 24,
+  "v12_full_core": {
+    "attempted": 21,
+    "passed": 17,
+    "failed": [
+      "SEM12",
+      "SEM14",
+      "SEM15",
+      "SEM20"
+    ],
+    "untested": [
+      "SEM21",
+      "SEM22",
+      "SEM23",
+      "SEM24"
+    ]
+  },
+  "v13": {
+    "prepared": true,
+    "model_calls": 0
+  },
+  "budget": {
+    "cap": 9500,
+    "used_conservative": 8157.1407552063465,
+    "unknown_v10_retained": 4112,
+    "shortest_v13_next_bound": 1440
+  },
+  "release_gate": {
+    "command": "pnpm verify:release",
+    "unit_and_integration_passed": 148,
+    "e2e_passed": 256,
+    "chromium": 128,
+    "webkit": 128,
+    "retry": 0,
+    "skipped": 0,
+    "main_actions": 49,
+    "text_actions": 33,
+    "log": "/private/tmp/moneytalk-20261016-release-complete-enumeration.log"
+  },
+  "final_followup": {
+    "check": "pnpm check passed",
+    "unit_and_integration": {
+      "command": "WORKERD_BINARY_PATH=/private/tmp/moneytalk-workerd-20261016 pnpm test",
+      "passed": 152,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/private/tmp/moneytalk-20261016-final-unit-integration-stable-workerd.log",
+      "note": "MINIFLARE_WORKERD_PATH is the actual supported override; WORKERD_BINARY_PATH here is unused. Existing original binary was fully read back; no dependency changes."
+    },
+    "targeted_offline": {
+      "passed": 15,
+      "failed": 0,
+      "log": "/private/tmp/moneytalk-20261016-v13-final-protocol.log"
+    },
+    "rerun_e2e": false,
+    "reason": "Only evaluation scripts, tests and docs changed after full E2E; application modules and four runtime asset hashes unchanged"
+  },
+  "preserved_failures": [
+    {
+      "log": "/private/tmp/moneytalk-20261016-release.log",
+      "reason": "incomplete82test enumeration; interrupted, not accepted"
+    },
+    {
+      "log": "/private/tmp/moneytalk-20261016-final-unit-integration.log",
+      "reason": "sandbox loopback EPERM;115 passed37 hook/file failures, not accepted"
+    },
+    {
+      "log": "/private/tmp/moneytalk-20261016-final-unit-integration-localport.log",
+      "reason": "native runtime EPIPE;116passed37 hook/file failures, not accepted"
+    },
+    {
+      "log": "/private/tmp/moneytalk-20261016-v13-stable-protocol.log",
+      "reason": "temporary copy omitted two historical fixtures;12passed2failed; fixed by copying originals"
+    }
+  ],
+  "runtime_assets_sha256": {
+    "charts-CFcUh5pp.js": "c4d98bb1b88629497f7391cc3edf4ffcdcf2e35741f6f825b03ec14e62d72f49",
+    "index-BFEenxtW.js": "29555831d16c54784cb196402949f2cecfe7e720bf0f4ee7a725b01d17e90f04",
+    "index-DUFo_DJ4.css": "d675d033365b88c4ad6c93bbca0c11aefd31bf8cd16d3b73bdca890f0ec209bc",
+    "text-record-ui-BMhkQofB.js": "05dd498a73d847f5351e03b86d302cec44ed056e83c363bc46eaa504a5f91191"
+  },
+  "browser": {
+    "primary": "@Browser timed out",
+    "fallback": "Ego Lite Space126/p1 reused",
+    "free_plan": "Free $0 Current plan seen in dashboard",
+    "cleanup": "finish executed once; subsequent read-only list showed no Space126",
+    "personal_chrome_used": false,
+    "finder_keep_downloaded": "not completed; user temporarily unavailable; no further action requested"
+  },
+  "unverified": [
+    "v13 actual understanding",
+    "MESSY01-04",
+    "capacity and cross-segment corrections",
+    "website model integration",
+    "Free Workflows CPU and state",
+    "real iPhone",
+    "mainland ordinary network"
+  ]
+}

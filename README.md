@@ -1,6 +1,6 @@
 # MoneyTalk / 记一笔：HTML + Cloudflare
 
-2026-10-15 理解层最新进展：[免费续测与后续入口](web-cloudflare/docs/semantic-intake-20261013/continuation-20261015.md)。短题通过；长题流式传输已有明确回执，但正文仍被截断，未启用网站AI。下一免费窗口自动续测更紧凑协议；下文保留各阶段历史记录。
+2026-10-16 理解层最新进展：[免费续测、完整逐项复核与下一入口](web-cloudflare/docs/semantic-intake-20261013/continuation-20261016.md)。41笔长题通过，但v12完整审查为17/21通过，4题失败、4题未测；v13仅准备，网站AI尚未启用。免费日重置后自动续做，不需要操作Finder；下文保留历史记录。
 
 2026-10-02 当前状态：原生响应式网页、Worker 接口和 D1 数据结构已在独立的 [web-cloudflare](web-cloudflare/README.md) 目录实现，受保护的免费网址为 https://moneytalk-web.550754381zzx.workers.dev 。桌面真实登录、保存刷新、修改、删除和回收站恢复已验证；真实 iPhone 和国内普通网络仍待验证，没有迁移真实历史账本。详见 [云端记录](web-cloudflare/docs/cloudflare-deployment.md)。
 

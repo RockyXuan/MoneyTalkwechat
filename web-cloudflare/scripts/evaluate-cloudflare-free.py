@@ -114,7 +114,7 @@ catch(e){console.log(JSON.stringify({error:e.message}));}"""
     version = 'synthetic-free-v4'
     if '--prompt' in args:
         pos = args.index('--prompt')
-        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'): raise RuntimeError('Invalid fixed prompt version')
+        if pos + 1 >= len(args) or args[pos + 1] not in ('v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12', 'v13'): raise RuntimeError('Invalid fixed prompt version')
         version = 'synthetic-free-' + args[pos + 1]; del args[pos:pos + 2]
     messy = '--messy' in args
     if messy:
@@ -144,8 +144,12 @@ import fs from 'node:fs';const p=JSON.parse(fs.readFileSync(0,'utf8'));
 try { const r=evaluationRequest(p.fixture,p.suite,p.version,p.model);console.log(JSON.stringify({body:r.body,reserved:r.reservedNeurons})); }
 catch(e){console.log(JSON.stringify({error:e.message}));}"""
     score_code = """import {evaluateEnvelope} from './scripts/semantic-evaluation.mjs';
+import {auditProposal,audits} from './scripts/semantic-audit.mjs';
 import fs from 'node:fs';const p=JSON.parse(fs.readFileSync(0,'utf8'));
-try {console.log(JSON.stringify(evaluateEnvelope(p.envelope,p.fixture,p.suite,p.model,p.version)));}
+try {const result=evaluateEnvelope(p.envelope,p.fixture,p.suite,p.model,p.version);
+const spec=p.fixture.audit??audits.cases[p.fixture.id];
+const audit=spec?auditProposal(result.proposal,spec):null;
+console.log(JSON.stringify({...result,audit,full_field_pass:result.score.pass&&audit?.pass===true}));}
 catch(e){console.log(JSON.stringify({validation_error:e.message}));}"""
     stream_code="""import {decodeSemanticStream} from './scripts/semantic-stream.mjs';import fs from 'node:fs';
 const p=JSON.parse(fs.readFileSync(0,'utf8'));try{const raw=new TextDecoder('utf-8',{fatal:true}).decode(Buffer.from(p.base64,'base64'));console.log(JSON.stringify({envelope:decodeSemanticStream(raw,p.model)}));}catch(e){console.log(JSON.stringify({error:e.message}));}"""
@@ -174,6 +178,7 @@ const p=JSON.parse(fs.readFileSync(0,'utf8'));try{const raw=new TextDecoder('utf
             with urllib.request.urlopen(request, timeout=180) as r:
                 record['http_status'] = r.status
                 record['cf_ray'] = r.headers.get('cf-ray')
+                record['response_headers_seconds']=round(time.monotonic()-t,3)
                 if req['body'].get('stream'):
                     if not r.headers.get('content-type','').lower().startswith('text/event-stream'): raise RuntimeError('provider did not return SSE')
                     raw=bytearray()
@@ -182,11 +187,14 @@ const p=JSON.parse(fs.readFileSync(0,'utf8'));try{const raw=new TextDecoder('utf
                             if time.monotonic()-t>360: raise TimeoutError('stream wall-clock limit')
                             chunk=r.read1(4096)
                             if not chunk: break
+                            if not raw: record['first_stream_byte_seconds']=round(time.monotonic()-t,3)
                             raw.extend(chunk)
+                            record['last_stream_byte_seconds']=round(time.monotonic()-t,3)
                             if len(raw)>8*1024*1024: raise RuntimeError('provider response too large')
                     finally:
                         record['stream_base64']=base64.b64encode(raw).decode('ascii')
                         record['stream_sha256']=hashlib.sha256(raw).hexdigest()
+                        record['stream_bytes_received']=len(raw)
                     decoded=node(stream_code, {'base64':record['stream_base64'],'model':model})
                     if 'error' in decoded:
                         record['stream_validation_error']=decoded['error']
@@ -209,7 +217,7 @@ const p=JSON.parse(fs.readFileSync(0,'utf8'));try{const raw=new TextDecoder('utf
         target.write_text(json.dumps(record, ensure_ascii=False, indent=2))
         ev = record.get('evaluation', {})
         print(f['id'], record.get('http_status'), record['seconds'],
-              'PASS' if ev.get('score', {}).get('pass') else str(ev.get('validation_error', ev.get('score', {}).get('failures', 'API failed')))[:180], flush=True)
+              'PASS' if ev.get('full_field_pass') is True else str(ev.get('validation_error', (ev.get('score', {}).get('failures', []) + (ev.get('audit') or {}).get('failures', [])) or 'No complete independent acceptance'))[:180], flush=True)
         if record.get('http_status') != 200: break  # No repeated auth/quota/transport calls.
         if record.get('transport_error'):
             print('Transport or local decoding incomplete; no further call sent', flush=True); break

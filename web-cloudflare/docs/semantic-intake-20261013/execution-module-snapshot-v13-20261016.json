@@ -1,0 +1,8 @@
+{
+  "source": "/Users/rockyx/Documents/Codex/MoneyTalk-web/web-cloudflare",
+  "snapshot": "/var/folders/r6/d87b2sn907z9rzkm9fvvkm680000gn/T/moneytalk-semantic-v13-20261016-vjd4su7c",
+  "manifest_sha256": "bc5773b215f0b26aee81a511d89cacdface392ecde34b50d0c5ffb10ace97192",
+  "verified_files": 292,
+  "inference_requests": 0,
+  "purpose": "v13 preparation only; no auth or inference"
+}

@@ -58,9 +58,9 @@ export function replayEvidence(record, fixture, suite = goldenSuite, spec = audi
     if (JSON.stringify(record.request) !== JSON.stringify(evaluationRequest(fixture, suite, record.prompt_version, COMPARISON_MODEL).body)) throw Error('不是当前固定提示与参数组合，需保留原结果并独立复测');
     const context = semanticContext(fixture.raw, suite.anchor_day, [...suite.categories, ...(fixture.expected.category_override || [])]);
     if (record.request.messages?.[1]?.content !== JSON.stringify(context)) throw Error('实际发送原文或分类不一致');
-    const reasoning=['synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? record.request.chat_template_kwargs?.enable_thinking===false && !('reasoning_effort' in record.request) : record.request.reasoning_effort==='low';
-    if (record.request.tools || (['synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? record.request.stream!==true || record.request.stream_options?.include_usage!==true : record.request.stream!==false) || record.request.store !== false || record.request.tool_choice !== 'none' || record.request.temperature !== 0 || record.request.seed !== 42 || !reasoning) throw Error('存储或工具边界或固定参数不符');
-    if(['synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version)){
+    const reasoning=['synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version) ? record.request.chat_template_kwargs?.enable_thinking===false && !('reasoning_effort' in record.request) : record.request.reasoning_effort==='low';
+    if (record.request.tools || (['synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version) ? record.request.stream!==true || record.request.stream_options?.include_usage!==true : record.request.stream!==false) || record.request.store !== false || record.request.tool_choice !== 'none' || record.request.temperature !== 0 || record.request.seed !== 42 || !reasoning) throw Error('存储或工具边界或固定参数不符');
+    if(['synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version)){
       if(typeof record.stream_base64!=='string')throw Error('缺少原始流证据');
       const bytes=Buffer.from(record.stream_base64,'base64');
       if(createHash('sha256').update(bytes).digest('hex')!==record.stream_sha256)throw Error('原始流快照校验失败');
@@ -68,15 +68,15 @@ export function replayEvidence(record, fixture, suite = goldenSuite, spec = audi
       if(JSON.stringify(replayed)!==JSON.stringify(record.envelope))throw Error('流内容与最终响应不一致');
     }
     const completion = extractCompletion(record.envelope, COMPARISON_MODEL);
-    if (!['synthetic-free-v4', 'synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version)) throw Error('未知提示版本');
-    const proposal = record.prompt_version==='synthetic-free-v10' ? validateDenseProposal(completion.content,context) : ['synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(record.prompt_version) ? validateGroupedProposal(completion.content,context) : ['synthetic-free-v5','synthetic-free-v6','synthetic-free-v7'].includes(record.prompt_version) ? validateCompactProposal(completion.content, context) : validateSemanticProposal(completion.content, context);
+    if (!['synthetic-free-v4', 'synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version)) throw Error('未知提示版本');
+    const proposal = ['synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version) ? validateDenseProposal(completion.content,context) : ['synthetic-free-v8','synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(record.prompt_version) ? validateGroupedProposal(completion.content,context) : ['synthetic-free-v5','synthetic-free-v6','synthetic-free-v7'].includes(record.prompt_version) ? validateCompactProposal(completion.content, context) : validateSemanticProposal(completion.content, context);
     const original = scoreProposal(proposal, fixture), audit = auditProposal(proposal, spec);
     return { pass: original.pass && audit.pass, original, audit, proposal };
   } catch (e) { return { pass: false, validation_error: e.message }; }
 }
 
 export function buildCoreReport(root = fileURLToPath(directory), version = PROMPT_VERSION) {
-  if (!['synthetic-free-v4','synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10'].includes(version)) throw Error('未知报告版本');
+  if (!['synthetic-free-v4','synthetic-free-v5','synthetic-free-v6','synthetic-free-v7','synthetic-free-v8','synthetic-free-v9','synthetic-free-v10','synthetic-free-v11','synthetic-free-v12','synthetic-free-v13'].includes(version)) throw Error('未知报告版本');
   const prefix = 'free-qwen38-' + version.split('-').at(-1);
   const folders = readdirSync(root).filter(n => n === prefix || n.startsWith(prefix + '-'));
   const rows = goldenSuite.cases.filter(c => c.id.startsWith('SEM')).map(fixture => {

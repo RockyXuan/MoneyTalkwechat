@@ -38,6 +38,9 @@ with tempfile.TemporaryDirectory() as tmp:
   {**response,'envelope':{'success':True,'result':{**response['envelope']['result'],'usage':None}}},
   *[{**response,'envelope':{'success':True,'result':{**response['envelope']['result'],'usage':{**response['envelope']['result']['usage'],k:v}}}} for k,v in [('prompt_tokens',1.5),('completion_tokens',True),('neurons',float('inf')),('neurons',float('nan'))]]]:
   (p/'SEM01.json').write_text(json.dumps(bad));assert m.budget_used(p.parent,'2026-10-14')==200
+ broken={'http_status':200,'stream_validation_error':'流协议无效','finished_at':'2026-10-13T12:02:00+00:00','stream_base64':'fictional-incomplete'}
+ (p/'SEM01.json').write_text(json.dumps(broken));assert m.budget_used(p.parent,'2026-10-13')==200
+ assert m.budget_used(p.parent,'2026-10-14')==200
  response['envelope']['result']['usage']['neurons']=300
  (p/'SEM01.json').write_text(json.dumps(response));assert m.budget_used(p.parent,'2026-10-13')==301
  response['envelope']['result']['usage']['neurons']=-1

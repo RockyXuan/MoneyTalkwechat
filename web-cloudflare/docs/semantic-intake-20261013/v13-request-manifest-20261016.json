@@ -1,0 +1,161 @@
+{
+  "generated_at": "2026-10-16T03:38:56.021Z",
+  "version": "synthetic-free-v13",
+  "run": "full-core",
+  "synthetic_only": true,
+  "model": "@cf/qwen/qwen3.8-27b",
+  "inference_requests": 0,
+  "hash_encoding": "JavaScript JSON.stringify UTF-8; Python request hash uses different spacing",
+  "rows": [
+    {
+      "case": "SEM01",
+      "request_sha256": "f1ce7cc5b30b684afba6c02c728cf74f8f2b2f2ec5424a2a39808f87599cf99f",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1443
+    },
+    {
+      "case": "SEM02",
+      "request_sha256": "c9f476839b718c6e6ed1b063747b56a6c3dc135309b1ef691013cfba319f7fde",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM03",
+      "request_sha256": "15040565018333b9845706bd7ce6358982d7777a72a8d71c49cb16e185283b10",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM04",
+      "request_sha256": "7463a62d678534a889a1aaff212936b9d3c0b9566ba9bc23f549960dcdcca163",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM05",
+      "request_sha256": "74a27246611480eeb83bd8806f755bcb8b1c5c156b720dbc51ad6e3db443ac77",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM06",
+      "request_sha256": "98be37d538caa8b8a8aa5edb365bec2aaadaab5190062822107b7e7e21193587",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM07",
+      "request_sha256": "8af9ecf51060d17d727fb43b30f3a58e6027dafac25e24254242197aef686199",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1440
+    },
+    {
+      "case": "SEM08",
+      "request_sha256": "bfb11fb9d3542731a000d03e42f7095821ba54f36b030577dc9ec03005e73068",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1445
+    },
+    {
+      "case": "SEM09",
+      "request_sha256": "e6ee50b8d6e9d50559a4de2b5466f31378cabf0ba4fb01f2c6ca7f931a96f8a6",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM10",
+      "request_sha256": "662c8e5ffd7ecc89ecae5123319bbed77c09896c38372282c244523bc95b1a8c",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1440
+    },
+    {
+      "case": "SEM11",
+      "request_sha256": "e5d48a89036ed4c8561412d3ac1ecd46962b8071271e320dfffa4d99a0de3843",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1550
+    },
+    {
+      "case": "SEM12",
+      "request_sha256": "cb93bdc4488b0fb4bd1d6b444cf1270eae49e5a44eea267cc763cca259d9a41d",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM13",
+      "request_sha256": "21d5b204d22388b4b016835cbbb4e78fa74673a85887ed8ee721451830c03b30",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM14",
+      "request_sha256": "a17de8cd6328982a2c9acda21137ac6a0dee3c95ca93fcfabc6ae4d11f4703fd",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1440
+    },
+    {
+      "case": "SEM15",
+      "request_sha256": "7393985b914baa9e9b910e8cd2b0522bf03884360ee551ef651d68c5c659c84d",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM16",
+      "request_sha256": "26364d85785a35a33916bdf6cf2c660cc72b30d2256761891ac4079306e18b06",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1443
+    },
+    {
+      "case": "SEM17",
+      "request_sha256": "63e9ee07a652564f101d0d9cb15e9183590528641ce5b0b19a0509e41e5b5b55",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM18",
+      "request_sha256": "731e39fff9afa1ac2585b76e09d9e38ea6062f72723d15af0c8f46f1ae03ca7f",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1442
+    },
+    {
+      "case": "SEM19",
+      "request_sha256": "5afbf3781d5ec05ca78163bd8044cd3133319a5140fba9c14b0b5aa61a01a791",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM20",
+      "request_sha256": "4010586965c4b3fa51ca635c0e0f6dcbd923692c0ff5f2acc9f55c4e23bb41ef",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM21",
+      "request_sha256": "97bb2fa4b5ca8d924c34171e4fa507b28cc8906724c7128454950cae5e0a0c0a",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM22",
+      "request_sha256": "5388c14e8df51c2add5eab89006a293d6170fff9e146a4eabeefbff6eeb56e93",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM23",
+      "request_sha256": "ceece99702cad149ce44d76f99bd1283ec1c759af1e377fc0c09d4d06bed6119",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM24",
+      "request_sha256": "68d7f3d9a1e0d7eb06699caa7c9289ec4e5f85c3236ac08b5a8e0ac0009870c0",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 1441
+    },
+    {
+      "case": "SEM25",
+      "request_sha256": "0673bf70f7aeb9ab66677698fb571005fdcdebabbbcb171857b7cc56b1c937f9",
+      "system_sha256": "3c384df7b8d06cf1fc96fc582eef0ffa993b9611af698384df64e26256691ec4",
+      "reserved_neurons": 4236
+    }
+  ]
+}
