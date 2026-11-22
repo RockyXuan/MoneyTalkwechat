@@ -5,6 +5,7 @@ import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from 'jose';
 import { createApp } from '../worker/index.js';
 import { authenticate, verifyAccess } from '../worker/auth.js';
+import { subscriptionItem } from '../shared/subscriptions.js';
 import { demoBackup } from '../shared/demo.js';
 import { backupContent, digest } from '../shared/domain.js';
 
@@ -515,4 +516,120 @@ test('new intentions preserve identical purchases; same-key retries and restore 
  const a=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody,key:intakeKey})).data;const replay=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody,key:intakeKey})).data;assert.equal(a.batches[0].id,replay.batches[0].id);
  const other=(await req('/api/text-intakes',{user,method:'POST',body:intakeBody})).data;assert.notEqual(a.batches[0].id,other.batches[0].id);assert.notEqual(a.batches[0].intake.id,other.batches[0].intake.id);
  assert.equal((await req('/api/entries',{user})).data.totals.expense_minor,2);
+});
+
+
+test('source calendar ownership, input bounds, retries, independent accounts and reversible backup restoration',async()=>{
+ const user='calendar-owner';await req('/api/session',{user});
+ const body={source:'抖音（合成账号甲）',from:'2025-01-01',to:'2025-03-31'},key=crypto.randomUUID();
+ const write=await req('/api/source-ranges',{user,method:'POST',body,key});assert.equal(write.status,201);
+ assert.deepEqual((await req('/api/source-ranges',{user,method:'POST',body,key})).data,write.data);
+ assert.equal((await req('/api/source-ranges',{user,method:'POST',body:{...body,to:'2025-04-30'},key})).status,409);
+ for(const bad of [{...body,from:'2025-02-30'},{...body,to:'2099-01-01'},{...body,to:'2024-12-31'},{...body,user_id:'other'}])assert.equal((await req('/api/source-ranges',{user,method:'POST',body:bad})).status,400);
+ let board=(await req('/api/text-batches?view=board',{user})).data;assert.equal(board.platforms.find(g=>g.source===body.source).calendar.ranges.length,1);assert.equal(board.platforms.find(g=>g.source==='抖音').calendar.ranges.length,0);
+ assert.ok(!(await req('/api/text-batches?view=board',{user:'calendar-other'})).data.platforms.some(g=>g.source===body.source));
+ await req(`/api/source-ranges/${write.data.range.id}`,{user:'calendar-other',method:'DELETE',body:{}});
+ assert.equal((await req('/api/backup',{user})).data.source_ranges.length,1);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,6);
+ const check=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(check.valid,true);
+ const manifest={fingerprint:check.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:0,source_ranges:backup.source_ranges};
+ const job=(await req('/api/restores',{user,method:'POST',body:manifest})).data;assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ assert.deepEqual((await req('/api/backup',{user,ledger:job.id})).data.source_ranges,backup.source_ranges);
+ const wrongVersion={...backup,version:5};assert.equal((await req('/api/restores/preview',{user,method:'POST',body:wrongVersion})).data.valid,false);
+ const repeated={...backup,source_ranges:[...backup.source_ranges,...backup.source_ranges]};assert.equal((await req('/api/restores/preview',{user,method:'POST',body:repeated})).data.valid,false);
+ const delKey=crypto.randomUUID();for(let n=0;n<2;n++)assert.equal((await req(`/api/source-ranges/${write.data.range.id}`,{user,key:delKey,method:'DELETE',body:{}})).status,200);
+ assert.ok(!(await req('/api/backup',{user})).data.source_ranges);assert.equal((await req('/api/entries',{user})).data.totals.count,0);
+});
+
+test('subscription consent survives backup; scheduled catch-up is exact, concurrent-safe, pausable and never recreates deleted periods', async()=>{
+ const {subscriptionItem}=await import('../shared/subscriptions.js');const {settleSubscriptions}=await import('../worker/recurring-subscriptions.js');const {today,shiftMonth}=await import('../shared/format.js');
+ const user='subscription-auto-explicit';const owner=(await req('/api/session',{user})).data;const month=today().slice(0,7);
+ const item=subscriptionItem({title:'虚构自动月卡',amount:'68',cycle:'monthly',source:'其他订阅软件',category:'other',start:shiftMonth(month,-1),status:'ongoing'});
+ const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:item.raw,items:[item]}})).data.batch;
+ assert.equal((await settleSubscriptions(db,{ledger:owner.ledger.id})).count,0,'unconfirmed rule is never automatic');
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{}})).data;
+ const confirmed=await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:batch.version,preview_hash:plan.preview_hash}});assert.equal(confirmed.data.count,2);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.text_batches[0].items[0].auto_record,true);assert.equal((await req('/api/restores/preview',{user,method:'POST',body:backup})).status,200);
+ const next=`${shiftMonth(month,1)}-15`;const concurrent=await Promise.all([settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:next}),settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:next})]);assert.equal(concurrent.reduce((n,r)=>n+r.count,0),1);assert.equal((await req('/api/entries',{user})).data.totals.expense_minor,20400);
+ const entry=(await req('/api/entries',{user})).data.entries[0];await req(`/api/entries/${entry.id}/delete`,{user,method:'POST',body:{version:entry.version}});assert.equal((await settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:next})).count,0);
+ let current=(await req(`/api/text-batches/${batch.id}`,{user})).data.batch;await req(`/api/text-batches/${batch.id}/status`,{user,method:'POST',body:{version:current.version,status:'paused'}});const later=`${shiftMonth(month,2)}-15`;assert.equal((await settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:later})).count,0);
+ current=(await req(`/api/text-batches/${batch.id}`,{user})).data.batch;await req(`/api/text-batches/${batch.id}/status`,{user,method:'POST',body:{version:current.version,status:'active'}});assert.equal((await settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:later})).count,1);assert.equal((await req('/api/subscriptions/settle',{user:'other-auto-user',method:'POST',body:{},ledger:owner.ledger.id})).status,403);
+});
+test('old ongoing rules remain manual and scheduled handler only processes active ledger with explicit new consent',async()=>{
+ const {subscriptionItem}=await import('../shared/subscriptions.js');const {settleSubscriptions}=await import('../worker/recurring-subscriptions.js');const {today,shiftMonth}=await import('../shared/format.js');
+ const user='subscription-old-manual';const owner=(await req('/api/session',{user})).data;const month=today().slice(0,7);const item=subscriptionItem({title:'虚构旧循环',amount:'1',cycle:'monthly',source:'其他订阅软件',category:'other',start:month,status:'ongoing'});delete item.auto_record;
+ const b=(await req('/api/text-batches',{user,method:'POST',body:{original_text:item.raw,items:[item]}})).data.batch;const p=(await req(`/api/text-batches/${b.id}/preview`,{user,method:'POST',body:{}})).data;await req(`/api/text-batches/${b.id}/confirm`,{user,method:'POST',body:{version:b.version,preview_hash:p.preview_hash}});
+ assert.equal((await settleSubscriptions(db,{ledger:owner.ledger.id,currentDay:`${shiftMonth(month,1)}-15`})).count,0);
+ const worker=(await import('../worker/index.js')).default;let task;worker.scheduled({}, {DB:db},{waitUntil(p){task=p;}});await task;assert.equal((await req('/api/entries',{user})).data.totals.count,1);
+});
+
+test('spending labels persist separately for categories and subscriptions, reject stale edits and survive backup restore',async()=>{
+ const user='spending-label-test';await req('/api/session',{user});
+ const cat=(await req('/api/categories',{user})).data.categories.find(c=>c.id==='other');
+ const {id,version,...category}=cat;const saved=await req(`/api/categories/${id}`,{user,method:'PATCH',body:{...category,version,spending_label:'yellow'}});assert.equal(saved.status,200);
+ const item=textItem({start_month:'2025-01',through_month:'2025-01'});const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:'虚构订阅',items:[item]}})).data.batch;
+ const plan=(await req(`/api/text-batches/${batch.id}/preview`,{user,method:'POST',body:{item_ids:[item.id]}})).data;
+ assert.equal((await req(`/api/text-batches/${batch.id}/confirm`,{user,method:'POST',body:{version:1,preview_hash:plan.preview_hash,item_ids:[item.id]}})).status,200);
+ const body={version:2,item_id:item.id,spending_label:'red'},key=crypto.randomUUID();
+ const marked=await req(`/api/text-batches/${batch.id}/spending-label`,{user,method:'PATCH',body,key});assert.equal(marked.status,200);
+ assert.deepEqual((await req(`/api/text-batches/${batch.id}/spending-label`,{user,method:'PATCH',body,key})).data,marked.data);
+ assert.equal((await req(`/api/text-batches/${batch.id}/spending-label`,{user,method:'PATCH',body:{...body,spending_label:'green'}})).status,409);
+ assert.equal((await req(`/api/text-batches/${batch.id}/spending-label`,{user:'bob',method:'PATCH',body})).status,404);
+ const backup=(await req('/api/backup',{user})).data;assert.equal(backup.version,7);assert.equal(backup.categories.find(c=>c.id==='other').spending_label,'yellow');assert.equal(backup.text_batches[0].items[0].spending_label,'red');
+ const preview=(await req('/api/restores/preview',{user,method:'POST',body:backup})).data;assert.equal(preview.valid,true);
+ const job=(await req('/api/restores',{user,method:'POST',body:{fingerprint:preview.fingerprint,ledger:backup.ledger,categories:backup.categories,entry_count:backup.entries.length,text_batches:backup.text_batches,text_slots:backup.text_slots}})).data;
+ assert.equal((await req(`/api/restores/${job.id}/entries`,{user,method:'POST',body:{entries:backup.entries}})).status,200);assert.equal((await req(`/api/restores/${job.id}/finish`,{user,method:'POST',body:{}})).status,200);
+ const restored=(await req('/api/backup',{user,ledger:job.id})).data;assert.deepEqual(backupContent(restored),backupContent(backup));
+});
+
+test('five subscriptions needing category review do not block the next valid renewal', async () => {
+ const {subscriptionItem} = await import('../shared/subscriptions.js');
+ const {settleSubscriptions} = await import('../worker/recurring-subscriptions.js');
+ const {today,shiftMonth} = await import('../shared/format.js');
+ const user='queue-review', month=today().slice(0,7);
+ const owner=(await req('/api/session',{user})).data;
+ for(let i=0;i<6;i++){
+   const item=subscriptionItem({title:'合成月卡'+i,amount:String(i+1),cycle:'monthly',category:i<5?'food':'other',source:'其他订阅软件',start:month,status:'ongoing'});
+   const batch=(await req('/api/text-batches',{user,method:'POST',body:{original_text:item.raw,items:[item]}})).data.batch;
+   const plan=(await req('/api/text-batches/'+batch.id+'/preview',{user,method:'POST',body:{}})).data;
+   const confirmation=await req('/api/text-batches/'+batch.id+'/confirm',{user,method:'POST',body:{version:batch.version,preview_hash:plan.preview_hash}});
+   assert.equal(confirmation.data.count,1);
+ }
+ await db.prepare('UPDATE categories SET archived=1 WHERE ledger_id=? AND id=?').bind(owner.ledger.id,'food').run();
+ const options={ledger:owner.ledger.id,currentDay:shiftMonth(month,1)+'-15'};
+ const first=await settleSubscriptions(db,options);
+ assert.equal(first.issues.length,5);
+ assert.equal(first.count,1);
+ assert.equal((await settleSubscriptions(db,options)).count,0);
+ assert.equal((await req('/api/entries',{user})).data.totals.expense_minor,2700);
+});
+
+test('subscription review is read-only and confirmation handles overlap, concurrency and same-key retry', async () => {
+ const user='subscription-review';
+ const post=(path,body,key)=>req(`/api/${path}`,{user,method:'POST',body,key});
+ const item=subscriptionItem({title:'虚构月卡',source:'其他订阅软件',cycle:'monthly',amount:'30',start:'2023-06',end:'2025-10',status:'stopped',category:'entertainment'});
+ const body={original_text:item.raw,items:[item]};
+ await post('entries',expense({amount_minor:3000,occurred_on:'2025-10',note:'另一项固定扣款'}));
+ const preview=await post('subscriptions/preview',body);
+ assert.equal(preview.status,200);
+ assert.equal(preview.data.count,29);
+ assert.equal(preview.data.expense_minor,87000);
+ assert.deepEqual(preview.data.overlap_months,[]);
+ assert.equal((await req('/api/text-batches',{user})).data.batches.length,0);
+ await post('entries',expense({amount_minor:3100,occurred_on:'2025-10-01',note:'虚构月卡'}));
+ assert.equal((await post('subscriptions/confirm',{...body,preview_hash:preview.data.preview_hash})).data.error.code,'PREVIEW_CHANGED');
+ const refreshed=await post('subscriptions/preview',body);
+ assert.deepEqual(refreshed.data.overlap_months,['2025-10']);
+ const confirmation={...body,preview_hash:refreshed.data.preview_hash};
+ assert.equal((await post('subscriptions/confirm',confirmation)).data.error.code,'POSSIBLE_DUPLICATES');
+ assert.equal((await req('/api/text-batches',{user})).data.batches.length,0);
+ const acknowledged={...confirmation,acknowledge_duplicates:true};
+ const keys=[crypto.randomUUID(),crypto.randomUUID()];
+ const results=await Promise.all(keys.map(key=>post('subscriptions/confirm',acknowledged,key)));
+ assert.deepEqual(results.map(result=>result.status).sort(),[200,409]);
+ const index=results.findIndex(result=>result.status===200);
+ const retry=await post('subscriptions/confirm',acknowledged,keys[index]);
+ assert.deepEqual(retry.data,results[index].data);
+ assert.equal((await req('/api/entries',{user})).data.totals.count,31);
+ assert.equal((await req('/api/text-batches',{user})).data.batches.length,1);
 });

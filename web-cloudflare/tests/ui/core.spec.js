@@ -348,8 +348,10 @@ test('SET04–08 JSON download, display persistence, logout cancel/confirm/reope
   await close(page);
   await expect(page.locator('.profile-card')).toBeVisible();
   await action(page, 'logout').click();
+  await page.evaluate(() => sessionStorage.setItem('moneytalk:pending-module:test', '虚构订阅草稿'));
   await action(page, 'confirm-logout').click();
   await expect(page.locator('.boot-state')).toContainText('已退出本地预览');
+  expect(await page.evaluate(() => sessionStorage.getItem('moneytalk:pending-module:test'))).toBeNull();
   await action(page, 'login').click();
   await page.waitForLoadState('networkidle');
   await page.locator('.mobile-nav [data-route="record"]').click();
@@ -374,7 +376,16 @@ test('BACK01–05 invalid files, preview, independent restore, activation and re
   await expect(action(page, 'activate-ledger')).toBeVisible();
   expect((await ledger.call('/session')).ledger.id).toBe(before);
   const candidate = await action(page, 'activate-ledger').getAttribute('data-id');
+  let releaseSession;
+  const sessionGate = new Promise(resolve => { releaseSession = resolve; });
+  const sessionRequest = page.waitForRequest('**/api/session');
+  await page.route('**/api/session', async route => { await sessionGate; await route.continue(); }, {times:1});
   await action(page, 'activate-ledger').click();
+  try {
+    await sessionRequest;
+    await expect(page.locator('.profile-card')).toHaveCount(0);
+    await expect(page.locator('.boot-state')).toBeVisible();
+  } finally { releaseSession(); }
   await expect(page.locator('.profile-card')).toContainText('UI候选恢复测试');
   await action(page, 'backup').click();
   await page.locator('#backup-file').setInputFiles({ name: 'repeat.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
@@ -392,6 +403,7 @@ test('ERR01–04 initial and statistics failure with honest state and retry', as
   await page.goto('/stats?month=2026-09');
   await expect(page.locator('.boot-state')).toContainText('模拟身份服务故障');
   await page.unroute('**/api/session');
+  expect(await page.evaluate(() => sessionStorage.getItem('moneytalk:pending-module:test'))).toBeNull();
   await action(page, 'login').click();
   await expect(page.locator('#expense-chart')).toBeVisible();
   await page.route('**/api/stats?**', route => route.fulfill({ status: 500, json: { error: { message: '模拟统计故障', code: 'TEST' } } }));

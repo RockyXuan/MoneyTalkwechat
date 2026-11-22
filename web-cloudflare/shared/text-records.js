@@ -1,4 +1,4 @@
-import { titleSource, tagPlatformItems } from './platform-sources.js';
+import { titleSource, tagPlatformItems, spokenBatchSource } from './platform-sources.js';
 import { categorySuggestion, spokenCategory } from './category-suggestions.js';
 import { parseAmount, validDate, validRecordDate, today, shiftMonth, exactSum } from './format.js';
 
@@ -15,10 +15,23 @@ function hasPrice(text){
  return /[+-]?\d+(?:\.\d+)?(?:元|块)?/.test(masked);
 }
 // Keep source spans so segmentation never loses punctuation, whitespace or trailing text.
-function textClauses(raw) {
+const itemMarker=/^\s*(?:[•●▪·*–—-]\s+|[•●▪]\s*|\d{1,2}[、.)）]\s+)/;
+const categoryAnnotation=/[（(]\s*(?:算到|归到|归入|记到|分类[：:]?)\s*([^（）()]{1,32})[）)]\s*$/;
+function textClauses(raw,categories) {
   const clauses=[];
-  let prefix=null;
+  let prefix=null,source=null,category=null;
   for(const sentence of raw.matchAll(/[^\n；;。]+/g)) {
+    const line=sentence[0].trim();
+    const batchSource=spokenBatchSource(line);
+    if(batchSource){source=batchSource;category=null;continue;}
+    const group=line.match(/^([^：:]{1,48})[：:]$/)?.[1]?.replace(/\s*[（(][^（）()]*[）)]\s*$/,'').trim();
+    const groupNames=group?.split(/\s*[／/]\s*/).filter(Boolean);
+    if(groupNames?.length&&!itemMarker.test(line)&&(
+      /类$/.test(group)||categories?.some(c=>c.name===group||(c.aliases||[]).includes(group))
+    )){
+      category=groupNames.map(name=>name.replace(/^(?:我自己用的|自己用的)\s*/,'').replace(/类$/,'')).join(' / ').slice(0,32);
+      continue;
+    }
     const chunks=[];let at=sentence.index,sentenceHasPrice=false;
     for(const comma of sentence[0].matchAll(/[,，](?!\d{3}(?:[.,元]|$))/g)) {
       chunks.push({start:at,end:sentence.index+comma.index});at=sentence.index+comma.index+comma[0].length;
@@ -27,7 +40,8 @@ function textClauses(raw) {
     let laterPriced=false;for(let i=chunks.length-1;i>=0;i--){chunks[i].priced=hasPrice(raw.slice(chunks[i].start,chunks[i].end));chunks[i].later_priced=laterPriced;laterPriced=chunks[i].priced||laterPriced;}
     for(const span of chunks) {
       const chunk=raw.slice(span.start,span.end).trim();if(!chunk)continue;
-      const priced=span.priced;
+      const marked=itemMarker.test(chunk);
+      const priced=marked?hasPrice(chunk.replace(itemMarker,'')):span.priced;
       const context=titleSource(chunk)?chunk.replace(/^\s*[^·：:]+?\s*[·：:]\s*/,''):chunk;
       const header=!priced&&/^(?:从|今天|今日|昨日|昨天|前天|上个月|本月|\d{2,4}年|分类|归到|归入|每月|每个月|每季度|每年|每周|每天|每两|隔月|月付|年付|季付)/.test(context);
       if(header&&sentenceHasPrice&&!span.later_priced&&/^(?:从|截至|截止|每月|每个月|每季度|每年|每周|每天|每两|隔月|月付|年付|季付)/.test(context)){clauses.at(-1).end=span.end;continue;}
@@ -35,8 +49,8 @@ function textClauses(raw) {
       if(header){prefix=prefix?{start:prefix.start,end:span.end}:span;continue;}
       if(prefix&&!priced){prefix.end=span.end;continue;}
       const start=prefix?prefix.start:span.start;prefix=null;
-      if(clauses.length&&(!priced||/^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(chunk)))clauses.at(-1).end=span.end;
-      else clauses.push({start,end:span.end});
+      if(clauses.length&&!marked&&(!priced||/^(?:然后|之后|先记到|暂时|可能|大概|提醒|一共|合计|总共)/.test(chunk)))clauses.at(-1).end=span.end;
+      else clauses.push({start,end:span.end,source,category});
     }
   }
   if(prefix)clauses.push(prefix);
@@ -47,16 +61,18 @@ export function parseTextRecords(raw, currentDay = today(), categories = null) {
 }
 function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatform=false) {
   if (typeof raw !== 'string' || !raw.trim() || raw.length > maxChars) throw new Error(`请填写 1–${maxChars.toLocaleString('en-US')} 字的文字，原文不会截断`);
-  const clauses=textClauses(raw).map(s=>s.raw);
+  const clauses=textClauses(raw,categories);
   if(!clauses.length)throw new Error('没有识别到项目，请补充商品和金额；原文仍保留');
   if (clauses.length > maxItems) throw new Error(`一次最多 ${maxItems} 项，请分批核对；原文仍保留`);
   let inheritedDate=null,inheritedCategory=null,inheritedPlatform=null;
-  const parsed=clauses.map((raw,index) => {
-    const item = { id:`item-${index + 1}`, raw, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true };
+  const parsed=clauses.map(({raw:quote,source,category},index) => {
+    const annotation=quote.match(categoryAnnotation);
+    const raw=quote.replace(itemMarker,'').replace(categoryAnnotation,'').trim();
+    const item = { id:`item-${index + 1}`, raw:quote, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true };
     const explicitCategory=categories?spokenCategory(raw,categories,item.type):null;
     if(explicitCategory)inheritedCategory={name:explicitCategory.name,type:item.type};
-    const spoken=explicitCategory||(inheritedCategory?.type===item.type?{name:inheritedCategory.name,token:''}:null);
-    const ownPlatform=titleSource(raw);if(ownPlatform)inheritedPlatform=ownPlatform;
+    const spoken=(annotation?{name:annotation[1].trim(),token:''}:null)||explicitCategory||(category?{name:category,token:''}:null)||(inheritedCategory?.type===item.type?{name:inheritedCategory.name,token:''}:null);
+    const ownPlatform=titleSource(raw);if(ownPlatform||source)inheritedPlatform=ownPlatform||source;
     const foundDates = dates(raw);
     if (!foundDates.length) {
       const short=raw.match(/(?<!\d)(\d{1,2})\s*月(?:\s*(\d{1,2})\s*[日号])?/);
@@ -93,7 +109,8 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
       const day=raw.match(/(?:每月|每个月)\s*(\d{1,2})\s*[日号]/);
       if (day) item.charge_day=Number(day[1]);
       item.date_precision=day?'day':'month';
-      item.ongoing=/持续|一直|以后每|今后每|不断|继续每/.test(raw) && !end;
+      item.ongoing=/持续|一直|以后每|今后每|不断|继续每|到现在|至今|到今天/.test(raw) && !end;
+      if(item.ongoing)item.auto_record=true;
       if (!item.start_month) item.questions.push('起始月未知，不能计算历史条数');
 
       if (!item.through_month && !item.ongoing) item.questions.push('补记截止月或持续循环方式待确认');
@@ -109,14 +126,14 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
     if(amounts.length===1){title=title.replace(/(?:花了?|付了?|有)(?=\s*[¥￥$€£]?\s*[+-]?\d)/g,'').replace(amounts[0][0],'');}
     title=title.replace(/^[的\s]+|[的\s]+$/g,'').trim();
     if(spoken?.token)title=title.replace(spoken.token,'').trim();
-    item.title=title.slice(0,80) || (item.type==='income'?'收入待命名':'项目待命名');
+    item.title=title.replace(itemMarker,'').replace(/\s*[：:]\s*$/,'').slice(0,80) || (item.type==='income'?'收入待命名':'项目待命名');
     if (item.type==='income') item.category_id=/工资/.test(raw)?'salary':/奖金/.test(raw)?'bonus':'other-income';
-    else item.category_id=/餐|饭|吃|咖啡|奶茶/.test(title)?'food':/车|地铁|公交|打车/.test(title)?'transport':/房租/.test(title)?'housing':'other';
+    else item.category_id=/餐|饭|吃|咖啡|奶茶/.test(title)?'food':/打车|出租车|停车|车费|火车|地铁|公交/.test(title)?'transport':/房租/.test(title)?'housing':'other';
     if (foundDates.some(d=>!validMonth(monthOf(d)))) item.questions.push('原文日期无效');
     inheritedPlatform=titleSource(item.title)||inheritedPlatform;
-    const platform=ownPlatform||(inheritPlatform?inheritedPlatform:null);
+    const platform=ownPlatform||(inheritPlatform?(source||inheritedPlatform):null);
     const tagged=platform?tagPlatformItems([item],platform)[0]:item;
-    if(spoken)return categorySuggestion(tagged,categories,spoken.name);
+    if(spoken&&categories)return categorySuggestion(tagged,categories,spoken.name);
     if(categories&&!categories.some(c=>c.id===item.category_id&&c.type===item.type&&!c.archived))item.category_id=null;
     return tagged;
   });
@@ -127,7 +144,7 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
 export const LONG_TEXT_LIMIT=50000;
 export const LONG_ITEM_LIMIT=400;
 export function parseTextIntake(raw,currentDay=today(),categories=null,{inheritPlatform=true}={}) {
-  const items=parseRecords(raw,currentDay,categories,LONG_TEXT_LIMIT,LONG_ITEM_LIMIT,inheritPlatform),spans=textClauses(raw);
+  const items=parseRecords(raw,currentDay,categories,LONG_TEXT_LIMIT,LONG_ITEM_LIMIT,inheritPlatform),spans=textClauses(raw,categories);
   const segments=[];let start=0,first=0;
   for(let n=0;n<items.length;n++){
     const end=n+1<items.length?spans[n+1].start:raw.length;
@@ -165,11 +182,11 @@ export function compileTextItems(items, currentDay=today(), slots=[], {enforceBa
       if (!missing.length) {
         const interval={monthly:1,quarterly:3,yearly:12}[item.cycle];
         for (let month=item.start_month, n=0;month<=end;month=shiftMonth(month,interval),n++) {
-          if(n>=120) {missing.push('展开超过 120 笔，请缩小范围');break;}
           const [y,m]=month.split('-').map(Number),last=new Date(Date.UTC(y,m,0)).getUTCDate();
           if(!monthPrecision && item.charge_day>last && item.short_month!=='last_day') {missing.push(`${month} 没有 ${item.charge_day} 日，请确认是否使用月末`);break;}
           const day=monthPrecision?month:`${month}-${String(Math.min(last,item.charge_day)).padStart(2,'0')}`;
           if(day>currentDay || done.has(`${item.id}|${day}`)) continue;
+          if(entries.length>=120){missing.push('展开超过 120 笔，请缩小范围');break;}
           entries.push({item_id:item.id,occurred_on:day});
         }
       }

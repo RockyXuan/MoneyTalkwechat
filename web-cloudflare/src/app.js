@@ -1,16 +1,22 @@
+import { readPageData, restoreBackup } from './ledger-data.js';
 import './styles.css';
 import './responsive.css';
 import './mobile.css';
 import './platform-board.css';
+import './workspace-tabs.css';
+import './primary-text.css';
+import { subscriptionItem } from '../shared/subscriptions.js';
+import { subscriptionsPage,subscriptionForm,subscriptionReview } from './subscriptions-ui.js';
 import { request, mutate, queryString, setLedger, download } from './api.js';
-import { shell, recordPage, statsPage, billsPage, settingsPage, loading, entryForm, categoryManager, categoryEditor } from './views.js';
+import { navigateCalendar, rangeForm, parseRangeForm } from './source-calendar-ui.js';
+import { NAV, shell, recordPage, statsPage, billsPage, settingsPage, loading, entryForm, categoryManager, categoryEditor } from './views.js';
 import { escape as e, icon, iconButton, empty, recordRow, categoryIcon } from './ui.js';
 import { today, periodRange, shiftMonth, parseAmount, decimal, money, canonical, validDate, validRecordDate, recordDateLabel, recordRange } from '../shared/format.js';
 
 const root = document.querySelector('#app'), dialog = document.querySelector('#dialog'), toastElement = document.querySelector('#toast');
 const storage = { get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }, set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Display preferences are optional. */ } } };
-const knownPages = ['record', 'bills', 'stats', 'settings'];
-const firstPage = () => knownPages.includes(location.pathname.slice(1)) ? location.pathname.slice(1) : matchMedia('(max-width: 767px)').matches ? 'record' : 'stats';
+const pageLabels = new Map(NAV.map(([page, , label]) => [page, label]));
+const firstPage = () => pageLabels.has(location.pathname.slice(1)) ? location.pathname.slice(1) : matchMedia('(max-width: 767px)').matches ? 'record' : 'stats';
 const initialParams=new URLSearchParams(location.search);
 const routeFilters = params => ({ type: ['expense', 'income'].includes(params.get('type')) ? params.get('type') : '', category_id: /^[A-Za-z0-9_-]{1,100}$/.test(params.get('category_id') || '') ? params.get('category_id') : '', q: (params.get('q') || '').slice(0, 200) });
 const routeOffset = params => { const value = Number(params.get('offset')); return Number.isSafeInteger(value) && value >= 0 && value <= 10000000 ? Math.floor(value / 50) * 50 : 0; };
@@ -19,6 +25,17 @@ const initialMonth=initialParams.get('month')||initialRange?.from.slice(0,7);
 const s = { page: firstPage(), month: validDate(`${initialMonth}-01`)?initialMonth:today().slice(0,7), period:['month','quarter','year'].includes(initialParams.get('period'))?initialParams.get('period'):'month', chart: storage.get('moneytalk:chart', 'bar'), density: storage.get('moneytalk:density', 'comfortable'), categories: [], session: null, recent: null, bills: null, stats: null, textSummary:null, platformSource:'', filters: routeFilters(initialParams), billRange: initialRange, offset: routeOffset(initialParams), error: '', draft: null, modal: null };
 if (!['bar', 'line', 'pie'].includes(s.chart)) s.chart = 'bar';
 let closeTimer, dialogReturnFocus, dialogTrigger, dialogDisposer;
+let inlineTextDisposer=null,inlineTextNode=null,inlineBusy=false;
+function unmountInlineText(){document.documentElement.classList.remove('primary-text-inview');inlineTextDisposer?.();inlineTextDisposer=null;inlineTextNode=null;inlineBusy=false;}
+async function mountInlineText(){
+ if(inlineTextDisposer&&!inlineTextNode?.isConnected)unmountInlineText();
+ const node=root.querySelector('#record-text-workspace');if(!node||!s.session||s.page!=='record'||inlineTextDisposer||(s.modal?.type==='text-records'&&!s.modal.batchOverlay))return;
+ inlineTextNode=node;
+ try{const module=await import('./text-record-ui.js');if(!node.isConnected||node!==inlineTextNode||inlineTextDisposer||(s.modal?.type==='text-records'&&!s.modal.batchOverlay))return;
+ document.documentElement.classList.toggle('primary-text-inview',!document.activeElement?.closest('.record-entry-column,.record-workspace,.mobile-tools.record-tools'));
+ inlineTextDisposer=module.mountTextRecords(node,{embedded:true,categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}`,lock:busy=>{inlineBusy=busy;},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{s.filters={q:'',type:'',category_id:''};s.billRange=recordRange(range.from,range.to);s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+ }catch(error){if(node.isConnected)node.textContent=`文字记账暂时无法打开：${error.message}`;}
+}
 let outsideGesture, dismissedPoint;
 let epoch = 0, renderEpoch = 0, chartsModule, toastTimer, undoAction = null;
 const baseDraft = () => ({ amount: '', type: 'expense', category_id: s.categories.find(c => c.type === 'expense' && !c.archived)?.id || 'food', occurred_on: (s.session?.today || today()).slice(0,7), note: '', expanded: false, error: '', pending: null });
@@ -37,11 +54,16 @@ function render() {
   const formContext = focused?.closest?.('[data-form="entry"]')?.dataset.context;
   const focusName = focused?.name;
   const selection = focusName && ['amount', 'note'].includes(focusName) ? [focused.selectionStart, focused.selectionEnd] : null;
+  const inlineFocused=inlineTextNode?.contains(focused)?focused:null;
+  const inlineSelection=inlineFocused?.matches('textarea,input[type=text],input:not([type]),input[type=search]')?[inlineFocused.selectionStart,inlineFocused.selectionEnd]:null;
+  if(s.page!=='record'&&inlineTextDisposer)unmountInlineText();
   chartsModule?.destroyChart();
   const ticket = ++renderEpoch;
   document.documentElement.classList.toggle('compact', s.density === 'compact');
-  const content = !s.session || !s.draft ? loading() : ({ record: recordPage, bills: billsPage, stats: statsPage, settings: settingsPage }[s.page])(s);
+  const content = !s.session || !s.draft ? loading() : ({ record: recordPage, bills: billsPage, stats: statsPage, subscriptions: subscriptionsPage, settings: settingsPage }[s.page])(s);
+  if(s.session)ensureWorkspace();
   const frame=document.createElement('template');frame.innerHTML=shell(s,content);
+  const preserveInline=frame.content.querySelector('#record-text-workspace')&&inlineTextNode?.isConnected&&inlineTextDisposer;
   const previousMobile=root.querySelector('.mobile-nav'),previousSidebar=root.querySelector('.sidebar');
   const updateLinks=(previous,replacement)=>{for(const link of previous.querySelectorAll('[data-route]')){
     const next=replacement.querySelector(`[data-route="${link.dataset.route}"]`);if(!next)continue;
@@ -53,7 +75,17 @@ function render() {
     updateLinks(previousMobile,frame.content.querySelector('.mobile-nav'));
     updateLinks(previousSidebar.querySelector('nav'),frame.content.querySelector('.sidebar nav'));
     for(const selector of ['.ledger-switch','.sidebar-bottom'])previousSidebar.querySelector(selector).replaceWith(frame.content.querySelector(selector));
-    root.querySelector('.app-workspace').replaceWith(frame.content.querySelector('.app-workspace'));
+    const oldTabs=root.querySelector('.workspace-tabs'),newTabs=frame.content.querySelector('.workspace-tabs');
+    if(oldTabs.innerHTML!==newTabs.innerHTML)oldTabs.innerHTML=newTabs.innerHTML;
+    if(preserveInline){
+      // Keep the live editor and its ancestors attached: detaching between
+      // pointerdown/up loses a click in WebKit, even if the node is reused.
+      root.querySelector('.page-header').replaceWith(frame.content.querySelector('.page-header'));
+      const main=root.querySelector('#main');for(const child of [...main.children])if(!child.classList.contains('primary-text-card'))child.remove();
+      for(const child of [...frame.content.querySelector('#main').children])if(!child.classList.contains('primary-text-card'))main.append(child);
+    }else{
+      root.querySelector('.app-workspace').replaceWith(frame.content.querySelector('.app-workspace'));
+    }
     const tools=root.querySelector('.mobile-tools'),nextTools=frame.content.querySelector('.mobile-tools');
     if(tools&&nextTools)tools.replaceWith(nextTools);else if(tools)tools.remove();else if(nextTools)root.insertBefore(nextTools,previousMobile);
   }else root.replaceChildren(frame.content);
@@ -63,7 +95,9 @@ function render() {
     replacement?.focus({ preventScroll: true });
     if (selection && replacement) replacement.setSelectionRange(...selection);
   }
-  document.title = `${{ record: '记一笔', bills: '账单', stats: '统计', settings: '我的' }[s.page]} · MoneyTalk`;
+  if(inlineFocused?.isConnected){inlineFocused.focus({preventScroll:true});if(inlineSelection)inlineFocused.setSelectionRange(...inlineSelection);}
+  mountInlineText();
+  document.title = `${pageLabels.get(s.page)} · MoneyTalk`;
   if (s.page === 'stats' && s.stats && !s.error) {
     import('./charts.js').then(module => { chartsModule = module; if (ticket !== renderEpoch) return; module.renderChart(document.querySelector('#expense-chart'), s.stats, s.chart, categoryBills); }).catch(() => toast('统计图暂时无法加载，分类金额仍可查看'));
   }
@@ -77,8 +111,8 @@ async function init() {
     if (priorUser && priorUser !== s.session.user.id) clearDrafts();
     sessionStorage.setItem('moneytalk:last-user', s.session.user.id);
     s.categories = (await request('/categories')).categories;
-    readDraft();
-    if (!knownPages.includes(location.pathname.slice(1))) history.replaceState(null, '', `/${s.page}`);
+    readDraft(); ensureWorkspace();
+    if (!pageLabels.has(location.pathname.slice(1))) history.replaceState(null, '', `/${s.page}`);
     render(); await load();
     try{const copy=JSON.parse(sessionStorage.getItem(`${draftKey()}:copy`)||'null');if(copy?.isCopy){s.modal={type:'entry',draft:{...copy,saving:false,error:''},original:entryValues(copy)};updateForm('dialog');}}catch{/* Invalid optional draft cannot prevent opening the ledger. */}
   } catch (error) { showConnectionError(error); }
@@ -89,22 +123,38 @@ function showConnectionError(error) {
 }
 function showLoggedOut() { root.innerHTML = '<main class="boot-state"><h1>已退出本地预览</h1><p>当前浏览器的未保存草稿已清除。本地预览用于验证功能，正式登录由云端访问保护负责。</p><button class="button primary" data-action="login">重新打开本地账本</button></main>'; }
 function billQuery() { return { ...(s.billRange || periodRange(s.month, 'month', s.session.today)), ...s.filters, limit: 50, offset: s.offset }; }
+let pageReads;
+window.addEventListener('pagehide', () => {
+  ++epoch;
+  pageReads?.abort();
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted && s.session) load();
+});
 async function load({ quiet = false } = {}) {
   if (!s.session) return;
   const routeParams=new URLSearchParams();if(['bills','stats'].includes(s.page)){routeParams.set('month',s.month);if(s.page==='stats')routeParams.set('period',s.period);if(s.page==='bills'&&s.billRange){routeParams.set('from',s.billRange.from);routeParams.set('to',s.billRange.to);}}
   if (s.page === 'bills') { for (const [key, value] of Object.entries(s.filters)) if (value) routeParams.set(key, value); if (s.offset) routeParams.set('offset', String(s.offset)); }
   history.replaceState(null,'',`/${s.page}${routeParams.size?'?'+routeParams:''}`);
+  pageReads?.abort();
+  pageReads = new AbortController();
   const ticket = ++epoch, page = s.page;
   s.error = '';
   if (!quiet) { if (page === 'bills') s.bills = null; if (page === 'stats') s.stats = null; render(); }
   try {
-    const [categories, recent, current, textSummary] = await Promise.all([
-      request('/categories'), request('/entries?limit=6'),
-      page === 'stats' ? request(`/stats?${queryString(periodRange(s.month, s.period, s.session.today))}`) : page === 'bills' ? request(`/entries?${queryString(billQuery())}`) : Promise.resolve(null),
-      request('/text-batches?view=board'),
-    ]);
+    let settled;
+    try {
+      settled = await request('/subscriptions/settle', { method: 'POST', body: {} });
+    } catch (error) {
+      if (error.status === 401 || error.status === 403 || error.code === 'LOGIN_REQUIRED') throw error;
+    }
+    if(ticket!==epoch)return;
+    s.subscriptionWarning = settled ? '' : '订阅续记结果尚未核实，以下仅显示已保存的账目。刷新可重新核对。';
+    if(settled?.issues?.length)toast('有订阅需要核对，请到订阅区查看');
+    const filters = page === 'stats' ? periodRange(s.month, s.period, s.session.today) : page === 'bills' ? billQuery() : {};
+    const { categories, recent, current, textSummary } = await readPageData(page, filters, AbortSignal.any([pageReads.signal, AbortSignal.timeout(20000)]));
     if (ticket !== epoch) return;
-    s.categories = categories.categories; s.recent = recent; s.textSummary=textSummary;
+    s.categories = categories; s.recent = recent; s.textSummary=textSummary;
     if(!textSummary.platforms?.some(g=>g.source===s.platformSource))s.platformSource=textSummary.platforms?.find(g=>g.resume)?.source||textSummary.platforms?.[0]?.source||'';
     if (page === 'stats') s.stats = current; if (page === 'bills') s.bills = current;
     render();
@@ -114,9 +164,19 @@ async function load({ quiet = false } = {}) {
     s.error = error.message; render();
   }
 }
-function navigate(page, replace = false) {
-  if (!knownPages.includes(page)) return;
-  closeDialog(true); saveDraft(); s.page = page; s.error = '';
+const workspaceViews = new Map();
+const viewFields=['month','period','filters','billRange','offset'];
+function workspaceKey(){return `moneytalk:workspace:${s.session?.user.id}:${s.session?.ledger.id}`;}
+function rememberWorkspace(){if(!s.session)return;try{sessionStorage.setItem(workspaceKey(),JSON.stringify(s.workspacePages));}catch{/* Optional navigation state. */}}
+function ensureWorkspace(){if(!s.workspacePages){try{s.workspacePages=JSON.parse(sessionStorage.getItem(workspaceKey())||'[]').filter(p=>pageLabels.has(p));}catch{s.workspacePages=[];}s.workspacePages=[...new Set(s.workspacePages)];}if(!s.workspacePages.includes(s.page))s.workspacePages.push(s.page);rememberWorkspace();}
+function navigate(page, replace = false, restoreView = false) {
+  if (!pageLabels.has(page)) return;
+  if(inlineBusy&&restoreView){toast('正在保存文字，请稍候');return;}
+  if(dialog.open){if(restoreView){if(!closeDialog())return;}else closeDialog(true);}
+  ensureWorkspace(); saveDraft();
+  workspaceViews.set(s.page,Object.fromEntries(viewFields.map(key=>[key,structuredClone(s[key])])));
+  if(restoreView&&page!==s.page&&workspaceViews.has(page))Object.assign(s,workspaceViews.get(page));
+  s.page = page; s.error = ''; ensureWorkspace();
   if (replace) history.replaceState(null, '', `/${page}`); else history.pushState(null, '', `/${page}`);
   window.scrollTo({ top: 0 }); render(); load();
 }
@@ -127,16 +187,126 @@ function openDialog(title, body, { type = '', wide = false } = {}) {
   // opener so dismissing a sheet returns keyboard users to the same control.
   if(!dialog.open){dialogReturnFocus=dialogTrigger?.isConnected?dialogTrigger:document.activeElement;dialogTrigger=null;}
   dialog.className = wide ? 'entry-dialog' : '';
+  dialog.classList.toggle('batch-overlay',Boolean(s.modal?.batchOverlay));
   dialog.dataset.locked = 'false';
   dialog.dataset.type = type || s.modal?.type || 'general';
   dialog.innerHTML = `<header class="dialog-header"><h2 id="dialog-title">${e(title)}</h2>${iconButton('close', '关闭', 'data-action="close-dialog"')}</header><div class="dialog-body">${body}</div><div class="dialog-bottom-close" ${/data-action="close-dialog"/.test(body)?'hidden':''}><button class="button secondary" data-action="close-dialog">${s.modal?.type==='stats-options'?'完成':s.modal?.type==='discard'?'返回编辑':'关闭'}</button></div>`;
-  if (dialog.open && dialog.dataset.nonmodal === 'true') dialog.close();
-  const docked=dialog.dataset.type==='text-records'&&matchMedia('(min-width:1100px)').matches;
+  const docked=(dialog.dataset.type==='subscription-review'||(dialog.dataset.type==='text-records'&&!s.modal?.batchOverlay))&&matchMedia('(min-width:1100px)').matches;
+  if(dialog.open && (dialog.dataset.nonmodal==='true')!==docked)dialog.close();
   dialog.dataset.nonmodal=String(docked);dialog.setAttribute('aria-modal',String(!docked));
   if (!dialog.open) {if(docked)dialog.show();else dialog.showModal();}
   dialog.scrollTop = 0;
   document.body.classList.toggle('dialog-open',!docked);document.body.classList.toggle('text-dock-open',docked);
   if(s.modal && !s.modal.initialControls)s.modal.initialControls=dialogControls();
+}
+function moduleDraftKey(type,source=''){return `moneytalk:pending-module:${s.session.user.id}:${s.session.ledger.id}:${type}:${source}`;}
+function rememberModule(modal,form){
+ const key=moduleDraftKey(modal.type,modal.source||'');modal.storageKey=key;
+ try{sessionStorage.setItem(key,JSON.stringify({key:modal.key,body:modal.body,fields:Object.fromEntries(new FormData(form))}));}catch{/* Same-page retry remains available when session storage is unavailable. */}
+}
+function forgetModule(modal){try{sessionStorage.removeItem(modal.storageKey);}catch{/* Optional retry cache cannot turn a confirmed save into an error. */}}
+function fillSubscription(fields){
+ const form=dialog.querySelector('form');
+ for(const [name,value] of Object.entries(fields)){
+  const control=form.elements.namedItem(name);
+  if(control&&typeof value==='string')control.value=value;
+ }
+ const end=form.querySelector('[data-subscription-end]');
+ end.hidden=form.elements.namedItem('status').value==='ongoing';
+ end.querySelector('input').required=!end.hidden;
+}
+function showSubscriptionReview(modal,message=''){
+ modal.type='subscription-review';
+ openDialog('确认订阅',subscriptionReview(modal.body.items[0],modal.plan,{uncertain:modal.uncertain,message}));
+ dialog.querySelector('#subscription-error').scrollIntoView({block:'nearest'});
+}
+function openModule(type,source=''){
+ const modal=s.modal={type,source,key:crypto.randomUUID(),storageKey:moduleDraftKey(type,source)};
+ openDialog(type==='subscription'?'记录订阅':'标记已核对范围',type==='subscription'?subscriptionForm(s):rangeForm(source));
+ try{
+  const old=JSON.parse(sessionStorage.getItem(modal.storageKey)||'null');
+  if(!old?.key||!old.body||!old.fields)return;
+  if(type==='subscription'){
+   fillSubscription(old.fields);
+   if(old.plan&&old.confirmation){
+    Object.assign(modal,{key:old.key,body:old.body,fields:old.fields,plan:old.plan,confirmation:old.confirmation,uncertain:true});
+    showSubscriptionReview(modal,'上次入账结果尚未确认，请重试核对。');
+   }else{
+    modal.legacyKey=old.key;
+    dialog.querySelector('#subscription-error').textContent='已恢复上次输入。继续前会先核对上次草稿的保存结果。';
+   }
+   return;
+  }
+  modal.key=old.key;modal.body=old.body;modal.uncertain=true;
+  const form=dialog.querySelector('form');
+  for(const [name,value] of Object.entries(old.fields)){
+   const control=form.elements.namedItem(name);
+   if(control&&typeof value==='string')control.value=value;
+  }
+  form.querySelector('.field-error').textContent='上次保存结果尚未确认，已恢复原输入；请重试核对。';
+ }catch{/* Invalid optional draft is ignored. */}
+}
+async function previewSubscription(modal){
+ const plan=await request('/subscriptions/preview',{method:'POST',body:modal.body});
+ modal.plan={...plan,title:modal.fields.title.trim(),category:s.categories.find(c=>c.id===modal.fields.category)?.name||''};
+}
+async function submitSubscription(form){
+ const modal=s.modal,confirming=form.dataset.form==='subscription-confirm';
+ if(modal?.busy)return;
+ modal.busy=true;dialog.dataset.locked='true';
+ for(const button of form.querySelectorAll('button'))button.disabled=true;
+ const fieldError=form.querySelector('#subscription-error');
+ fieldError.textContent='';
+ try{
+  if(!confirming){
+   if(modal.legacyKey){
+    const prior=await request(`/operations/${modal.legacyKey}`);
+    if(prior.result?.batch){
+     forgetModule(modal);closeDialog(true);await load({quiet:true});
+     await openTextRecords(prior.result.batch.id,modal.source);
+     return;
+    }
+    forgetModule(modal);delete modal.legacyKey;
+   }
+   modal.fields=Object.fromEntries(new FormData(form));
+   const item=subscriptionItem(modal.fields);
+   if(!item.category_id)throw new Error('请选择分类');
+   modal.body={original_text:item.raw,items:[item]};
+   await previewSubscription(modal);
+   if(s.modal===modal)showSubscriptionReview(modal);
+   return;
+  }
+  modal.confirmation??={...modal.body,preview_hash:modal.plan.preview_hash,acknowledge_duplicates:modal.plan.overlap_months.length>0};
+  try{
+   sessionStorage.setItem(modal.storageKey,JSON.stringify({key:modal.key,body:modal.body,fields:modal.fields,plan:modal.plan,confirmation:modal.confirmation}));
+  }catch{/* Same-page retry keeps its original submission key. */}
+  const result=await mutate('/subscriptions/confirm',modal.confirmation,{key:modal.key});
+  forgetModule(modal);
+  if(s.modal!==modal)return;
+  closeDialog(true);
+  if(s.page==='subscriptions')await load({quiet:true});
+  else navigate('subscriptions');
+  toast(`已入账 ${result.count} 笔 · ${money(result.expense_minor)}`);
+ }catch(error){
+  if(s.modal!==modal)return;
+  if(!confirming){
+   fieldError.textContent=error.code==='NETWORK'?'连接中断，输入已保留。请点击下一步重试。':error.message;
+   return;
+  }
+  modal.uncertain=error.code==='NETWORK'||error.status>=500||error.code==='LOGIN_REQUIRED';
+  if(!modal.uncertain){forgetModule(modal);delete modal.confirmation;modal.key=crypto.randomUUID();}
+  if(['PREVIEW_CHANGED','VERSION_CONFLICT'].includes(error.code)){
+   try{await previewSubscription(modal);showSubscriptionReview(modal,'账本或扣费月份已变化，请重新核对后确认。');return;}
+   catch(refreshError){showSubscriptionReview(modal,refreshError.message);return;}
+  }
+  showSubscriptionReview(modal,error.message);
+ }finally{
+  modal.busy=false;
+  if(s.modal===modal){
+   dialog.dataset.locked='false';
+   for(const button of form.querySelectorAll('button'))button.disabled=false;
+  }
+ }
 }
 function entryValues(draft) {
   let amount;try{amount=parseAmount(draft.amount);}catch{amount=`invalid:${draft.amount}`;}
@@ -154,7 +324,7 @@ function hasDialogChanges() {
   if(s.modal?.type==='entry')return s.modal.original!==entryValues(s.modal.draft);
   // Text input already persists in this browser session on every edit and on
   // disposal. Closing that dock never discards the user's local draft.
-  if(s.modal?.type==='text-records')return false;
+  if(s.modal?.type==='text-records'||s.modal?.type==='subscription-review')return false;
   return Boolean(s.modal?.initialControls && s.modal.initialControls!==dialogControls());
 }
 function returnToEditing() {
@@ -172,6 +342,7 @@ function closeDialog(force = false) {
   if(!force&&dialog.classList.contains('closing'))return false;
   if (dialog.dataset.locked === 'true' && !force) { toast('正在处理，请稍候'); return false; }
   if(!force&&s.modal?.type==='discard'){returnToEditing();return false;}
+  if(!force&&['source-range','subscription','subscription-review'].includes(s.modal?.type)&&s.modal.uncertain){toast('保存结果尚未核实，请先重试确认');return false;}
   if(!force&&s.modal?.type==='entry'&&s.modal.draft.pending){toast('保存结果尚未核实，请先重试保存');return false;}
   if(!force&&hasDialogChanges()){
     const previous=s.modal,nodes=document.createDocumentFragment();
@@ -179,17 +350,19 @@ function closeDialog(force = false) {
     nodes.append(...dialog.childNodes);s.modal={type:'discard',previous,suspended};
     openDialog('放弃修改？','<p class="dialog-intro">这次修改还没有保存。</p><div class="dialog-footer"><button class="button secondary" data-action="keep-editing">继续编辑</button><button class="button danger-button" data-action="discard-editing">放弃修改</button></div>');return false;
   }
-  const finish=()=>{if(s.modal?.type==='entry'&&s.modal.draft.isCopy)sessionStorage.removeItem(`${draftKey()}:copy`);dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
+  const finish=()=>{if(s.modal?.type==='entry'&&s.modal.draft.isCopy)sessionStorage.removeItem(`${draftKey()}:copy`);dialogDisposer?.();dialogDisposer=null;if(dialog.open)dialog.close();document.body.classList.remove('dialog-open','text-dock-open');s.modal=null;dialog.dataset.locked='false';dialog.classList.remove('closing');mountInlineText();if(dialogReturnFocus?.isConnected)dialogReturnFocus.focus({preventScroll:true});};
   clearTimeout(closeTimer);
   if(!force&&dialog.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){dialog.classList.add('closing');closeTimer=setTimeout(finish,180);}else finish();
   return true;
 }
-async function openTextRecords(initialBatchId=null,initialSource='') {
+async function openTextRecords(initialBatchId=null,initialSource='',batchOverlay=false) {
+  if(inlineBusy){toast('正在保存文字，请稍候');return;}
+  if(!batchOverlay)unmountInlineText();
   if(dialog.open)closeDialog(true);
-  const modal={type:'text-records',dispose:null};s.modal=modal;
-  openDialog('文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
+  const modal={batchOverlay,type:'text-records',dispose:null};s.modal=modal;
+  openDialog(batchOverlay?'批次明细':'文字与循环记账','<div id="text-record-container">正在打开…</div>',{wide:true});
   try {const module=await import('./text-record-ui.js');if(s.modal!==modal||!dialog.open)return;
-    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,initialSource,onStartSource:source=>{s.platformSource=source;openTextRecords(null,source);},categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}${initialSource?`:source:${initialSource}`:''}`,lock:busy=>{if(s.modal===modal){dialog.dataset.locked=busy?'true':'false';for(const button of dialog.querySelectorAll('[data-action=close-dialog]'))button.disabled=busy;}},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
+    dialogDisposer=modal.dispose=module.mountTextRecords(dialog.querySelector('#text-record-container'),{initialBatchId,initialSource,batchOverlay,onStartSource:source=>{s.platformSource=source;openTextRecords(null,source);},categories:s.categories,currentDay:s.session.today,local:s.session.local,draftKey:`moneytalk:draft:text:${s.session.user.id}:${s.session.ledger.id}${batchOverlay?`:batch:${initialBatchId}`:initialSource?`:source:${initialSource}`:''}`,lock:busy=>{if(s.modal===modal){dialog.dataset.locked=busy?'true':'false';for(const button of dialog.querySelectorAll('[data-action=close-dialog]'))button.disabled=busy;}},onSaved:()=>load({quiet:true}),onCategoriesChanged:next=>{s.categories=next;},onViewBills:range=>{range=recordRange(range.from,range.to);s.filters={q:'',type:'',category_id:''};s.billRange=range;s.month=range.from.slice(0,7);s.offset=0;navigate('bills');}});
   }catch(error){if(s.modal===modal)dialog.querySelector('#text-record-container').textContent=`暂时无法打开：${error.message}`;}
 }
 function updateForm(context) {
@@ -309,7 +482,7 @@ function editCategory(id) { s.modal = { type: 'category', category: s.categories
 async function saveCategory(form) {
   const modal = s.modal; if (modal.busy) return;
   const fields = new FormData(form), previous = modal.category;
-  const body = { aliases:String(fields.get('aliases')||'').split(/[,，;；\n]/).map(x=>x.trim()).filter(Boolean), name: fields.get('name').trim(), type: previous?.type || fields.get('type'), color_key: fields.get('color_key'), icon: fields.get('icon'), sort_order: Number(fields.get('sort_order')), archived: fields.get('archived') === 'on' };
+  const body = { spending_label:fields.get('spending_label')||null, aliases:String(fields.get('aliases')||'').split(/[,，;；\n]/).map(x=>x.trim()).filter(Boolean), name: fields.get('name').trim(), type: previous?.type || fields.get('type'), color_key: fields.get('color_key'), icon: fields.get('icon'), sort_order: Number(fields.get('sort_order')), archived: fields.get('archived') === 'on' };
   if (previous) body.version = previous.version;
   if (modal.body && canonical(modal.body) !== canonical(body)) modal.key = crypto.randomUUID();
   modal.body = body; modal.busy = true; dialog.dataset.locked = 'true'; form.querySelector('button[type=submit]').disabled = true;
@@ -323,7 +496,7 @@ async function exportCsv(filtered) {
   catch (error) { toast(error.message); }
 }
 function openBackup() {
-  s.modal = { type: 'backup', file: null, preview: null, job: null, busy: false };
+  s.modal = { type: 'backup', file: null, preview: null, busy: false };
   openDialog('备份与恢复', `<p class="dialog-intro">完整备份包含分类、有效账目、回收站、文字草稿与循环规则。恢复时创建独立候选账本，当前账本会保留。</p><div class="backup-actions"><button class="button secondary" data-action="download-backup">${icon('file')}下载完整 JSON 备份</button><button class="button secondary" data-action="export-all">${icon('download')}导出全部有效账目 CSV</button></div><label class="upload-area">${icon('upload', 29)}<strong>选择备份文件进行检查</strong><span class="muted">MoneyTalk JSON 备份 · 最大 20 MB</span><input type="file" accept="application/json,.json" id="backup-file" /></label><div id="backup-preview"></div>`);
 }
 async function downloadBackup() {
@@ -359,15 +532,9 @@ async function startRestore() {
   const progress = document.querySelector('#restore-progress'), data = modal.file;
   try {
     progress.innerHTML = '<p>正在准备候选账本…</p>';
-    const job = await request('/restores', { method: 'POST', body: { fingerprint: modal.preview.fingerprint, ledger: data.ledger, categories: data.categories, entry_count: data.entries.length, ...(data.text_batches?{text_batches:data.text_batches,text_slots:data.text_slots||[]}:{} ) } });
-    modal.job = job;
-    if (!job.complete) {
-      for (let i = 0; i < data.entries.length; i += 50) {
-        const result = await request(`/restores/${job.id}/entries`, { method: 'POST', body: { entries: data.entries.slice(i, i + 50) } });
-        progress.innerHTML = `<progress value="${result.received}" max="${Math.max(1, data.entries.length)}"></progress><p>已核对 ${result.received} / ${data.entries.length} 笔记录</p>`;
-      }
-    }
-    await request(`/restores/${job.id}/finish`, { method: 'POST', body: {} });
+    const job = await restoreBackup(data, modal.preview.fingerprint, received => {
+      progress.innerHTML = `<progress value="${received}" max="${Math.max(1, data.entries.length)}"></progress><p>已核对 ${received} / ${data.entries.length} 笔记录</p>`;
+    });
     progress.innerHTML = `<div class="success-mark">${icon('checks', 27)}</div><p><strong>${job.repeated ? '已找到并核对同一备份的候选账本' : '候选账本已通过完整校验'}</strong></p><p>分类、记录与备份内容一致，当前账本仍在使用。</p><button class="button primary" data-action="activate-ledger" data-id="${e(job.id)}">切换到已校验的候选账本</button>`;
     button.hidden = true;
     modal.initialControls=dialogControls();
@@ -382,14 +549,17 @@ async function openLedgers() {
   } catch (error) { toast(error.message); }
 }
 async function activateLedger(id) {
+  if(inlineBusy){toast('文字正在保存，请稍候再切换账本');return;}
   if (dialog.dataset.locked === 'true') return;
   try {
     dialog.dataset.locked = 'true';
     await request(`/ledgers/${id}/activate`, { method: 'POST', body: {} });
-    ++epoch; closeDialog(true); clearDrafts(); undoAction = null; toastElement.classList.remove('show');
-    setLedger(id); s.session = await request('/session'); s.categories = (await request('/categories')).categories;
-    s.draft = baseDraft(); s.filters = { q: '', type: '', category_id: '' }; s.billRange = null; s.offset = 0;
-    saveDraft(); toast('已切换账本'); render(); await load();
+    ++epoch;
+    unmountInlineText();
+    root.innerHTML = '<main class="boot-state" role="status">正在打开切换后的账本…</main>';
+    closeDialog(true);
+    // Start with the server's active ledger and restore only its scoped drafts.
+    location.replace('/' + s.page);
   } catch (error) { dialog.dataset.locked = 'false'; toast(error.message); }
 }
 async function openTrash(offset = 0) {
@@ -404,6 +574,13 @@ function displaySettings() {
   openDialog('显示设置', `<form data-form="display" class="standard-form"><label>默认统计图<select name="chart"><option value="bar" ${s.chart === 'bar' ? 'selected' : ''}>分类堆叠柱状图</option><option value="line" ${s.chart === 'line' ? 'selected' : ''}>分类折线图</option><option value="pie" ${s.chart === 'pie' ? 'selected' : ''}>分类饼图</option></select></label><label>账单显示密度<select name="density"><option value="comfortable" ${s.density !== 'compact' ? 'selected' : ''}>舒适</option><option value="compact" ${s.density === 'compact' ? 'selected' : ''}>紧凑</option></select></label><p class="dialog-intro">只在本设备保存显示偏好，账本数据仍由服务器保存。</p><button class="button primary" type="submit">保存设置</button></form>`);
 }
 async function logout() {
+  unmountInlineText();
+  for (const [store, prefix] of [[localStorage, 'moneytalk:input-cache:'], [sessionStorage, 'moneytalk:pending-module:']]) {
+    for (let index = store.length - 1; index >= 0; index--) {
+      const key = store.key(index);
+      if (key?.startsWith(prefix)) store.removeItem(key);
+    }
+  }
   clearDrafts(); ++epoch; closeDialog(true); chartsModule?.destroyChart(); undoAction = null; toastElement.classList.remove('show');
   const local = s.session?.local; s.session = null; s.draft = null; s.bills = null; s.stats = null; s.recent = null;
   setLedger(null);
@@ -444,8 +621,19 @@ document.addEventListener('click',event=>{
 },true);
 document.addEventListener('dblclick',event=>{if(repeatedDismiss(event)){event.preventDefault();event.stopImmediatePropagation();}},true);
 document.addEventListener('click', async event => {
+  if(s.modal?.type==='subscription-review'&&(s.modal.busy||s.modal.uncertain)&&!dialog.contains(event.target)){
+    event.preventDefault();return;
+  }
+  const tab=event.target.closest('[data-workspace-page]');
+  if(tab){event.preventDefault();navigate(tab.dataset.workspacePage,false,true);return;}
+  const closed=event.target.closest('[data-workspace-close]');
+  if(closed){event.preventDefault();const page=closed.dataset.workspaceClose;if(s.workspacePages.length<2)return;
+    const index=s.workspacePages.indexOf(page);
+    if(page===s.page){navigate(s.workspacePages[index+1]||s.workspacePages[index-1],false,true);if(s.page===page)return;}
+    s.workspacePages=s.workspacePages.filter(p=>p!==page);workspaceViews.delete(page);rememberWorkspace();render();return;
+  }
   const route = event.target.closest('[data-route]');
-  if (route && !event.metaKey && !event.ctrlKey && !event.shiftKey) { event.preventDefault(); navigate(route.dataset.route); return; }
+  if (route && !event.metaKey && !event.ctrlKey && !event.shiftKey) { event.preventDefault(); navigate(route.dataset.route,false,true); return; }
   const target = event.target.closest('[data-action]'); if (!target || target.disabled) return;
   if (!dialog.open) dialogTrigger = target;
   const { action, value, id, context } = target.dataset;
@@ -454,7 +642,27 @@ document.addEventListener('click', async event => {
     else if (action === 'refresh') await load();
     else if (action === 'new-entry') newEntry();
     else if (action === 'duplicate-entry') await duplicateEntry(id);
-    else if (action === 'platform-select') {s.platformSource=target.dataset.source;render();}
+    else if(action==='source-account'){
+      s.modal={type:'source-account'};const accounts=(s.textSummary?.platforms||[]).filter(g=>g.source.startsWith('抖音（'));
+      openDialog('抖音账号',`<form data-form="source-account" class="standard-form"><label>账号名称<input name="account" required maxlength="58" placeholder="填写正在查看的抖音账号" list="source-account-list" /></label><datalist id="source-account-list">${accounts.map(g=>`<option value="${e(g.source.slice(3,-1))}"></option>`).join('')}</datalist><p class="field-error" id="account-error" role="alert"></p><div class="dialog-footer"><button type="button" class="button secondary" data-action="close-dialog">取消</button><button class="button primary" type="submit">用这个账号继续记</button></div></form>`);
+    }
+    else if(action==='subscription-label'){target.disabled=true;try{await mutate(`/text-batches/${id}/spending-label`,{version:Number(target.dataset.version),item_id:target.dataset.itemId,spending_label:target.getAttribute('aria-pressed')==='true'?null:target.dataset.value},{method:'PATCH'});await load();}catch(error){target.disabled=false;throw error;}}
+    else if(action==='subscription-status'){target.disabled=true;try{await mutate(`/text-batches/${id}/status`,{version:Number(target.dataset.version),status:target.dataset.status});toast(target.dataset.status==='paused'?'订阅已暂停，已有账目保留':'订阅已恢复');await load();}catch(error){target.disabled=false;throw error;}}
+    else if(action==='subscription-new'){openModule('subscription');}
+    else if(action==='subscription-back'){
+      const modal=s.modal;if(modal?.type!=='subscription-review'||modal.busy||modal.uncertain)return;
+      modal.type='subscription';modal.initialControls=null;
+      openDialog('记录订阅',subscriptionForm(s));fillSubscription(modal.fields);
+    }
+    else if (action === 'source-calendar') navigateCalendar(target,s);
+    else if (action === 'source-range-open') {openModule('source-range',target.dataset.source);}
+    else if (action === 'source-range-parse') parseRangeForm(target.closest('form'));
+    else if (action === 'source-range-remove') {
+      target.disabled=true;
+      try {await mutate(`/source-ranges/${target.dataset.id}`,{}, {method:'DELETE'});await load({quiet:true});toast('已撤销范围标记，账目保留');}
+      catch(error){target.disabled=false;toast(error.message);}
+    }
+    else if (action === 'platform-select') {s.platformSource=target.dataset.source;s.explicitPlatformSource=target.dataset.source;render();}
     else if (action === 'entry') await openEntry(id, target.dataset.editField);
     else if (action === 'close-dialog') closeDialog();
     else if(action==='keep-editing')returnToEditing();
@@ -491,7 +699,7 @@ document.addEventListener('click', async event => {
     else if (action === 'export-all') await exportCsv(false);
     else if (action === 'export-filter') await exportCsv(true);
     else if (action === 'backup') openBackup();
-    else if (action === 'text-records') await openTextRecords(target.dataset.batchId||null,target.dataset.source||'');
+    else if (action === 'text-records') await openTextRecords(target.dataset.batchId||null,target.dataset.source||'',target.hasAttribute('data-batch-overlay'));
     else if (action === 'download-backup') await downloadBackup();
     else if (action === 'start-restore') await startRestore();
     else if (action === 'activate-ledger') await activateLedger(id);
@@ -512,6 +720,7 @@ document.addEventListener('input', event => {
   if (!d.id) saveDraft();
 });
 document.addEventListener('change', async event => {
+  if(event.target.matches('[data-form=subscription] [name=status]')){const box=event.target.closest('form').querySelector('[data-subscription-end]');box.hidden=event.target.value==='ongoing';box.querySelector('input').required=!box.hidden;}
   if (event.target.dataset.action === 'month') { if (!/^\d{4}-\d{2}$/.test(event.target.value)) return; s.month = event.target.value; s.billRange = null; s.offset = 0; await load(); }
   if(event.target.name==='date_precision'&&event.target.closest('[data-form="entry"]')){const form=event.target.closest('form'),d=currentDraft(form.dataset.context);if(!d || d.pending)return;d.occurred_on=event.target.value==='month'?d.occurred_on.slice(0,7):d.occurred_on.length===10?d.occurred_on:'';d.date_precision=event.target.value;saveDraft();updateForm(form.dataset.context);return;}
   if (event.target.name === 'occurred_on' && event.target.closest('[data-form="entry"]')) {
@@ -523,6 +732,24 @@ document.addEventListener('change', async event => {
 document.addEventListener('submit', async event => {
   const form = event.target.closest('[data-form]'); if (!form) return; event.preventDefault();
   try {
+    if(form.dataset.form==='source-account'){
+      const account=String(new FormData(form).get('account')||'').trim();
+      if(!account||account.length>58){form.querySelector('#account-error').textContent='请填写 1–58 字的账号名称';return;}
+      closeDialog(true);await openTextRecords(null,`抖音（${account}）`);
+    }
+    if(['subscription','subscription-confirm'].includes(form.dataset.form))await submitSubscription(form);
+    if(form.dataset.form==='source-range'){
+      const modal=s.modal;if(modal?.type!=='source-range'||modal.busy)return;
+      const fields=new FormData(form),body={source:modal.source,from:String(fields.get('from')),to:String(fields.get('to'))};
+      if(!validDate(body.from)||!validDate(body.to)||body.from>body.to||body.to>today()){form.querySelector('#source-range-error').textContent='请填写今天之前的有效起止日期，开始不能晚于结束。';return;}
+      if(modal.body&&canonical(modal.body)!==canonical(body)){
+        if(modal.uncertain){form.querySelector('#source-range-error').textContent='上次保存结果尚未确认，请先恢复原日期并重试核对。';return;}modal.key=crypto.randomUUID();
+      }
+      modal.body=body;modal.busy=true;dialog.dataset.locked='true';form.querySelector('[type=submit]').disabled=true;
+      try{rememberModule(modal,form);await mutate('/source-ranges',body,{key:modal.key});forgetModule(modal);await load({quiet:true});closeDialog(true);toast('已保存核对范围');}
+      catch(error){modal.uncertain=error.code==='NETWORK'||error.status>=500;if(!modal.uncertain&&modal.storageKey)forgetModule(modal);form.querySelector('#source-range-error').textContent=error.message;}
+      finally{modal.busy=false;if(s.modal===modal){dialog.dataset.locked='false';form.querySelector('[type=submit]').disabled=false;}}
+    }
     if (form.dataset.form === 'entry') await saveEntry(form);
     if (form.dataset.form === 'search') { s.filters.q = String(new FormData(form).get('q') || '').trim(); s.offset = 0; await load(); }
     if (form.dataset.form === 'category') await saveCategory(form);
@@ -536,7 +763,7 @@ document.addEventListener('submit', async event => {
 });
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open&&dialog.dataset.nonmodal==='true'){event.preventDefault();closeDialog();}});
 dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
-window.addEventListener('popstate',()=>{s.page=firstPage();const p=new URLSearchParams(location.search);s.filters=routeFilters(p);s.offset=routeOffset(p);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
+window.addEventListener('popstate',()=>{s.page=firstPage();ensureWorkspace();const p=new URLSearchParams(location.search);s.filters=routeFilters(p);s.offset=routeOffset(p);if(validDate(`${p.get('month')}-01`))s.month=p.get('month');s.billRange=validDate(p.get('from'))&&validDate(p.get('to'))&&p.get('from')<=p.get('to')?{from:p.get('from'),to:p.get('to')}:null;if(['month','quarter','year'].includes(p.get('period')))s.period=p.get('period');closeDialog(true);render();load();});
 window.addEventListener('beforeunload', event => { const modal=s.modal?.type==='discard'?s.modal.previous:s.modal;if (modal?.type==='entry'&&modal.draft.id&&(modal.original!==entryValues(modal.draft)||modal.draft.pending)) { event.preventDefault(); event.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && s.session && !dialog.open && !s.draft?.saving && !document.activeElement?.matches('input,textarea')) { s.session.today = today(); load({ quiet: true }); } });
 window.addEventListener('online', () => { if (s.error) load(); });
@@ -556,4 +783,20 @@ updateViewport();
 init();
 
 const dockMedia=matchMedia('(min-width:1100px)');
-dockMedia.addEventListener('change',()=>{if(s.modal?.type!=='text-records'||!dialog.open)return;dialog.close();dialog.dataset.nonmodal=String(dockMedia.matches);dialog.setAttribute('aria-modal',String(!dockMedia.matches));document.body.classList.toggle('text-dock-open',dockMedia.matches);document.body.classList.toggle('dialog-open',!dockMedia.matches);if(dockMedia.matches)dialog.show();else dialog.showModal();});
+dockMedia.addEventListener('change',()=>{if(s.modal?.type!=='text-records'||s.modal.batchOverlay||!dialog.open)return;dialog.close();dialog.dataset.nonmodal=String(dockMedia.matches);dialog.setAttribute('aria-modal',String(!dockMedia.matches));document.body.classList.toggle('text-dock-open',dockMedia.matches);document.body.classList.toggle('dialog-open',!dockMedia.matches);if(dockMedia.matches)dialog.show();else dialog.showModal();});
+
+document.addEventListener('keydown',event=>{
+ const tab=event.target.closest('[role="tab"][data-workspace-page]');if(!tab)return;
+ const tabs=[...root.querySelectorAll('[role="tab"][data-workspace-page]')],index=tabs.indexOf(tab);
+ let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;
+ if(next!==undefined){event.preventDefault();tabs[next].focus();}
+ if(event.key==='Delete'){event.preventDefault();root.querySelector(`[data-workspace-close="${tab.dataset.workspacePage}"]`)?.click();root.querySelector('[role="tab"][aria-selected="true"]')?.focus();}
+});
+
+function primaryInputContext(event){
+ if(dialog.open||s.page!=='record')return;
+ if(event.target.closest('.primary-text-card'))document.documentElement.classList.add('primary-text-inview');
+ else if(event.target.closest('.record-entry-column,.record-workspace,.mobile-tools.record-tools'))document.documentElement.classList.remove('primary-text-inview');
+}
+document.addEventListener('pointerdown',primaryInputContext,true);
+document.addEventListener('focusin',primaryInputContext,true);

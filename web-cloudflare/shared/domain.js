@@ -1,3 +1,5 @@
+import { sourceRangeSchema } from './source-range-schema.js';
+import { RANGE_LIMIT } from './source-calendar.js';
 import { TEXT_BATCH_LIMIT, TEXT_SLOT_LIMIT } from './text-limits.js';
 import { z } from 'zod';
 import { textBatchSchema, textSlotSchema } from './text-schema.js';
@@ -14,15 +16,17 @@ export const entryInput = z.object({
 export const categoryInput = z.object({
   aliases: z.array(z.string().trim().min(1).max(32)).max(20).refine(a=>new Set(a.map(x=>x.normalize('NFKC').toLocaleLowerCase())).size===a.length,'别称不能重复').optional(),
   name: z.string().trim().min(1).max(32), type: z.enum(['expense', 'income']),
+  spending_label: z.enum(['green','white','yellow','red']).nullable().optional(),
   color_key: z.enum(Object.keys(PALETTE)), icon: z.enum(ICONS),
   sort_order: z.number().int().min(0).max(10000).default(100), archived: z.boolean().default(false),
 }).strict();
 export const backupCategory = categoryInput.extend({ id }).transform(({aliases,...category})=>({...category,...(aliases?.length?{aliases}:{})}));
 export const backupEntry = entryInput.extend({ id, version: z.number().int().min(1), created_at: timestamp, updated_at: timestamp, deleted_at: timestamp.nullable() });
 export const backupSchema = z.object({
-  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]), exported_at: timestamp,
+  format: z.literal('moneytalk-backup'), version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7)]), exported_at: timestamp,
   ledger: z.object({ name: z.string().trim().min(1).max(64), currency: z.literal('CNY'), timezone: z.literal(TIMEZONE) }).strict(),
   categories: z.array(backupCategory).max(100), entries: z.array(backupEntry).max(50000),
+  source_ranges:z.array(sourceRangeSchema).max(RANGE_LIMIT).optional(),
   text_batches:z.array(textBatchSchema).max(TEXT_BATCH_LIMIT).optional(),text_slots:z.array(textSlotSchema).max(TEXT_SLOT_LIMIT).optional(),
 }).strict();
 export function validateBackup(raw) {
@@ -30,6 +34,9 @@ export function validateBackup(raw) {
   if (!parsed.success) return { valid: false, errors: parsed.error.issues.slice(0, 30).map(x => `${x.path.join('.')}: ${x.message}`) };
   const data = parsed.data;
   const errors = [];
+  if(data.version<7&&(data.categories.some(c=>c.spending_label)||(data.text_batches||[]).some(b=>b.items.some(i=>i.spending_label))))errors.push('支出标记需要版本 7 备份');
+  if((data.source_ranges?.length||(data.text_batches||[]).some(b=>b.items.some(i=>i.source)))&&data.version<6)errors.push('来源日历需要版本 6 备份');
+  if(new Set((data.source_ranges||[]).map(r=>r.id)).size!==(data.source_ranges||[]).length)errors.push('来源范围 ID 重复');
   if (data.version < 3 && ((data.text_slots||[]).some(s=>s.occurred_on.length===7) || data.entries.some(e=>e.occurred_on.length===7) || (data.text_batches||[]).some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined)))) errors.push('日期精度记录需要版本 3 备份');
   if(data.version<5&&(data.text_batches||[]).some(b=>b.intake))errors.push('长段上下文需要版本 5 备份');
   if (data.version < 4 && (data.categories.some(c=>c.aliases?.length) || (data.text_batches||[]).some(b=>b.items.some(i=>i.category_hint)))) errors.push('分类建议需要版本 4 备份');
@@ -81,7 +88,7 @@ export function validateBackup(raw) {
   } };
 }
 export function backupContent(data) {
-  return { ledger: data.ledger, categories: data.categories.map(({aliases,...category})=>({...category,...(aliases?.length?{aliases}:{})})).sort((a, b) => a.id.localeCompare(b.id)), entries: [...data.entries].sort((a, b) => a.id.localeCompare(b.id)), ...(data.text_batches?.length ? {text_batches:[...data.text_batches].sort((a,b)=>a.id.localeCompare(b.id))}:{}), ...(data.text_slots?.length ? {text_slots:[...data.text_slots].sort((a,b)=>`${a.batch_id}|${a.item_id}|${a.occurred_on}`.localeCompare(`${b.batch_id}|${b.item_id}|${b.occurred_on}`))}:{}) };
+  return { ...(data.source_ranges?.length?{source_ranges:[...data.source_ranges].sort((a,b)=>a.id.localeCompare(b.id))}:{}), ledger: data.ledger, categories: data.categories.map(({aliases,...category})=>({...category,...(aliases?.length?{aliases}:{})})).sort((a, b) => a.id.localeCompare(b.id)), entries: [...data.entries].sort((a, b) => a.id.localeCompare(b.id)), ...(data.text_batches?.length ? {text_batches:[...data.text_batches].sort((a,b)=>a.id.localeCompare(b.id))}:{}), ...(data.text_slots?.length ? {text_slots:[...data.text_slots].sort((a,b)=>`${a.batch_id}|${a.item_id}|${a.occurred_on}`.localeCompare(`${b.batch_id}|${b.item_id}|${b.occurred_on}`))}:{}) };
 }
 export function csvCell(value) {
   let text = String(value ?? '');

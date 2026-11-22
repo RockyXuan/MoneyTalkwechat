@@ -1,0 +1,122 @@
+{
+  "date": "2026-11-17",
+  "status": "deployed_and_verified",
+  "version": "f1f3d1d6-1db5-41c3-a2b2-9c177b2535a7",
+  "urls": [
+    "https://moneytalk-web.550754381zzx.workers.dev/record",
+    "https://moneytalk-web.550754381zzx.workers.dev/subscriptions"
+  ],
+  "unit_api": {
+    "passed": 164,
+    "failed": 0
+  },
+  "ui": {
+    "passed": 280,
+    "files": 15,
+    "engines": {
+      "chromium": 140,
+      "webkit": 140
+    },
+    "skipped": 0,
+    "failed": 0,
+    "flaky": 0
+  },
+  "control_coverage": {
+    "main": 56,
+    "text": 34,
+    "missing": {
+      "chromium-mobile": [],
+      "webkit-mobile": []
+    }
+  },
+  "release_log": "/private/tmp/moneytalk-primary-final-v5-release.log",
+  "source_sha256": {
+    "migrations/0001_ledger.sql": "8be0b4141b895858c64aa24a93bcc527716e4f6e4e3a4b018d1d16f90aba7df3",
+    "migrations/0002_restore_reuse.sql": "0cd89c988d372230dfc360096e65c320f48bf4bc01e71ddd427b30260c436097",
+    "migrations/0003_text_records.sql": "de800aab7a44a284886a1a0001f5567d13417e232791f524d3b3586ee20ac139",
+    "migrations/0004_category_aliases.sql": "2300a63d057c7902659aa1cbf0e51faff9339024e70cd70f73df2c129a082748",
+    "migrations/0005_restore_slot_chunks.sql": "e1a4f52af22e78613a64f4ee3aa44e378cf08546c6f2d55ff9a75cf0ca50fe88",
+    "migrations/0006_source_ranges.sql": "523b4817420806bd2bec022994978308e99be6bcd55016e5d0d6f038c9ae949a",
+    "shared/batch-library.js": "7592a6d07c1e07dba532c786d518ca536fb2e34a17b33e8cdfb5ede9a33aa70c",
+    "shared/batch-progress.js": "551aa7bf30003e2dc373824b90f4f4ce075982ab5f18f5a222b1d99fd26ca3fc",
+    "shared/bill-demo.js": "a5fc23caefa72192f39fce1b3c2823830491ab515170cf6890f8493c1305ba3d",
+    "shared/bill-review.js": "84f6c979ce6cb003c0596278624db16d684fe4c5d3bff5b7dc7a3880c63a2a38",
+    "shared/bill-zip.js": "63cca2efcd86a7c4f344510182b0ac5669f17c84d4321d3a6d0510ac0ab66b8d",
+    "shared/category-suggestions.js": "6f41b9d7911fbf916093bda336c59da77b367ca6d96c86131681c7c123664e31",
+    "shared/demo.js": "f91bf3ea2fbca19899ffc7fc312ff96a05073c033e9dbaebdcb82062a76ffd4c",
+    "shared/domain.js": "1276af23ac06202b1c60c5bcd973c60ce5446e5255f07cf82422b27816c0c6c9",
+    "shared/format.js": "86b0c5d7e00f33016d2367246a754f46653c405d4a8fe42bd5646f58978cade9",
+    "shared/intake-category-options.js": "e463d088b18abeb7ef54dd27c2eb1337d08eab831b9b65705a63f261177c1efc",
+    "shared/platform-board.js": "8f8cf775dc925d2173b293dc5a2efcd4d11d6c791b661900b018385dfea35971",
+    "shared/platform-sources.js": "598adbfde8cd34730eef7d882e6897e9714ed84307e667f1d1ecc1a07305cac0",
+    "shared/semantic-dense.js": "de14175858ebfbfcc73a6fd2e0a223328fa3e31686b0aa2d3e4c8272bc4b0661",
+    "shared/semantic-groups.js": "01162107218474409ea697f1175405664ae1508c27b4df3273afde995bed8de5",
+    "shared/semantic-guided.js": "e82b27f69d37e4b8536525d364cc07e9ee4905e92ca71e6f91c4071a5659523d",
+    "shared/semantic-proposal.js": "8c121eb1a3aaf5fc6c8157077554f37d2d6d255c9ceee24ec28b28f860705fb7",
+    "shared/semantic-wire.js": "25ff344d057a55aa4ba2f45491522d5689e754f8b2249af4734c3499c758a8b6",
+    "shared/source-calendar.js": "ffa725f62364b942b5b0371c1e813c7457b94fea00af58b5a05a7dca1f732bc9",
+    "shared/source-range-schema.js": "da42b9853b18aa209586427a09c51f430bd7d2d3c0fdee790c35b86ca613176c",
+    "shared/subscriptions.js": "66e79632dba85c8b97270a13deaf59fa4091f0f59b9c1e216e691cef1ffd6adc",
+    "shared/text-limits.js": "c0b227271bb65548d49799d4f640425c22f4aa05e3e3188ce43998cd22c49526",
+    "shared/text-records.js": "2a6ee9ae165fb7bf515f54704012531d6978dc2023ded296ac3100e9b19601fa",
+    "shared/text-schema.js": "a48bc473989700b5724807dd55ea2afbe5b9bf21a573e1230dfe279aabbddd05",
+    "src/api.js": "9371b8a52362c5b6335cd26e7a272eeb4d5cbd376e647d0da7de22c6f6820cf3",
+    "src/app.js": "01611511d97152fb0b0e390157ea3a1ec4647a0222418d0204ea9b405e0cf86f",
+    "src/bill-review-ui.js": "4ce1471a437c018682a236d3292240e10bfdc95760e4938822a849c05395f1bc",
+    "src/charts.js": "2687bf6b9f84704d313f56c1ec4f186604b76c60d57e5f9de2f41af1172cf75c",
+    "src/mobile.css": "c6f935ef1581fbbffa32446623877e1b555f311d62c9d788bbb72984873a268b",
+    "src/platform-board-ui.js": "2feb415032895e51591e1c0f2d00d14d37c67c833425bf60a9a84e52b529cd05",
+    "src/platform-board.css": "496b3bc25d4c230db9d25ebc7d212f6f358c3364da2ae84b0c7c5770342d8862",
+    "src/primary-text.css": "cca87ec0139c8bbc3511f2555fa3d3eda15cb5554c1301439603a03f97372f7d",
+    "src/responsive.css": "189249edd0f7c4c87931ed66a85aef2004c9eb9ce5dddd8940f272c20b39383e",
+    "src/source-calendar-ui.js": "ad8479ffab1188d804208a9f306314298247dd89e42b521b9495ed954d49a10b",
+    "src/styles.css": "959fb5db3f8b00b9ad42b944dad436a9ffe8592911715df7c6a9f3989a104fa8",
+    "src/subscriptions-ui.js": "ff6cf49336c5df05c2f76a02c678c62a812c7d3a182262079df2c2aa41e4760c",
+    "src/text-record-ui.js": "500d0e98b8ee0d7bfe496b77f2cb409aa569ccaf547c5a57e1ba867414964da3",
+    "src/ui.js": "439099224238802f76771c0b18f28ea3331d3a22273e815432166411c15fbf3d",
+    "src/views.js": "521f12415c770b00f17dbb3cf4f319d5389987fa8d1e804927bce9df4f5d379b",
+    "src/workspace-tabs.css": "3d3f0205b17f27c239570b0e4b37cca88817144d040db8c85e58c4ea2c34c976",
+    "worker/auth.js": "8688541a6b5afe16e1d56a1fc0389fa8d5f9bd8e33e23dd2c4165f0a8de04c5f",
+    "worker/index.js": "9dc73aa3889bebca4b64c8fb6e77c57934d4d5721453de79c1fac7d8fad8a28e",
+    "worker/json-insert.js": "e8aef24b58fb19ed7f383b6ffe064d51e5fef2454f6491524c53c518df1c0e41",
+    "worker/recurring-subscriptions.js": "1a71183563b12c9eb95576f0a97d153bb064e7ff291304b44d712b722e8e827d",
+    "worker/restores.js": "46e3793cd9ae99f5c2e888055bf4bf8ff1770f116e47fd9c079fa2a82791e154",
+    "worker/source-ranges.js": "50a47d098415e680222ca307d8dd0ac929f74e17628c4f62d7612b06a0906f6f",
+    "worker/store.js": "bd32e249d608411e97d39bd9a754f31309e9e55164e22bdd82e326fd947d4e2c",
+    "worker/text-records.js": "8e554ec25181fb52505e0f27b987c2525804ce5dfcf86c2ec584a5f89d383b3b",
+    "wrangler.jsonc": "62ce3b60e840763892d86f501977c2d3054b3332a4bdce5aa65b18142381efc2"
+  },
+  "production_synthetic": {
+    "confirmed_entries": 15,
+    "amount_minor": 55,
+    "monthly_subscription_entries": 13,
+    "explicit_other_draft_verified": true,
+    "original_ledger_restored": true,
+    "cleanup": {
+      "ledgers": 0,
+      "entries": 0,
+      "batches": 0,
+      "slots": 0,
+      "categories": 0,
+      "active_users": 0
+    }
+  },
+  "anonymous_http": {
+    "/record": "302",
+    "/api/session": "302"
+  },
+  "subscription_cron_utc": "5 16 * * *",
+  "manual_browsers": [
+    "@Browser local isolated 8793",
+    "Chrome native dedicated Codex Workbench MoneyTalk window"
+  ],
+  "unverified": [
+    "real iPhone",
+    "mainland ordinary network",
+    "real elapsed monthly scheduled event"
+  ],
+  "general_semantic_model_enabled": false,
+  "platform_collection_enabled": false,
+  "codex_automation_restored": false,
+  "git_commit_or_push_this_delivery": false
+}

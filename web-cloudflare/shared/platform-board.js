@@ -1,12 +1,12 @@
-import { batchSources, PRIMARY_PLATFORMS } from './platform-sources.js';
+import { batchSources, CONSUMPTION_SOURCES } from './platform-sources.js';
 import { batchProgress } from './batch-progress.js';
 import { compileDraftItems } from './text-records.js';
 import { today } from './format.js';
 
 // A long spoken message remains one visible range even when saved in small drafts.
 // Derive from every retained batch, never just the most recent loaded entries.
-export function platformBoard(batches){
- const groups=new Map(PRIMARY_PLATFORMS.map(source=>[source,new Map()]));
+export function platformBoard(batches,ranges=[]){
+ const groups=new Map(CONSUMPTION_SOURCES.map(source=>[source,new Map()]));
  for(const batch of batches){
   const split=new Map();for(const {source,item} of batchSources(batch)){if(!split.has(source))split.set(source,[]);split.get(source).push(item);}
   for(const [source,items] of split){
@@ -16,7 +16,10 @@ export function platformBoard(batches){
    const key=batch.intake?.id||batch.id,rows=groups.get(source);if(!rows.has(key))rows.set(key,[]);rows.get(key).push({batch,items,slots,plan});
   }
  }
+ for(const r of ranges)if(!groups.has(r.source))groups.set(r.source,new Map());
  return [...groups].map(([source,sets])=>{
+  const dates=new Map();
+  for(const parts of sets.values())for(const part of parts)for(const slot of part.slots){if(slot.deleted_at)continue;const date=slot.current_occurred_on||slot.occurred_on;dates.set(date,(dates.get(date)||0)+1);}
   const rows=[...sets.values()].map(parts=>{
    parts.sort((a,b)=>(a.batch.intake?.index||0)-(b.batch.intake?.index||0));
    const items=parts.flatMap(p=>p.items.map(i=>({...i,id:`${p.batch.id}|${i.id}`}))),slots=parts.flatMap(p=>p.slots.map(s=>({...s,item_id:`${p.batch.id}|${s.item_id}`})));
@@ -27,6 +30,6 @@ export function platformBoard(batches){
    return {id:target.batch.id,status:parts.every(p=>p.batch.status==='paused')?'paused':target.batch.status,created_at:parts[0].batch.created_at,progress,categories:[...categories].map(([id,count])=>({id,count})),needs_review:Boolean(unfinished)};
   });
   rows.sort((a,b)=>(b.progress.recorded_at||b.created_at||'').localeCompare(a.progress.recorded_at||a.created_at||'')||a.id.localeCompare(b.id));
-  return {source,batches:rows,latest:rows[0]||null,resume:rows.find(r=>r.needs_review)||null,review_batches:rows.filter(r=>r.needs_review).length};
+  return {source,calendar:{ranges:ranges.filter(r=>r.source===source),dates:[...dates].map(([date,count])=>({date,count}))},batches:rows,latest:rows[0]||null,resume:rows.find(r=>r.needs_review)||null,review_batches:rows.filter(r=>r.needs_review).length};
  });
 }

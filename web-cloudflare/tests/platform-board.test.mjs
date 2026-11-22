@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { platformBoard } from '../shared/platform-board.js';
 import { batchProgress } from '../shared/batch-progress.js';
-import { batchSources, tagPlatformItems } from '../shared/platform-sources.js';
+import { CONSUMPTION_SOURCES, batchSources, tagPlatformItems } from '../shared/platform-sources.js';
 import { parseTextRecords } from '../shared/text-records.js';
 const batch=(id,text,date='2026-09-01T00:00:00.000Z')=>({id,status:'pending',created_at:date,original_text:text,items:parseTextRecords(text,'2026-10-11'),slots:[]});
 const saved=(i,date='2026-10-01T00:00:00.000Z',extra={})=>({item_id:i.id,occurred_on:i.occurred_on,created_at:date,entry_id:i.id,category_id:i.category_id,...extra});
 test('platform board keeps six empty platforms; mixed sources split without changing original order',()=>{
- assert.equal(platformBoard([]).length,6);assert.ok(platformBoard([]).every(x=>!x.latest));
+ assert.equal(platformBoard([]).length,CONSUMPTION_SOURCES.length);assert.ok(platformBoard([]).every(x=>!x.latest));
  const b=batch('mix','淘宝 · 合成首件1元；京东 · 合成物品2元；淘宝 · 合成尾件3元');b.slots=[saved(b.items[2])];
  const board=platformBoard([b]),tao=board.find(x=>x.source==='淘宝'),jd=board.find(x=>x.source==='京东');
  assert.equal(batchProgress(b).source,'混合来源');assert.equal(tao.latest.progress.total_items,2);assert.equal(tao.latest.progress.last_title,'合成尾件');assert.equal(tao.latest.progress.first_confirmed,'合成尾件');assert.equal(tao.latest.progress.next_title,'合成首件');assert.equal(tao.latest.progress.has_gaps,true);assert.equal(jd.latest.progress.confirmed_items,0);

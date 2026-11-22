@@ -1,4 +1,5 @@
-import {test,expect,open,action} from './fixtures.js';
+import { CONSUMPTION_SOURCES } from '../../shared/platform-sources.js';
+import {test,expect,open,action,close} from './fixtures.js';
 import {parseTextRecords} from '../../shared/text-records.js';
 test.use({seed:'empty'});
 const detail = page => page.locator('#dialog');
@@ -12,15 +13,19 @@ for(const width of [390,1440]){
   if(width>=768)await action(page,'filter-type').click();else await page.locator('[data-action=remove-filter][data-value=type]').click();await expect(page).toHaveURL(/category_id=food/);await expect(page.locator('.active-filters button')).toHaveCount(2);
   await page.reload();await expect(page.locator('[data-action=remove-filter][data-value=category_id]')).toBeVisible();
   await page.locator('[data-action=remove-filter][data-value=range]').click();await expect(page).not.toHaveURL(/from=/);
+  await expect(page.locator('.active-filters button')).toHaveCount(1);
+  await expect(page.locator('.filter-summary')).toContainText('共 1 笔');
   if(width>=768)await page.locator('[data-action=filter-type][data-value=expense]').click();else await open(page,'bills','month=2026-09&category_id=food&type=expense');await page.locator('[data-action=remove-filter][data-value=type]').click();await expect(page).toHaveURL(/category_id=food/);
   await page.locator('[data-action=remove-filter][data-value=category_id]').click();await expect(page.locator('.active-filters')).toHaveCount(0);
  });
  test(`LEARN02 ${width} current period keeps conditions, clears custom range and pagination`,async({page,ledger})=>{
-  await page.setViewportSize({width,height:950});const month=(await ledger.call('/session')).today.slice(0,7);
+  await page.setViewportSize({width,height:950});const today=(await ledger.call('/session')).today;const month=today.slice(0,7);
   await open(page,'bills','month=2025-01&type=expense&q=合成&offset=50&from=2025-01-01&to=2025-01-31');await action(page,'current-period').click();
   await expect(page).toHaveURL(new RegExp(`month=${month}`));await expect(page).toHaveURL(/type=expense/);await expect(page).not.toHaveURL(/offset=|from=/);await expect(page.locator('.active-filters')).toContainText('合成');
   await open(page,'stats','month=2025-01&period=quarter');await action(page,'current-period').click();await expect(page).toHaveURL(new RegExp(`month=${month}&period=quarter`));
+  await expect(page.locator('.period-caption')).toContainText(today);
   await open(page,'stats','month=2024-01&period=year');await action(page,'current-period').click();await expect(page).toHaveURL(new RegExp(`month=${month}&period=year`));
+  await expect(page.locator('.period-caption')).toContainText(today);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  });
  test(`LEARN03 ${width} copy creates independent month draft, refresh resumes and main input survives`,async({page,ledger})=>{
@@ -42,9 +47,19 @@ test('LEARN05 mobile platform tabs keep main draft and extra sources, desktop st
  await ledger.call('/text-batches',{original_text:'合成待核对0.01元',items:parseTextRecords('合成待核对0.01元','2026-09-14')});
  await open(page);await page.locator('#amount-main').fill('8.88');await page.locator('#note-main').fill('合成草稿');
  for(const source of ['京东','抖音','淘宝','支付宝','微信','拼多多']){await page.locator(`.platform-tabs [data-source="${source}"]`).click();await expect(page.locator('.platform-card:visible')).toHaveCount(1);await expect(page.locator(`.platform-card[data-platform="${source}"]`)).toBeVisible();await expect(page.locator('#amount-main')).toHaveValue('8.88');}
- await page.locator('.platform-tabs [data-source="口述记录"]').click();await expect(page.locator('.platform-card:visible')).toContainText('合成待核对');await page.emulateMedia({reducedMotion:'reduce'});expect(await page.locator('.platform-card:visible').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+ await page.locator('.source-more summary').click();
+ await page.locator('.platform-tabs [data-source="口述记录"]').click();
+ const card=page.locator('.platform-card[data-platform="口述记录"]');
+ await expect(card.locator('.platform-batch-meta')).toContainText('最近一批');
+ await expect(card).not.toContainText('合成待核对');
+ await card.getByRole('button',{name:'继续核对',exact:true}).click();
+ await expect(page.locator('#dialog .text-candidate')).toContainText('合成待核对');
+ await close(page);
+ await expect(page.locator('#amount-main')).toHaveValue('8.88');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ expect(await card.evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
  await info.attach('mobile-selected-platform',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
- await page.setViewportSize({width:1440,height:950});await expect(page.locator('.platform-card:visible')).toHaveCount(7);await expect(page.locator('.platform-tabs')).not.toBeVisible();
+ await page.setViewportSize({width:1440,height:950});await expect(page.locator('.platform-card:visible')).toHaveCount(CONSUMPTION_SOURCES.length+1);await expect(page.locator('.platform-tabs')).not.toBeVisible();
 });
 test('LEARN06 copied draft double submit and lost response retry produce one new entry',async({page,ledger})=>{
  const original=await make(ledger);await open(page);await page.locator(`.record-detail[data-id="${original.id}"]`).click();await action(page,'duplicate-entry',detail(page)).click();

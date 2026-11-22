@@ -16,8 +16,9 @@ export async function request(path, { method = 'GET', body, key, signal, raw = f
     throw new RequestError(method === 'GET' ? '暂时无法连接账本，请检查网络后重试' : '连接中断，保存结果尚未确认。输入已保留，请点击重试核对结果', 'NETWORK');
   }
   try {
-    const json = response.headers.get('Content-Type')?.includes('application/json');
-    if (!response.ok || (!json && !raw)) {
+    const mediaType = response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase();
+    const json = mediaType === 'application/json';
+    if (!response.ok || (raw ? mediaType !== 'text/csv' : !json)) {
       const data = json ? await response.json() : null;
       throw new RequestError(data?.error?.message || (response.status >= 500 ? '账本服务暂时不可用，请核对并重试' : '登录可能已失效，请重新登录'), data?.error?.code || (response.status >= 500 ? 'SERVICE_UNAVAILABLE' : 'LOGIN_REQUIRED'), response.status);
     }

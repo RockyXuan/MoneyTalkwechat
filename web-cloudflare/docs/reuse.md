@@ -24,3 +24,16 @@
 - [Cloudflare Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[D1 事务](https://developers.cloudflare.com/d1/worker-api/d1-database/)、[Access 验证](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)
 
 页面只向同源账本 API 请求数据，没有分析埋点、远端字体或第三方 AI 调用。生产 Worker 获取 Access 公钥属于身份验证边界，不会把账单发送给第三方模型。
+
+
+## 2026-11-17 来源日历与订阅
+
+复用 `platformBoard`、`batchProgress`、现有文字候选/循环展开、Worker 身份权限、幂等提交、D1 隔离账本和候选恢复。新增来源范围为独立表，备份仅有新内容时升到v6，旧v1–v5继续读取。没有新运行依赖，没有外部模型或遥测接收方。
+
+查阅 [W3C 日期界面示例](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/) 的可访问名称/键盘原则；例子本身注明非直接生产代码。考察 [Vanilla Calendar Pro](https://github.com/uvarov-frontend/vanilla-calendar-pro)（MIT、零外部依赖的日期选择库），本任务是范围状态展示，日期录入继续使用浏览器原生控件，不需要额外选择器。因此没有下载/安装该库；未引入其包体或依赖，不宣称已完成该第三方库安全审计。用原生按钮、网格布局、details/summary实现最小视图，订阅沿用既有校验和存储。
+
+### 2026-11-17 站内标签与持续订阅
+
+- 复用既有SPA导航、会话草稿、循环展开、月份精度、text_slots及版本冲突保护；未引入新框架、依赖或第三方接收方。
+- 对照W3C Tabs键盘规范（https://www.w3.org/WAI/ARIA/apg/patterns/tabs/）及MIT的Tabby（https://github.com/cferdinandi/tabby）。Tabby主要切换已有DOM面板，不能直接替代本项目的账本路由和刷新，所以只沿用规范，不安装或复制外部代码，无新增许可、依赖体积或网络隐私负担。
+- 持续记账使用Cloudflare原生scheduled handler和既有D1，不新增调度服务。官方UTC说明：https://developers.cloudflare.com/workers/configuration/cron-triggers/；Free每次50查询上限：https://developers.cloudflare.com/d1/platform/limits/。每日北京时间00:05检查明确授权的订阅；每次最多处理5个有到期支出的批次，网页打开时同样补漏。新增auto_record标志及首次确认槽位缺一不可，不自动开启旧循环。

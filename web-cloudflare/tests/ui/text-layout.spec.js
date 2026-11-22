@@ -98,14 +98,26 @@ test('TEXT11 duplicate warning requires explicit acknowledgement', async ({ page
 
 test('TEXT12 failed save is retryable with same operation and exact record count', async ({ page, ledger }) => {
   await open(page);
-  await compose(page, '2026 年 8 月 15 日 UI虚构咖啡 0.01 元');
-  await page.route('**/api/text-batches', route => route.request().method() === 'POST' ? route.abort('failed') : route.continue());
-  await textAction(page, 'save').click();
+  await action(page,'text-records').click();
+  const raw='2026 年 8 月 15 日 UI虚构咖啡 0.01 元';
+  let failedKey;
+  await page.route('**/api/text-batches', route => {
+    if(route.request().method()!=='POST')return route.continue();
+    failedKey=route.request().headers()['idempotency-key'];
+    return route.abort('failed');
+  });
+  await page.route('**/api/operations/*',route=>route.abort());
+  await page.locator('#text-raw').fill(raw);
+  await textAction(page, 'parse').click();
   await expect(textAction(page, 'retry')).toBeVisible();
-  await expect(page.locator('[data-field="amount_minor"]')).toHaveValue('0.01');
+  await expect(page.locator('#text-raw')).toHaveValue(raw);
   expect((await ledger.call('/text-batches')).batches).toHaveLength(0);
   await page.unroute('**/api/text-batches');
+  await page.unroute('**/api/operations/*');
+  const retried=page.waitForRequest(req=>req.method()==='POST'&&req.url().endsWith('/api/text-batches'));
   await textAction(page, 'retry').click();
+  expect(failedKey).toBeTruthy();
+  expect((await retried).headers()['idempotency-key']).toBe(failedKey);
   await expect(page.locator('#text-status')).toContainText('草稿已保存');
   expect((await ledger.call('/text-batches')).batches).toHaveLength(1);
   expect((await ledger.call('/entries')).totals.count).toBe(61);
@@ -149,11 +161,13 @@ for (const width of [360, 390, 430, 768, 1440, 1920]) {
       expect(layout.body, `${route} horizontal overflow`).toBeLessThanOrEqual(layout.viewport + 1);
       if (width < 768) {
         const nav = await page.locator('.mobile-nav').boundingBox();
-        const tools = await page.locator('.mobile-tools').boundingBox();
+        const currentTools=page.locator(route==='record'?'.primary-text-card #text-actions':'.mobile-tools');
+        if(route==='record')await expect(page.locator('.mobile-tools.record-tools')).toBeHidden();
+        const tools = await currentTools.boundingBox();
         expect(nav.y).toBeGreaterThan(700);
         expect(tools.y).toBeGreaterThan(600);
         expect(tools.y + tools.height).toBeLessThanOrEqual(nav.y + 1);
-        const controls = await page.locator('.mobile-tools button').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
+        const controls = await currentTools.locator('button').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
         expect(controls.every(h => h >= 44)).toBe(true);
         if (route === 'record') {
           const recent = await page.locator('.record-workspace > .recent-card').boundingBox();

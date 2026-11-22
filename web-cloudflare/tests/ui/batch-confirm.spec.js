@@ -9,7 +9,7 @@ test.describe('per-item green confirmation',()=>{
  test('BATCH01 saved acknowledgement precedes animation, double click writes once and reload resumes at the gap',async({page,ledger},testInfo)=>{
   await open(page);await compose(page,three);
   await expect(card(page,'item-1').locator('[data-field=occurred_on]')).toHaveValue('2026-09');
-  await card(page,'item-1').evaluate(el=>{window.confirmAnimationEvidence=[];new MutationObserver(()=>{if(el.classList.contains('confirmed'))window.confirmAnimationEvidence.push({running:el.getAnimations().some(a=>a.playState==='running'),saved:el.querySelector('button')?.textContent.includes('已保存')});}).observe(el,{attributes:true,attributeFilter:['class']});});
+  await card(page,'item-1').evaluate(el=>{window.confirmAnimationEvidence=[];new MutationObserver(()=>{if(el.classList.contains('confirmed'))window.confirmAnimationEvidence.push({running:el.getAnimations().some(a=>a.playState==='running'),saved:el.querySelector('.confirm-one')?.textContent.includes('已保存')});}).observe(el,{attributes:true,attributeFilter:['class']});});
   let release;const gate=new Promise(resolve=>release=resolve);
   await page.route('**/api/text-batches/*/confirm',async route=>{await gate;await route.continue();});
   await confirm(page,'item-1').dblclick();
@@ -23,7 +23,7 @@ test.describe('per-item green confirmation',()=>{
   await expect(page.locator('.batch-progress')).toContainText('已确认 1 / 3 项');
   await expect(confirm(page,'item-2')).toBeFocused();
   await close(page);await page.reload();await page.waitForLoadState('networkidle');
-  await expect(page.locator('.batch-history')).toContainText('合成首件');await expect(page.locator('.batch-history')).toContainText('合成尾件');
+  await expect(page.locator('.platform-batch-meta')).toContainText('最近一批');
   await page.locator('.batch-history-row').click();
   await expect(page.locator('.text-candidate')).toHaveCount(2);
   await confirm(page,'item-3').click();await expect(card(page,'item-3')).toHaveCount(0);
@@ -31,7 +31,7 @@ test.describe('per-item green confirmation',()=>{
   const p=(await ledger.call('/text-batches')).batches[0].progress;
   expect(p.first_title).toBe('合成首件');expect(p.last_title).toBe('合成尾件');expect(p.continue_after).toBe('合成首件');expect(p.has_gaps).toBe(true);
   await confirm(page,'item-2').click();await expect(page.locator('.flow-success')).toContainText('3 笔');await expect(page.locator('.flow-success')).toContainText('0.06');
-  await close(page);await expect(page.locator('.batch-history')).toContainText('3/3 已确认');await expect(page.locator('.batch-history')).toContainText('本批全部已记');
+  await close(page);await expect(page.locator('.batch-history')).toContainText('3/3 已确认');await expect(page.locator('.platform-batch-meta')).toBeVisible();
   const entries=(await ledger.call('/entries')).entries;expect(entries).toHaveLength(3);expect(entries.every(e=>e.occurred_on==='2026-09')).toBe(true);
   await testInfo.attach('batch-history',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  });

@@ -10,7 +10,7 @@ export function entryRow(row) {
   const { ledger_id, ...entry } = row;
   return entry;
 }
-export function categoryRow(row) { const {aliases_json,...category}=row; const aliases=JSON.parse(aliases_json||'[]');return {...category,archived:Boolean(row.archived),...(aliases.length?{aliases}:{})}; }
+export function categoryRow(row) { const {aliases_json,spending_label,...category}=row; const aliases=JSON.parse(aliases_json||'[]');return {...category,...(spending_label?{spending_label}:{}),archived:Boolean(row.archived),...(aliases.length?{aliases}:{})}; }
 export async function initUser(db, identity) {
   const userId = await digest(`${identity.issuer}|${identity.sub}`);
   const existing = await first(db, 'SELECT * FROM users WHERE id=?', [userId]);
@@ -88,17 +88,18 @@ export function filters(query, ledgerId) {
 }
 export async function exportBackup(db, ledger) {
   const result = await db.batch([
-    statement(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived FROM categories WHERE ledger_id=? ORDER BY id', [ledger.id]),
+    statement(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,spending_label FROM categories WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT id,original_text,items_json,status,version,created_at,updated_at,intake_json FROM text_batches WHERE ledger_id=? ORDER BY id', [ledger.id]),
     statement(db, 'SELECT batch_id,item_id,occurred_on,entry_id FROM text_slots WHERE ledger_id=? ORDER BY batch_id,item_id,occurred_on', [ledger.id]),
+    statement(db, 'SELECT id,source,date_from AS "from",date_to AS "to",created_at FROM source_ranges WHERE ledger_id=? ORDER BY id',[ledger.id]),
   ]);
   const categories = result[0].results, entries = result[1].results;
   const rows=result[2].results;
   const text_batches=rows.map(({items_json,intake_json,...b})=>({...b,items:JSON.parse(items_json),...(intake_json?{intake:JSON.parse(intake_json)}:{})}));
   const text_slots=result[3].results;
   const monthPrecision=entries.some(e=>e.occurred_on.length===7)||text_batches.some(b=>b.items.some(i=>i.occurred_on?.length===7||i.date_precision!==undefined));
-  return backupSchema.parse({ format: 'moneytalk-backup', version: text_batches.some(b=>b.intake) ? 5 : categories.some(c=>JSON.parse(c.aliases_json||'[]').length)||text_batches.some(b=>b.items.some(i=>i.category_hint)) ? 4 : monthPrecision ? 3 : text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
+  return backupSchema.parse({ format: 'moneytalk-backup', ...(result[4].results.length?{source_ranges:result[4].results}:{}), version: categories.some(c=>c.spending_label)||text_batches.some(b=>b.items.some(i=>i.spending_label))?7:result[4].results.length||text_batches.some(b=>b.items.some(i=>i.source))?6:text_batches.some(b=>b.intake) ? 5 : categories.some(c=>JSON.parse(c.aliases_json||'[]').length)||text_batches.some(b=>b.items.some(i=>i.category_hint)) ? 4 : monthPrecision ? 3 : text_batches.length ? 2 : 1, exported_at: stamp(), ...(text_batches.length?{text_batches,text_slots}:{}), ledger: { name: ledger.name, currency: 'CNY', timezone: TIMEZONE }, categories: categories.map(categoryRow), entries });
 }
 export function exportCsv(rows) {
   const header = ['日期', '类型', '分类', '金额（元）', '备注', '记录ID'];
