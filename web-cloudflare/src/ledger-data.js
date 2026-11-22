@@ -5,13 +5,20 @@ export async function readPageData(page, filters, signal) {
   let detail = null;
   if (page === 'stats') detail = read('/stats?' + queryString(filters));
   if (page === 'bills') detail = read('/entries?' + queryString(filters));
-  const [categories, recent, current, textSummary] = await Promise.all([
+  const [categories, ownersData, recent, current, textSummary] = await Promise.all([
     read('/categories'),
+    read('/owners'),
     read('/entries?limit=6'),
     detail,
     read(page === 'subscriptions' ? '/text-batches' : '/text-batches?view=board'),
   ]);
-  return { categories: categories.categories, recent, current, textSummary };
+  return {
+    categories: categories.categories,
+    owners: ownersData.owners || [],
+    recent,
+    current,
+    textSummary,
+  };
 }
 
 export async function restoreBackup(data, fingerprint, onProgress) {
@@ -21,6 +28,7 @@ export async function restoreBackup(data, fingerprint, onProgress) {
     categories: data.categories,
     entry_count: data.entries.length,
   };
+  if (data.owners) manifest.owners = data.owners;
   if (data.source_ranges) manifest.source_ranges = data.source_ranges;
   if (data.text_batches) {
     manifest.text_batches = data.text_batches;

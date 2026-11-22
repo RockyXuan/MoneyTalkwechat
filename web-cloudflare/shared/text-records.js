@@ -1,5 +1,6 @@
 import { titleSource, tagPlatformItems, spokenBatchSource } from './platform-sources.js';
 import { categorySuggestion, spokenCategory } from './category-suggestions.js';
+import { DEFAULT_OWNERS } from './taxonomy.js';
 import { parseAmount, validDate, validRecordDate, today, shiftMonth, exactSum } from './format.js';
 
 export const CYCLES = { single: '单笔', monthly: '每月', quarterly: '每季度', yearly: '每年', unknown: '待确认' };
@@ -56,22 +57,38 @@ function textClauses(raw,categories) {
   if(prefix)clauses.push(prefix);
   return clauses.map(span=>({...span,raw:raw.slice(span.start,span.end).trim()}));
 }
-export function parseTextRecords(raw, currentDay = today(), categories = null) {
-  return parseRecords(raw,currentDay,categories,10000,40);
+export function parseTextRecords(raw, currentDay = today(), categories = null, owners = null) {
+  return parseRecords(raw,currentDay,categories,10000,40,false,owners);
 }
-function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatform=false) {
+function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatform=false,owners=null) {
   if (typeof raw !== 'string' || !raw.trim() || raw.length > maxChars) throw new Error(`请填写 1–${maxChars.toLocaleString('en-US')} 字的文字，原文不会截断`);
   const clauses=textClauses(raw,categories);
   if(!clauses.length)throw new Error('没有识别到项目，请补充商品和金额；原文仍保留');
   if (clauses.length > maxItems) throw new Error(`一次最多 ${maxItems} 项，请分批核对；原文仍保留`);
+  const ownerPool=(owners?.length?owners:DEFAULT_OWNERS).filter(o=>!o.archived);
   let inheritedDate=null,inheritedCategory=null,inheritedPlatform=null;
   const parsed=clauses.map(({raw:quote,source,category},index) => {
     const annotation=quote.match(categoryAnnotation);
-    const raw=quote.replace(itemMarker,'').replace(categoryAnnotation,'').trim();
-    const item = { id:`item-${index + 1}`, raw:quote, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true };
+    let raw=quote.replace(itemMarker,'').replace(categoryAnnotation,'').trim();
+    let matchedOwner=null;
+    const ownerMatch=raw.match(/(?:^|[\s，,；;])@([^\s，,。；;：:（）()]{1,24})/);
+    if(ownerMatch){
+      const key=ownerMatch[1].normalize('NFKC').trim().toLocaleLowerCase();
+      matchedOwner=ownerPool.find(o=>o.name.normalize('NFKC').trim().toLocaleLowerCase()===key)||null;
+      if(matchedOwner)raw=raw.replace(ownerMatch[0],' ').replace(/\s{2,}/g,' ').trim();
+    }
+    const item = { id:`item-${index + 1}`, raw:quote, title:'', type:/收入|工资|奖金|收到了|收到/.test(raw) && !/退款/.test(raw) ? 'income':'expense', amount_minor:null, category_id:null, cycle:/每季度|季付/.test(raw) ? 'quarterly':/每年|年付|年扣/.test(raw) ? 'yearly':/每月|每个月|月付|月扣/.test(raw) ? 'monthly':/每周|每天|每两|隔月/.test(raw) ? 'unknown':'single', occurred_on:null, start_month:null, through_month:null, charge_day:null, short_month:'pending', ongoing:false, questions:[], selected:true, ...(matchedOwner?{owner_id:matchedOwner.id}:{}) };
     const explicitCategory=categories?spokenCategory(raw,categories,item.type):null;
     if(explicitCategory)inheritedCategory={name:explicitCategory.name,type:item.type};
-    const spoken=(annotation?{name:annotation[1].trim(),token:''}:null)||explicitCategory||(category?{name:category,token:''}:null)||(inheritedCategory?.type===item.type?{name:inheritedCategory.name,token:''}:null);
+    let annotationMajor=annotation?.[1]?.trim()||'', annotationSub=null;
+    if(annotationMajor&&categories){
+      const slashParts=annotationMajor.split(/[\/／·]/).map(s=>s.trim()).filter(Boolean);
+      if(slashParts.length===2&&categories.some(c=>c.type===item.type&&!c.archived&&c.name===slashParts[0])){
+        annotationMajor=slashParts[0];
+        annotationSub=slashParts[1].slice(0,32);
+      }
+    }
+    const spoken=(annotation?{name:annotationMajor,token:''}:null)||explicitCategory||(category?{name:category,token:''}:null)||(inheritedCategory?.type===item.type?{name:inheritedCategory.name,token:''}:null);
     const ownPlatform=titleSource(raw);if(ownPlatform||source)inheritedPlatform=ownPlatform||source;
     const foundDates = dates(raw);
     if (!foundDates.length) {
@@ -133,9 +150,24 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
     inheritedPlatform=titleSource(item.title)||inheritedPlatform;
     const platform=ownPlatform||(inheritPlatform?(source||inheritedPlatform):null);
     const tagged=platform?tagPlatformItems([item],platform)[0]:item;
-    if(spoken&&categories)return categorySuggestion(tagged,categories,spoken.name);
-    if(categories&&!categories.some(c=>c.id===item.category_id&&c.type===item.type&&!c.archived))item.category_id=null;
-    return tagged;
+    let out=tagged;
+    if(spoken&&categories){
+      out=categorySuggestion(tagged,categories,spoken.name);
+      if(!out.category_id&&!annotationSub){
+        const subHits=categories.filter(c=>c.type===item.type&&!c.archived&&(c.subcategories||[]).includes(spoken.name));
+        if(subHits.length===1){
+          out={...tagged,category_id:subHits[0].id,subcategory:spoken.name};
+        }
+      }
+      if(out.category_id&&annotationSub)out={...out,subcategory:annotationSub};
+    } else if(categories&&!categories.some(c=>c.id===item.category_id&&c.type===item.type&&!c.archived)){
+      out={...tagged,category_id:null};
+    }
+    if(out.category_id&&!out.owner_id&&categories){
+      const resolvedCat=categories.find(c=>c.id===out.category_id);
+      if(resolvedCat?.default_owner_id)out={...out,owner_id:resolvedCat.default_owner_id};
+    }
+    return out;
   });
   for(let i=1;i<parsed.length;i++)if(/刚才|上一笔|更正|不是|改为|改成/.test(parsed[i].raw)){const named=parsed.slice(0,i).filter(p=>parsed[i].raw.includes(p.title.replace(/^.*? · /,'')));for(const prior of named.length?named:[parsed[i-1]])prior.questions.push('后文有改口或更正，请核对本项是否还应入账');}
   return parsed;
@@ -143,8 +175,8 @@ function parseRecords(raw,currentDay,categories,maxChars,maxItems,inheritPlatfor
 
 export const LONG_TEXT_LIMIT=50000;
 export const LONG_ITEM_LIMIT=400;
-export function parseTextIntake(raw,currentDay=today(),categories=null,{inheritPlatform=true}={}) {
-  const items=parseRecords(raw,currentDay,categories,LONG_TEXT_LIMIT,LONG_ITEM_LIMIT,inheritPlatform),spans=textClauses(raw,categories);
+export function parseTextIntake(raw,currentDay=today(),categories=null,{inheritPlatform=true,owners=null}={}) {
+  const items=parseRecords(raw,currentDay,categories,LONG_TEXT_LIMIT,LONG_ITEM_LIMIT,inheritPlatform,owners),spans=textClauses(raw,categories);
   const segments=[];let start=0,first=0;
   for(let n=0;n<items.length;n++){
     const end=n+1<items.length?spans[n+1].start:raw.length;
@@ -193,7 +225,7 @@ export function compileTextItems(items, currentDay=today(), slots=[], {enforceBa
     } else missing.push('当前周期尚未支持，请改为单笔或月／季／年循环');
     return {item, missing:[...new Set(missing)], entries:missing.length?[]:entries};
   });
-  const entries=rows.flatMap(r=>r.entries.map(e=>({...e,type:r.item.type,amount_minor:r.item.amount_minor,category_id:r.item.category_id,note:r.item.title})));
+  const entries=rows.flatMap(r=>r.entries.map(e=>({...e,type:r.item.type,amount_minor:r.item.amount_minor,category_id:r.item.category_id,note:r.item.title,...(r.item.subcategory?{subcategory:r.item.subcategory}:{}),...(r.item.owner_id?{owner_id:r.item.owner_id}:{})})));
   if(enforceBatchLimit&&entries.length>120)throw new TextBatchLimitError();
   return {rows,entries,count:entries.length,expense_minor:exactSum(entries.filter(e=>e.type==='expense').map(e=>e.amount_minor)),income_minor:exactSum(entries.filter(e=>e.type==='income').map(e=>e.amount_minor)),pending_count:rows.filter(r=>r.missing.length).length};
 }

@@ -1,6 +1,10 @@
 # MoneyTalk 接手与续做交接 · 2026-10-17
 
-**2026-11-22 最新入口。** [Antigravity 交接与需求复核](docs/handoff-antigravity-20261122.md) · [可复制提示词](ANTIGRAVITY_PROMPT.md)。已在新目录 `/Users/rockyx/MoneyTalk-web` 跑通完整 `pnpm verify:release`（172 项基础/接口 + 292 项双引擎 E2E + 58/37 操作覆盖零缺项）及 `pnpm deploy:check`，并于北京时间 14:49 发布线上版本 **`b448910e-0681-4467-a3d3-4079984d350c`**（替换 `f3817144-d834-4997-b04c-3cfd7e451986`），`wrangler deployments list` 读回 100% 流量，生产 D1 `0006`/`0007` 无待应用迁移，匿名 `/record`、`/subscriptions`、`/api/session` 均返回 `302` 跳转至 Access 登录页。真实 iPhone 手感、国内普通网络与线上登录后操作待真机验收。本页后续各段为历史记录。
+**2026-11-22 架构精简、两级分类/@归属人与方案 A 全站重做上线。** [本轮发布验收文档](web-cloudflare/docs/release-20261122-redesign.md) · [Antigravity 交接与需求复核](docs/handoff-antigravity-20261122.md) · [可复制提示词](ANTIGRAVITY_PROMPT.md)。
+
+- **线上版本与迁移**：生产库 `moneytalk-web-production` 已应用 `0008_taxonomy_and_owners.sql`（`owners` 成员表 + 分类 `subcategories_json`/`default_owner_id` + 账目 `subcategory`/`owner_id`）；生产 Worker 已发布版本 **`63ab45a2-0fa6-4324-9fa6-2eb86dc8f95c`**（100% 流量，`2026-11-22T09:35:17Z` 生效），匿名请求 `/record`、`/subscriptions`、`/api/session` 均返回 `302` 跳转至 Cloudflare Access 登录页，未触碰真实生产账目。
+- **全量门禁实证**：已在 `/Users/rockyx/MoneyTalk-web/web-cloudflare` 通过完整 `pnpm verify:release`（`tsc --noEmit` 0 错、`pnpm test` 107/107 通过、`pnpm build` 0 错、Chromium + WebKit 36/36 E2E 全通过、116 个界面 `data-action` 控件覆盖率 0 遗漏）与 `pnpm deploy:check`；并用隔离本地合成库抓取桌面浅/深色与手机 390px 截图核对排版。
+- **尚未线上实测项**：真实 iPhone Safari 物理手感、国内普通网络延迟及登录用户真实个人账本后的线上画面待用户实测确认。本页后续各段为历史记录。
 
 ## 2026-11-19 订阅确认与平台卡片合并发布
 
@@ -76,15 +80,14 @@
 
 | 位置 | 内容 |
 | --- | --- |
-| `web-cloudflare/src/app.js` | 主页面、四页导航、账单、统计与编辑 |
-| `web-cloudflare/src/text-record-ui.js` | 文字/循环候选、核对和批次界面 |
-| `web-cloudflare/worker/` | 身份、账本权限与API；不能相信客户端传入的用户身份 |
-| `web-cloudflare/shared/` | 金额、日期、批次及候选校验；语义评测模块目前不被运行网页导入 |
-| `web-cloudflare/migrations/` | D1迁移；不要因本机启动问题向远端应用迁移 |
-| `web-cloudflare/tests/api.test.mjs` | 隔离D1的接口集成测试 |
-| `web-cloudflare/tests/ui/` | Chromium/WebKit端到端测试 |
-| `web-cloudflare/scripts/semantic-*.mjs` | 模型请求生成、流式解析、原评分和独立审查 |
-| `web-cloudflare/scripts/evaluate-cloudflare-free*.py` | 官方免费评测器及经核对临时副本入口 |
+| `web-cloudflare/src/main.jsx`、`state/`、`pages/`、`components/` | Preact 11 + Vite 8 入口、全局状态、5 路由页与弹窗/轻浮层/分类墙组件 |
+| `web-cloudflare/src/styles/` | `tokens.css` + `app.css`（方案 A 浅/深双主题，兼容桌面标签页与手机 390px 底栏） |
+| `web-cloudflare/worker/` | 身份、账本权限、两级分类/`@归属人` 与矩阵统计 API；不能相信客户端传入的用户身份 |
+| `web-cloudflare/shared/` | `domain.js`、`taxonomy.js`（模板包与建议）、`format.js`、`text-records.js` 等纯逻辑 |
+| `web-cloudflare/migrations/` | D1 迁移（已含 `0008_taxonomy_and_owners.sql`） |
+| `web-cloudflare/tests/api.test.mjs`、`taxonomy.test.mjs` | 隔离 D1 接口与数据规则测试（107 项） |
+| `web-cloudflare/tests/ui/` | 7 套 Chromium/WebKit 端到端测试（36 项）与 116 控件覆盖检查 |
+| `archive/semantic-eval/` | 已归档的 Qwen 语义评测与流式脚手架（不进网站运行包） |
 
 固定 Node22.23.2、项目 pnpm11.19.0；优先用已安装依赖，锁文件不变。先检查Git，不覆盖未提交内容。
 

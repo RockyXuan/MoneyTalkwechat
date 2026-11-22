@@ -2,7 +2,7 @@ import { sourceRangeSchema } from '../shared/source-range-schema.js';
 import { RANGE_LIMIT } from '../shared/source-calendar.js';
 import { TEXT_BATCH_LIMIT, TEXT_SLOT_LIMIT } from '../shared/text-limits.js';
 import { z } from 'zod';
-import { backupSchema, backupCategory, backupEntry, validateBackup, backupContent, canonical, digest } from '../shared/domain.js';
+import { backupSchema, backupCategory, backupOwner, backupEntry, validateBackup, backupContent, canonical, digest } from '../shared/domain.js';
 import { textBatchSchema, textSlotSchema } from '../shared/text-schema.js';
 import { jsonInsert } from './json-insert.js';
 import { ApiError } from './auth.js';
@@ -42,11 +42,13 @@ export function registerRestores(app) {
   app.post('/api/restores', async c => {
     const manifest = z.object({
       fingerprint: z.string().regex(/^[0-9a-f]{64}$/), ledger: backupSchema.shape.ledger,
+      owners: z.array(backupOwner).max(30).optional(),
       source_ranges:z.array(sourceRangeSchema).max(RANGE_LIMIT).optional(),
       text_batches:z.array(textBatchSchema).max(TEXT_BATCH_LIMIT).optional(),text_slots:z.array(textSlotSchema).max(TEXT_SLOT_LIMIT).optional(),
       categories: z.array(backupCategory).max(100), entry_count: z.number().int().min(0).max(50000),
     }).strict().parse(await c.req.json());
-    const check = validateBackup({ format: 'moneytalk-backup', version: 7, exported_at: stamp(), ...(manifest.source_ranges?{source_ranges:manifest.source_ranges}:{}), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
+    const hasV8 = Boolean(manifest.owners?.length || manifest.categories.some(x => x.subcategories?.length || x.default_owner_id) || manifest.text_batches?.some(b => b.items.some(i => i.subcategory || i.owner_id)));
+    const check = validateBackup({ format: 'moneytalk-backup', version: hasV8 ? 8 : 7, exported_at: stamp(), ...(manifest.owners ? { owners: manifest.owners } : {}), ...(manifest.source_ranges?{source_ranges:manifest.source_ranges}:{}), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: manifest.categories, entries: [] });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
     const db = c.env.DB, owner = c.get('user').id;
     const previous = async () => {
@@ -79,7 +81,8 @@ export function registerRestores(app) {
         ...batchWrites,
         ...jsonInsert(db,'source_ranges',['ledger_id','id','source','date_from','date_to','created_at'],(manifest.source_ranges||[]).map(r=>[id,r.id,r.source,r.from,r.to,r.created_at])),
         ...jsonInsert(db,'restore_slot_chunks',['ledger_id','chunk_index','slots_json'],slotChunks),
-        ...bulkInsert(db, 'categories', ['ledger_id', 'id', 'name', 'type', 'color_key', 'icon', 'sort_order', 'archived', 'aliases_json', 'spending_label'], manifest.categories.map(x => [id, x.id, x.name, x.type, x.color_key, x.icon, x.sort_order, Number(x.archived), JSON.stringify(x.aliases||[]), x.spending_label||null])),
+        ...(manifest.owners?.length ? bulkInsert(db, 'owners', ['ledger_id', 'id', 'name', 'color_key', 'sort_order', 'archived'], manifest.owners.map(o => [id, o.id, o.name, o.color_key, o.sort_order, Number(o.archived)])) : []),
+        ...bulkInsert(db, 'categories', ['ledger_id', 'id', 'name', 'type', 'color_key', 'icon', 'sort_order', 'archived', 'aliases_json', 'spending_label', 'subcategories_json', 'default_owner_id'], manifest.categories.map(x => [id, x.id, x.name, x.type, x.color_key, x.icon, x.sort_order, Number(x.archived), JSON.stringify(x.aliases||[]), x.spending_label||null, JSON.stringify(x.subcategories||[]), x.default_owner_id||null])),
       ]);
     } catch (error) {
       const replay = await previous();
@@ -92,22 +95,23 @@ export function registerRestores(app) {
     const job = await jobFor(c, c.req.param('id'));
     const { entries } = z.object({ entries: z.array(backupEntry).min(1).max(50) }).strict().parse(await c.req.json());
     const db = c.env.DB;
-    const cats = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,spending_label FROM categories WHERE ledger_id=?', [job.ledger_id])).map(categoryRow);
+    const cats = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=?', [job.ledger_id])).map(categoryRow);
     const manifest = JSON.parse(job.manifest_json);
-    const check = validateBackup({ format: 'moneytalk-backup', version: 7, exported_at: stamp(), ...(manifest.source_ranges?{source_ranges:manifest.source_ranges}:{}), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
+    const hasV8 = Boolean(manifest.owners?.length || cats.some(c => c.subcategories?.length || c.default_owner_id) || entries.some(e => e.subcategory || e.owner_id));
+    const check = validateBackup({ format: 'moneytalk-backup', version: hasV8 ? 8 : 7, exported_at: stamp(), ...(manifest.owners ? { owners: manifest.owners } : {}), ...(manifest.source_ranges?{source_ranges:manifest.source_ranges}:{}), ...(manifest.text_batches?{text_batches:manifest.text_batches}:{}), ledger: manifest.ledger, categories: cats, entries });
     if (!check.valid) throw new ApiError(400, 'INVALID_BACKUP', check.errors[0]);
-    const oldRows = await all(db, `SELECT id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? AND id IN (${entries.map(() => '?').join(',')})`, [job.ledger_id, ...entries.map(e => e.id)]);
-    const old = new Map(oldRows.map(e => [e.id, e]));
+    const oldRows = await all(db, `SELECT id,type,amount_minor,category_id,occurred_on,note,subcategory,owner_id,version,created_at,updated_at,deleted_at FROM entries WHERE ledger_id=? AND id IN (${entries.map(() => '?').join(',')})`, [job.ledger_id, ...entries.map(e => e.id)]);
+    const old = new Map(oldRows.map(({subcategory,owner_id,...e}) => [e.id, {...e,...(subcategory?{subcategory}:{}),...(owner_id?{owner_id}:{})}]));
     for (const e of entries) if (old.has(e.id) && canonical(old.get(e.id)) !== canonical(e)) throw new ApiError(409, 'RESTORE_MISMATCH', '同一记录 ID 的恢复内容不一致');
     const additions = entries.filter(e => !old.has(e.id));
     if (job.completed_at && additions.length) throw new ApiError(409, 'RESTORE_COMPLETE', '已校验的候选账本不能继续写入恢复数据');
     const count = await first(db, 'SELECT COUNT(*) AS count FROM entries WHERE ledger_id=?', [job.ledger_id]);
     if (count.count + additions.length > job.expected_entries) throw new ApiError(400, 'RESTORE_COUNT', '恢复条数超过备份声明');
     if (additions.length) {
-      const cols = ['ledger_id', 'id', 'type', 'amount_minor', 'category_id', 'occurred_on', 'note', 'version', 'created_at', 'updated_at', 'deleted_at'];
+      const cols = ['ledger_id', 'id', 'type', 'amount_minor', 'category_id', 'occurred_on', 'note', 'subcategory', 'owner_id', 'version', 'created_at', 'updated_at', 'deleted_at'];
       await db.batch([
         statement(db, 'UPDATE restores SET write_version=write_version+1 WHERE ledger_id=? AND completed_at IS NULL', [job.ledger_id]),
-        ...bulkInsert(db, 'entries', cols, additions.map(e => [job.ledger_id, e.id, e.type, e.amount_minor, e.category_id, e.occurred_on, e.note, e.version, e.created_at, e.updated_at, e.deleted_at]), true, job.ledger_id),
+        ...bulkInsert(db, 'entries', cols, additions.map(e => [job.ledger_id, e.id, e.type, e.amount_minor, e.category_id, e.occurred_on, e.note, e.subcategory || null, e.owner_id || null, e.version, e.created_at, e.updated_at, e.deleted_at]), true, job.ledger_id),
       ]);
     }
     const updated = await first(db, 'SELECT COUNT(*) AS count FROM entries WHERE ledger_id=?', [job.ledger_id]);

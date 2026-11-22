@@ -28,10 +28,10 @@ export async function settleSubscriptions(db,{ledger=null,currentDay=today()}={}
   if(!candidates.length)continue;
   processed++;
   const now=stamp(),entries=[],newSlots=[];
-  for(const e of candidates){const id=await digest(`${row.ledger_id}|${row.id}|${e.item_id}|${e.occurred_on}`);entries.push([row.ledger_id,id,e.type,e.amount_minor,e.category_id,e.occurred_on,e.note,1,now,now,null]);newSlots.push([row.ledger_id,row.id,e.item_id,e.occurred_on,id]);}
+  for(const e of candidates){const id=await digest(`${row.ledger_id}|${row.id}|${e.item_id}|${e.occurred_on}`);entries.push([row.ledger_id,id,e.type,e.amount_minor,e.category_id,e.occurred_on,e.note,e.subcategory||null,e.owner_id||null,1,now,now,null]);newSlots.push([row.ledger_id,row.id,e.item_id,e.occurred_on,id]);}
   const guard={sql:"EXISTS(SELECT 1 FROM text_batches WHERE ledger_id=? AND id=? AND version=? AND status='active')",values:[row.ledger_id,row.id,row.version]};
   const results=await db.batch([
-   ...jsonInsert(db,'entries',['ledger_id','id','type','amount_minor','category_id','occurred_on','note','version','created_at','updated_at','deleted_at'],entries,{condition:guard,ignore:true}),
+   ...jsonInsert(db,'entries',['ledger_id','id','type','amount_minor','category_id','occurred_on','note','subcategory','owner_id','version','created_at','updated_at','deleted_at'],entries,{condition:guard,ignore:true}),
    ...jsonInsert(db,'text_slots',['ledger_id','batch_id','item_id','occurred_on','entry_id'],newSlots,{condition:guard,ignore:true}),
    statement(db,"UPDATE text_batches SET version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=? AND status='active'",[now,row.ledger_id,row.id,row.version])
   ]);

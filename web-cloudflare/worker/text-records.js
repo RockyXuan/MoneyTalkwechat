@@ -56,11 +56,11 @@ async function confirmedEntries(db,ledger,batch,plan,now,guard){
  for(const candidate of plan.entries){
   const id=await digest(`${ledger}|${batch.id}|${candidate.item_id}|${candidate.occurred_on}`);
   ids.push(id);
-  entryRows.push([ledger,id,candidate.type,candidate.amount_minor,candidate.category_id,candidate.occurred_on,candidate.note,1,now,now,null]);
+  entryRows.push([ledger,id,candidate.type,candidate.amount_minor,candidate.category_id,candidate.occurred_on,candidate.note,candidate.subcategory||null,candidate.owner_id||null,1,now,now,null]);
   slotRows.push([ledger,batch.id,candidate.item_id,candidate.occurred_on,id]);
  }
  const writes=[
-  ...jsonInsert(db,'entries',['ledger_id','id','type','amount_minor','category_id','occurred_on','note','version','created_at','updated_at','deleted_at'],entryRows,{condition:guard}),
+  ...jsonInsert(db,'entries',['ledger_id','id','type','amount_minor','category_id','occurred_on','note','subcategory','owner_id','version','created_at','updated_at','deleted_at'],entryRows,{condition:guard}),
   ...jsonInsert(db,'text_slots',['ledger_id','batch_id','item_id','occurred_on','entry_id'],slotRows,{condition:guard})
  ];
  const dates=plan.entries.map(entry=>entry.occurred_on).sort();

@@ -633,3 +633,268 @@ test('subscription review is read-only and confirmation handles overlap, concurr
  assert.equal((await req('/api/entries',{user})).data.totals.count,31);
  assert.equal((await req('/api/text-batches',{user})).data.batches.length,1);
 });
+
+test('owners CRUD, isolation, category subcategories/default_owner_id preservation, and apply-pack idempotency', async () => {
+  const user = 'tax-alice', bob = 'tax-bob';
+  const aliceSession = (await req('/api/session', { user })).data;
+  const bobSession = (await req('/api/session', { user: bob })).data;
+  assert.ok(aliceSession.ledger.id !== bobSession.ledger.id);
+
+  // Lazy seeding of default 5 owners
+  const seeded = await req('/api/owners', { user });
+  assert.equal(seeded.status, 200);
+  assert.deepEqual(seeded.data.owners.map(o => o.id), ['me', 'wife', 'parents', 'kid', 'family']);
+
+  // Create custom owner + duplicate name conflict (409 DUPLICATE_OWNER)
+  const created = await req('/api/owners', { method: 'POST', user, body: { name: '岳父母', color_key: 'teal', sort_order: 60 } });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.owner.name, '岳父母');
+  const ownerId = created.data.owner.id;
+
+  const dup = await req('/api/owners', { method: 'POST', user, body: { name: '岳父母', color_key: 'blue', sort_order: 70 } });
+  assert.equal(dup.status, 409);
+  assert.equal(dup.data.error.code, 'DUPLICATE_OWNER');
+
+  // Patch owner + optimistic conflict + cross-user isolation
+  const patched = await req(`/api/owners/${ownerId}`, { method: 'PATCH', user, body: { name: '外公外婆', color_key: 'indigo', sort_order: 65, archived: false, version: 1 } });
+  assert.equal(patched.status, 200);
+  assert.equal(patched.data.owner.version, 2);
+  assert.equal((await req(`/api/owners/${ownerId}`, { method: 'PATCH', user, body: { name: '冲突测试', color_key: 'indigo', sort_order: 65, archived: false, version: 1 } })).status, 409);
+  assert.equal((await req(`/api/owners/${ownerId}`, { method: 'PATCH', user: bob, body: { name: '越权', color_key: 'indigo', sort_order: 65, archived: false, version: 2 } })).status, 404);
+  assert.equal((await req('/api/owners', { user: bob, ledger: aliceSession.ledger.id })).status, 403);
+
+  // Category subcategories + default_owner_id & preservation on name-only update
+  const cats = (await req('/api/categories', { user })).data.categories;
+  const food = cats.find(c => c.id === 'food');
+  const catWithSub = await req('/api/categories/food', {
+    method: 'PATCH',
+    user,
+    body: {
+      name: food.name,
+      type: food.type,
+      color_key: food.color_key,
+      icon: food.icon,
+      sort_order: food.sort_order,
+      archived: false,
+      subcategories: ['外卖', '饮料咖啡'],
+      default_owner_id: 'me',
+      version: food.version,
+    },
+  });
+  assert.equal(catWithSub.status, 200);
+  assert.deepEqual(catWithSub.data.category.subcategories, ['外卖', '饮料咖啡']);
+  assert.equal(catWithSub.data.category.default_owner_id, 'me');
+
+  // Update only category name omitting subcategories and default_owner_id -> must preserve
+  const catRenamed = await req('/api/categories/food', {
+    method: 'PATCH',
+    user,
+    body: {
+      name: '饮食聚餐',
+      type: food.type,
+      color_key: food.color_key,
+      icon: food.icon,
+      sort_order: food.sort_order,
+      archived: false,
+      version: catWithSub.data.category.version,
+    },
+  });
+  assert.equal(catRenamed.status, 200);
+  assert.equal(catRenamed.data.category.name, '饮食聚餐');
+  assert.deepEqual(catRenamed.data.category.subcategories, ['外卖', '饮料咖啡']);
+  assert.equal(catRenamed.data.category.default_owner_id, 'me');
+
+  // Starter pack idempotency
+  const pack1 = await req('/api/categories/apply-pack', { method: 'POST', user, body: { pack: 'personal' } });
+  assert.equal(pack1.status, 200);
+  assert.ok(pack1.data.added_categories >= 1);
+  assert.ok(pack1.data.updated_subcategories >= 1);
+  assert.ok(pack1.data.categories.some(c => c.id === 'learning-growth'));
+  const totalCountAfterFirst = pack1.data.categories.length;
+
+  const pack2 = await req('/api/categories/apply-pack', { method: 'POST', user, body: { pack: 'personal' } });
+  assert.equal(pack2.status, 200);
+  assert.equal(pack2.data.added_categories, 0);
+  assert.equal(pack2.data.updated_subcategories, 0);
+  assert.equal(pack2.data.categories.length, totalCountAfterFirst);
+});
+
+test('entries subcategory/owner_id CRUD, stats matrix exact-cent invariants, @ text confirm, CSV & backup v8 round-trip', async () => {
+  const user = 'tax-stats';
+  await req('/api/session', { user });
+  await req('/api/owners', { user });
+
+  // Entry 1: food / 外卖 / @me
+  const e1 = (await req('/api/entries', {
+    method: 'POST',
+    user,
+    body: expense({ amount_minor: 3500, occurred_on: '2026-11-10', note: '虚构工作餐', subcategory: '外卖', owner_id: 'me' }),
+  })).data.entry;
+  assert.equal(e1.subcategory, '外卖');
+  assert.equal(e1.owner_id, 'me');
+
+  // Single-field amount PATCH omitting subcategory & owner_id preserves both
+  const e1Updated = (await req(`/api/entries/${e1.id}`, {
+    method: 'PATCH',
+    user,
+    body: {
+      type: e1.type,
+      amount_minor: 3600,
+      category_id: e1.category_id,
+      occurred_on: e1.occurred_on,
+      note: e1.note,
+      version: e1.version,
+    },
+  })).data.entry;
+  assert.equal(e1Updated.amount_minor, 3600);
+  assert.equal(e1Updated.subcategory, '外卖');
+  assert.equal(e1Updated.owner_id, 'me');
+
+  // Entry 2: legacy row without subcategory or owner_id
+  const e2 = (await req('/api/entries', {
+    method: 'POST',
+    user,
+    body: expense({ amount_minor: 1500, occurred_on: '2026-11-11', note: '虚构早餐', subcategory: null, owner_id: null }),
+  })).data.entry;
+  assert.equal(e2.subcategory, null);
+  assert.equal(e2.owner_id, null);
+
+  // Entry 3: shop / 图书绘本 / @wife
+  const shopCat = (await req('/api/categories', { user })).data.categories.find(c => c.name === '购物');
+  await req('/api/entries', {
+    method: 'POST',
+    user,
+    body: expense({ category_id: shopCat.id, amount_minor: 8000, occurred_on: '2026-11-12', note: '虚构绘本', subcategory: '图书绘本', owner_id: 'wife' }),
+  });
+
+  // ?owner_id=wife filters list/totals while owner_totals stays invariant for top bar
+  const filtered = (await req('/api/entries?from=2026-11-01&to=2026-11-30&owner_id=wife', { user })).data;
+  assert.equal(filtered.entries.length, 1);
+  assert.equal(filtered.totals.expense_minor, 8000);
+  const ownerMap = new Map(filtered.owner_totals.map(o => [o.owner_id ?? '__none__', o.expense_minor]));
+  assert.equal(ownerMap.get('me'), 3600);
+  assert.equal(ownerMap.get('wife'), 8000);
+  assert.equal(ownerMap.get('__none__'), 1500);
+
+  // @ text intake & confirm persists subcategory + owner_id
+  const { parseTextRecords } = await import('../shared/text-records.js');
+  const currentCats = (await req('/api/categories', { user })).data.categories;
+  const currentOwners = (await req('/api/owners', { user })).data.owners;
+  const originalText = '2026年11月13日，虚构奶酪零食 24元 @孩子（算到餐饮/零食水果）';
+  const parsedItems = parseTextRecords(originalText, '2026-11-13', currentCats, currentOwners);
+  const draft = (await req('/api/text-batches', {
+    method: 'POST',
+    user,
+    body: { original_text: originalText, items: parsedItems },
+  })).data;
+  const item = draft.batch.items[0];
+  assert.equal(item.owner_id, 'kid');
+  assert.equal(item.subcategory, '零食水果');
+  const plan = (await req(`/api/text-batches/${draft.batch.id}/preview`, { method: 'POST', user, body: {} })).data;
+  const confirmed = await req(`/api/text-batches/${draft.batch.id}/confirm`, {
+    method: 'POST',
+    user,
+    body: { version: draft.batch.version, preview_hash: plan.preview_hash },
+  });
+  assert.equal(confirmed.status, 200);
+
+  // Stats exact-cent equality across categories, subcategories, owner_totals, and matrix
+  const stats = (await req('/api/stats?from=2026-11-01&to=2026-11-30&bucket=day', { user })).data;
+  const totalExp = 3600 + 1500 + 8000 + 2400; // 15500
+  assert.equal(stats.totals.expense_minor, totalExp);
+  assert.equal(stats.categories.reduce((s, c) => s + c.amount_minor, 0), totalExp);
+  assert.equal(stats.owner_totals.reduce((s, o) => s + o.amount_minor, 0), totalExp);
+  assert.equal(stats.matrix.reduce((s, m) => s + m.amount_minor, 0), totalExp);
+  for (const cat of stats.categories) {
+    const subSum = stats.subcategories.filter(s => s.category_id === cat.id).reduce((sum, s) => sum + s.amount_minor, 0);
+    assert.equal(subSum, cat.amount_minor);
+  }
+  assert.ok(stats.subcategories.some(s => s.category_id === 'food' && s.subcategory === null && s.amount_minor === 1500));
+
+  // CSV export includes 二级分类 and 归属人
+  const csvRes = await req('/api/export.csv?from=2026-11-01&to=2026-11-30', { user });
+  assert.equal(csvRes.status, 200);
+  const csvText = csvRes.data;
+  assert.match(csvText, /二级分类/);
+  assert.match(csvText, /归属人/);
+  assert.match(csvText, /零食水果/);
+  assert.match(csvText, /孩子/);
+
+  // Backup v8 export & restore round-trip
+  const backup = (await req('/api/backup', { user })).data;
+  assert.equal(backup.version, 8);
+  assert.ok(backup.owners.length >= 5);
+  const prev = (await req('/api/restores/preview', { method: 'POST', user, body: backup })).data;
+  assert.equal(prev.valid, true);
+  const job = (await req('/api/restores', {
+    method: 'POST',
+    user,
+    body: {
+      fingerprint: prev.fingerprint,
+      ledger: backup.ledger,
+      owners: backup.owners,
+      categories: backup.categories,
+      text_batches: backup.text_batches,
+      text_slots: backup.text_slots,
+      entry_count: backup.entries.length,
+    },
+  })).data;
+  await req(`/api/restores/${job.id}/entries`, { method: 'POST', user, body: { entries: backup.entries } });
+  const done = await req(`/api/restores/${job.id}/finish`, { method: 'POST', user, body: {} });
+  assert.equal(done.status, 200);
+  assert.equal(done.data.summary.expense_minor, totalExp);
+  const roundTrip = (await req('/api/backup', { user, ledger: job.id })).data;
+  assert.equal(await digest(backupContent(roundTrip)), prev.fingerprint);
+});
+
+test('SQL migration upgrade from pre-0008 schema to 0008 preserves legacy categories and entries', async () => {
+  const localMf = new Miniflare(convertV4MiniflareOptions({
+    modules: true,
+    script: 'export default { fetch() { return new Response("ok") } }',
+    compatibilityDate: '2026-09-14',
+    d1Databases: ['DB'],
+  }));
+  try {
+    const migDb = await localMf.getD1Database('DB');
+    const files = (await readdir(new URL('../migrations/', import.meta.url))).filter(x => x.endsWith('.sql')).sort();
+    const runSql = async sql => {
+      for (const part of sql.split(/;\s*(?=CREATE|PRAGMA|INSERT|DROP|ALTER|$)/i).filter(x => x.trim())) {
+        await migDb.prepare(part).run();
+      }
+    };
+    for (const file of files.filter(f => f < '0008')) {
+      const sql = await readFile(new URL(`../migrations/${file}`, import.meta.url), 'utf8');
+      await runSql(sql);
+    }
+
+    const userId = await digest('test|legacy-mig');
+    const ledgerId = `personal-${userId.slice(0, 24)}`;
+    const now = '2026-10-01T00:00:00.000Z';
+    await migDb.batch([
+      migDb.prepare('INSERT INTO users(id,email,active_ledger_id,created_at) VALUES(?,?,?,?)').bind(userId, 'legacy-mig@example.invalid', ledgerId, now),
+      migDb.prepare('INSERT INTO ledgers(id,owner_id,name,created_at) VALUES(?,?,?,?)').bind(ledgerId, userId, '历史账本', now),
+      migDb.prepare('INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived) VALUES(?,?,?,?,?,?,?,0)').bind(ledgerId, 'food', '餐饮', 'expense', 'blue', 'utensils', 10),
+      migDb.prepare('INSERT INTO entries(ledger_id,id,type,amount_minor,category_id,occurred_on,note,version,created_at,updated_at,deleted_at) VALUES(?,?,?,?,?,?,?,?,?,?,NULL)').bind(ledgerId, 'legacy-entry-1', 'expense', 4250, 'food', '2026-10-01', '迁移前旧账单', 1, now, now),
+    ]);
+
+    // Apply 0008_taxonomy_and_owners.sql on populated pre-0008 DB
+    const mig0008 = await readFile(new URL('../migrations/0008_taxonomy_and_owners.sql', import.meta.url), 'utf8');
+    await runSql(mig0008);
+
+    const migApp = createApp({ verifyIdentity: async () => ({ sub: 'legacy-mig', email: 'legacy-mig@example.invalid', issuer: 'test' }) });
+    const callMig = path => migApp.request(origin + path, { headers: { Origin: origin } }, { DB: migDb });
+
+    const entriesRes = await (await callMig('/api/entries')).json();
+    assert.equal(entriesRes.entries.length, 1);
+    assert.equal(entriesRes.entries[0].amount_minor, 4250);
+    assert.equal(entriesRes.entries[0].subcategory, null);
+    assert.equal(entriesRes.entries[0].owner_id, null);
+
+    const statsRes = await (await callMig('/api/stats?from=2026-10-01&to=2026-10-31&bucket=day')).json();
+    assert.equal(statsRes.totals.expense_minor, 4250);
+    assert.equal(statsRes.subcategories[0].subcategory, null);
+    assert.equal(statsRes.owner_totals[0].owner_id, null);
+  } finally {
+    await localMf.dispose();
+  }
+});

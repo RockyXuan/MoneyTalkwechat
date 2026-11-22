@@ -1,6 +1,9 @@
 # MoneyTalk 项目总结 · 2026-10-17
 
-**2026-11-22 当前状态。** [需求复核、偏好、上线证据与接手规划](docs/handoff-antigravity-20261122.md) · [Antigravity 提示词](ANTIGRAVITY_PROMPT.md)。11 月 22 日淘宝结构化清单及核对增强已在新目录通过完整门禁（172 项基础/接口 + 292 项双引擎 E2E + 58/37 操作覆盖零缺项），并于北京时间 14:49 正式发布为 **`b448910e-0681-4467-a3d3-4079984d350c`**（100% 流量读回，前版 `f3817144-d834-4997-b04c-3cfd7e451986`，生产 D1 无待应用迁移，匿名 `/record`、`/subscriptions`、`/api/session` 均返回 `302`）。真实 iPhone 手感、国内普通网络与线上登录后画面待真机验收。下文的日期和测试数量属于相应历史批次。
+**2026-11-22 架构重整与全站 UI 上线状态。** [本轮发布验收](web-cloudflare/docs/release-20261122-redesign.md) · [交接文档](HANDOFF.md)。11 月 22 日在 `/Users/rockyx/MoneyTalk-web` 完成三项整顿并上线：
+1. **仓库与前端重整**：清除根目录已作废的旧 Taro/Coze 骨架及封存 CSV/ZIP 账单工具，将未接入网站的语义评测脚本归档至 `/Users/rockyx/MoneyTalk-web/archive/semantic-eval/`；前端以 Preact 11.2.0 + Vite 8.3.0 重构为「方案 A（Apple 极简金融风，浅/深双主题）」，保留全部既有能力并优化交互反馈与移动端 390px 胶囊导航。
+2. **两级分类 + `@归属人` + 三视图统计**：新增迁移 `0008_taxonomy_and_owners.sql`、财务常识模板包（个人标准包/家庭精细包）、大类默认 `@归属人`、账单页 `@归属人` 汇总过滤栏、列表 1-click 改分类/改子类/改 `@成员` 轻浮层，以及统计页三种原地可切换视图（分类长条 / 二维交叉透视表 / 剥洋葱环图同页内嵌下钻，无嵌套弹窗）。
+3. **验证与线上部署**：完整 `pnpm verify:release` 通过 `tsc --noEmit` 0 错、`pnpm test` 107/107 通过、Chromium + WebKit 36/36 E2E 全通过、116 个 `data-action` 控件覆盖率 0 缺项；`pnpm deploy:check` 通过；生产库已执行 `0008` 迁移，生产 Worker 发布至 **`63ab45a2-0fa6-4324-9fa6-2eb86dc8f95c`**（100% 流量，匿名请求均返回 `302` 跳转 Access 登录页）。真实 iPhone Safari 手感、国内网络与登录态个人账本待用户验收。以下为历史记录。
 
 > **下一项工作已转入新线程交接：** 月份卡片内用黄／绿等颜色直观呈现日期进度，详细需求、数据边界、代码入口及本线程教训见 [最新交接](HANDOFF_20261117_CALENDAR_COLOR.md)，可复制的提示词见 [新线程提示词](NEXT_THREAD_PROMPT_CALENDAR_COLOR.md)。本次只更新文档，没有实现或发布该颜色改动，也没有重新执行上线门禁。
 

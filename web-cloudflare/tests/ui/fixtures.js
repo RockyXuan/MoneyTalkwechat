@@ -49,23 +49,32 @@ export async function open(page, route = 'record', query = 'month=2026-09') {
   await expect(page.locator('.error-panel')).toHaveCount(0);
 }
 export const action = (page, name, root = page) => root.locator(`[data-action="${name}"]:visible`).first();
-export const textAction = (page, name) => page.locator(`#dialog [data-text-action="${name}"]`).first();
+export const textAction = (page, name) => page.locator(`[data-action="${name}"]:visible`).first();
 export async function close(page) {
   await action(page, 'close-dialog', page.locator('#dialog')).click();
   await expect(page.locator('#dialog')).not.toBeVisible();
 }
 export async function write(page, { amount = '12.34', note = 'UI虚构测试', date = '2026-09-14' } = {}) {
-  await page.locator('#amount-main').fill(amount);
-  await page.locator('#note-main').fill(note);
-  await page.locator('#entry-form-main [name="date_precision"]').selectOption(date.length===7?'month':'day');
-  await page.locator('#entry-form-main [name="occurred_on"]').fill(date);
-  await page.locator('.record-tools button[type="submit"]').click();
+  const manualForm = page.locator('#manual-form');
+  if (!(await manualForm.isVisible())) {
+    await action(page, 'record-mode-manual').click();
+    await expect(manualForm).toBeVisible();
+  }
+  await manualForm.locator('[name="amount"]').fill(amount);
+  await manualForm.locator('[name="note"]').fill(note);
+  await manualForm.locator('[name="date_precision"]').selectOption(date.length === 7 ? 'month' : 'day');
+  await manualForm.locator('[name="occurred_on"]').fill(date);
+  await action(page, 'manual-save-entry', manualForm).click();
 }
 export async function compose(page, text) {
-  await action(page, 'text-records').click();
-  await page.locator('#text-raw').fill(text);
-  await textAction(page, 'parse').click();
-  await expect(page.locator('.text-candidate').first()).toBeVisible();
+  const input = page.locator('#record-text-raw');
+  if (!(await input.isVisible())) {
+    await action(page, 'record-mode-text').click();
+    await expect(input).toBeVisible();
+  }
+  await input.fill(text);
+  await action(page, 'parse-text-records').click();
+  await expect(page.locator('[data-item-id]').first()).toBeVisible();
 }
 export async function downloadText(page, button) {
   const pending = page.waitForEvent('download');

@@ -3,18 +3,20 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import { ApiError, authenticate, requireSameOrigin } from './auth.js';
-import { all, first, statement, stamp, initUser, ownedLedger, validateCategory, operation, entryInsert, filters, categoryRow, exportBackup, exportCsv } from './store.js';
-import { entryInput, categoryInput, validDate, today, periodRange, buckets, digest } from '../shared/domain.js';
+import { all, first, statement, stamp, initUser, ownedLedger, validateCategory, operation, entryInsert, filters, categoryRow, ownerRow, ensureDefaultOwners, exportBackup, exportCsv } from './store.js';
+import { entryInput, categoryInput, ownerInput, validDate, today, periodRange, buckets, digest } from '../shared/domain.js';
+import { RECOMMENDED_SUBCATEGORIES, RECOMMENDED_NEW_MAJORS, STARTER_PACKS } from '../shared/taxonomy.js';
 import { registerRestores } from './restores.js';
 import { registerSourceRanges } from './source-ranges.js';
 import { registerTextRecords } from './text-records.js';
 
-const entryColumns = 'e.id,e.type,e.amount_minor,e.category_id,e.occurred_on,e.note,e.version,e.created_at,e.updated_at,e.deleted_at,c.name AS category_name,c.color_key,c.icon,c.spending_label';
-const joined = 'entries e JOIN categories c ON c.ledger_id=e.ledger_id AND c.id=e.category_id';
+const entryColumns = 'e.id,e.type,e.amount_minor,e.category_id,e.subcategory,e.owner_id,e.occurred_on,e.note,e.version,e.created_at,e.updated_at,e.deleted_at,c.name AS category_name,c.color_key,c.icon,c.spending_label,o.name AS owner_name,o.color_key AS owner_color_key';
+const joined = 'entries e JOIN categories c ON c.ledger_id=e.ledger_id AND c.id=e.category_id LEFT JOIN owners o ON o.ledger_id=e.ledger_id AND o.id=e.owner_id';
 const versionSchema = z.number().int().min(1);
 const querySchema = z.object({
   from: z.string().refine(validDate).optional(), to: z.string().refine(validDate).optional(),
   type: z.enum(['expense', 'income']).optional(), category_id: z.string().max(100).optional(),
+  owner_id: z.string().max(100).optional(), subcategory: z.string().max(32).optional(),
   q: z.string().trim().max(200).optional(), deleted: z.enum(['true', 'false']).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50), offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
 });
@@ -58,20 +60,76 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     await statement(c.env.DB, 'UPDATE users SET active_ledger_id=? WHERE id=?', [target.id, c.get('user').id]).run();
     return c.json({ ledger: target });
   });
-  app.get('/api/categories', async c => c.json({ categories: (await all(c.env.DB, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,version,spending_label FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [c.get('ledger').id])).map(categoryRow) }));
+  app.get('/api/owners', async c => {
+    const db = c.env.DB, ledger = c.get('ledger').id;
+    await ensureDefaultOwners(db, ledger);
+    return c.json({ owners: (await all(db, 'SELECT id,name,color_key,sort_order,archived,version FROM owners WHERE ledger_id=? ORDER BY sort_order,id', [ledger])).map(ownerRow) });
+  });
+  app.post('/api/owners', async c => {
+    const value = ownerInput.parse(await c.req.json());
+    const db = c.env.DB, ledger = c.get('ledger').id;
+    await ensureDefaultOwners(db, ledger);
+    const count = await first(db, 'SELECT COUNT(*) AS n FROM owners WHERE ledger_id=?', [ledger]);
+    if (count.n >= 30) throw new ApiError(400, 'OWNER_LIMIT', '一个账本最多支持 30 个归属人');
+    const owner = { id: crypto.randomUUID(), ...value, version: 1 };
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-owner', value }, { owner }, [statement(db, 'INSERT INTO owners(ledger_id,id,name,color_key,sort_order,archived,version) VALUES(?,?,?,?,?,?,1)', [ledger, owner.id, value.name, value.color_key, value.sort_order, Number(value.archived)])]);
+    return c.json(result, 201);
+  });
+  app.patch('/api/owners/:id', async c => {
+    const { version, ...value } = ownerInput.extend({ version: versionSchema }).parse(await c.req.json());
+    const db = c.env.DB, ledger = c.get('ledger').id, id = c.req.param('id');
+    const old = await first(db, 'SELECT * FROM owners WHERE ledger_id=? AND id=?', [ledger, id]);
+    if (!old) throw new ApiError(404, 'NOT_FOUND', '归属人不存在');
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-owner', id, version, value }, { owner: { id, ...value, version: version + 1 } }, [statement(db, 'UPDATE owners SET name=?,color_key=?,sort_order=?,archived=?,version=version+1 WHERE ledger_id=? AND id=? AND version=?', [value.name, value.color_key, value.sort_order, Number(value.archived), ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM owners WHERE ledger_id=? AND id=? AND version=?)', values: [ledger, id, version] });
+    return c.json(result);
+  });
+  app.get('/api/categories', async c => c.json({ categories: (await all(c.env.DB, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,version,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [c.get('ledger').id])).map(categoryRow) }));
+  app.post('/api/categories/apply-pack', async c => {
+    const { pack } = z.object({ pack: z.enum(['personal', 'family']) }).strict().parse(await c.req.json());
+    const db = c.env.DB, ledger = c.get('ledger').id, spec = STARTER_PACKS[pack];
+    await ensureDefaultOwners(db, ledger);
+    const current = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,version,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [ledger])).map(categoryRow);
+    const writes = [];
+    let added = 0, updated = 0;
+    for (const cat of current) {
+      if (cat.type !== 'expense' || cat.archived) continue;
+      const rec = RECOMMENDED_SUBCATEGORIES[cat.name] || RECOMMENDED_NEW_MAJORS.find(m => m.name === cat.name)?.subcategories || [];
+      if (!rec.length) continue;
+      const existing = cat.subcategories || [];
+      const merged = [...existing];
+      for (const s of rec.slice(0, spec.subLimit)) if (!merged.includes(s) && merged.length < 30) merged.push(s);
+      if (merged.length !== existing.length) {
+        updated++;
+        writes.push(statement(db, 'UPDATE categories SET subcategories_json=?,version=version+1 WHERE ledger_id=? AND id=?', [JSON.stringify(merged), ledger, cat.id]));
+      }
+    }
+    let nextSort = current.reduce((m, c) => Math.max(m, c.sort_order), 0) + 10;
+    let totalCount = current.length;
+    for (const mid of spec.majorIds) {
+      const tmpl = RECOMMENDED_NEW_MAJORS.find(m => m.id === mid);
+      if (!tmpl || current.some(c => c.type === 'expense' && (c.id === tmpl.id || c.name === tmpl.name))) continue;
+      if (totalCount >= 100) break;
+      totalCount++; added++;
+      writes.push(statement(db, 'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived,subcategories_json,default_owner_id) VALUES(?,?,?,?,?,?,?,0,?,?)', [ledger, tmpl.id, tmpl.name, tmpl.type, tmpl.color_key, tmpl.icon, nextSort, JSON.stringify(tmpl.subcategories), tmpl.default_owner_id]));
+      nextSort += 10;
+    }
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'apply-pack', pack }, { pack, added_categories: added, updated_subcategories: updated }, writes);
+    const categories = (await all(db, 'SELECT id,name,type,color_key,icon,sort_order,aliases_json,archived,version,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=? ORDER BY sort_order,id', [ledger])).map(categoryRow);
+    return c.json({ ...result, categories });
+  });
   app.post('/api/categories/resolve', async c => {
     const value=z.object({name:categoryInput.shape.name,type:categoryInput.shape.type}).strict().parse(await c.req.json());
     const db=c.env.DB,ledger=c.get('ledger').id,user=c.get('user'),key=c.req.header('Idempotency-Key'),requestValue={route:'resolve-category',value};
     const prior=await first(db,'SELECT request_hash,response_json FROM operations WHERE user_id=? AND ledger_id=? AND key=?',[user.id,ledger,key||'']);
     if(prior){if(prior.request_hash!==await digest(requestValue))throw new ApiError(409,'KEY_REUSED','同一次提交内容已变化');return c.json(JSON.parse(prior.response_json));}
-    const existing=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version,spending_label FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);
+    const existing=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);
     if(existing?.archived)throw new ApiError(409,'CATEGORY_ARCHIVED','同名分类已停用，请先在分类管理恢复，或选择其他分类');
     if(existing)return c.json(await operation(db,user,ledger,key,requestValue,{category:categoryRow(existing),reused:true},[]));
     const count=await first(db,'SELECT COUNT(*) AS n FROM categories WHERE ledger_id=?',[ledger]);
     if(count.n>=100)throw new ApiError(400,'CATEGORY_LIMIT','一个账本最多支持 100 个分类，请选择已有分类');
     const category={id:crypto.randomUUID(),...value,color_key:'slate',icon:'wallet',sort_order:100,archived:false,version:1};
     try{return c.json(await operation(db,user,ledger,key,requestValue,{category,reused:false},[statement(db,'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived) SELECT ?,?,?,?,?,?,?,0 WHERE (SELECT COUNT(*) FROM categories WHERE ledger_id=?)<100',[ledger,category.id,category.name,category.type,category.color_key,category.icon,category.sort_order,ledger])],{sql:'(SELECT COUNT(*) FROM categories WHERE ledger_id=?)<100',values:[ledger]}),201);}
-    catch(error){const same=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version,spending_label FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);if(!same||same.archived)throw error;return c.json(await operation(db,user,ledger,key,requestValue,{category:categoryRow(same),reused:true},[]));}
+    catch(error){const same=await first(db,'SELECT id,name,type,color_key,icon,sort_order,archived,aliases_json,version,spending_label,subcategories_json,default_owner_id FROM categories WHERE ledger_id=? AND name=? AND type=?',[ledger,value.name,value.type]);if(!same||same.archived)throw error;return c.json(await operation(db,user,ledger,key,requestValue,{category:categoryRow(same),reused:true},[]));}
   });
   app.post('/api/categories', async c => {
     const value = categoryInput.parse(await c.req.json());
@@ -79,7 +137,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const count = await first(db, 'SELECT COUNT(*) AS n FROM categories WHERE ledger_id=?', [ledger]);
     if (count.n >= 100) throw new ApiError(400, 'CATEGORY_LIMIT', '一个账本最多支持 100 个分类');
     const category = { id: crypto.randomUUID(), ...value, version: 1 };
-    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-category', value }, { category }, [statement(db, 'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived,aliases_json,spending_label) VALUES(?,?,?,?,?,?,?,?,?,?)', [ledger, category.id, value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(value.aliases||[]),value.spending_label||null])]);
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-category', value }, { category }, [statement(db, 'INSERT INTO categories(ledger_id,id,name,type,color_key,icon,sort_order,archived,aliases_json,spending_label,subcategories_json,default_owner_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', [ledger, category.id, value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(value.aliases||[]), value.spending_label||null, JSON.stringify(value.subcategories||[]), value.default_owner_id||null])]);
     return c.json(result, 201);
   });
   app.patch('/api/categories/:id', async c => {
@@ -88,17 +146,23 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const old = await first(db, 'SELECT * FROM categories WHERE ledger_id=? AND id=?', [ledger, id]);
     if (!old) throw new ApiError(404, 'NOT_FOUND', '分类不存在');
     if (old.type !== value.type && await first(db, 'SELECT id FROM entries WHERE ledger_id=? AND category_id=? LIMIT 1', [ledger, id])) throw new ApiError(400, 'CATEGORY_IN_USE', '已有记录的分类不能切换收入或支出类型');
-    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-category', id, version, value }, { category: { id, ...value, spending_label:value.spending_label===undefined?old.spending_label:value.spending_label, aliases:value.aliases??JSON.parse(old.aliases_json||'[]'), version: version + 1 } }, [statement(db, 'UPDATE categories SET name=?,type=?,color_key=?,icon=?,sort_order=?,archived=?,aliases_json=?,spending_label=?,version=version+1 WHERE ledger_id=? AND id=? AND version=?', [value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(value.aliases??JSON.parse(old.aliases_json||'[]')), value.spending_label===undefined?old.spending_label:value.spending_label, ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM categories WHERE ledger_id=? AND id=? AND version=?)', values: [ledger, id, version] });
+    const nextAliases = value.aliases ?? JSON.parse(old.aliases_json || '[]');
+    const nextSubs = value.subcategories === undefined ? JSON.parse(old.subcategories_json || '[]') : value.subcategories;
+    const nextDefaultOwner = value.default_owner_id === undefined ? old.default_owner_id : (value.default_owner_id || null);
+    const nextLabel = value.spending_label === undefined ? old.spending_label : value.spending_label;
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-category', id, version, value }, { category: { id, ...value, spending_label: nextLabel, aliases: nextAliases, ...(nextSubs.length ? { subcategories: nextSubs } : {}), ...(nextDefaultOwner ? { default_owner_id: nextDefaultOwner } : {}), version: version + 1 } }, [statement(db, 'UPDATE categories SET name=?,type=?,color_key=?,icon=?,sort_order=?,archived=?,aliases_json=?,spending_label=?,subcategories_json=?,default_owner_id=?,version=version+1 WHERE ledger_id=? AND id=? AND version=?', [value.name, value.type, value.color_key, value.icon, value.sort_order, Number(value.archived), JSON.stringify(nextAliases), nextLabel, JSON.stringify(nextSubs), nextDefaultOwner, ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM categories WHERE ledger_id=? AND id=? AND version=?)', values: [ledger, id, version] });
     return c.json(result);
   });
   app.get('/api/entries', async c => {
-    const q = query(c), f = filters(q, c.get('ledger').id);
+    const q = query(c), ledger = c.get('ledger').id, f = filters(q, ledger);
+    const barF = filters({ ...q, owner_id: undefined }, ledger);
     const result = await c.env.DB.batch([
       statement(c.env.DB, `SELECT ${entryColumns} FROM ${joined} WHERE ${f.sql} ORDER BY e.occurred_on DESC,e.created_at DESC,e.id DESC LIMIT ? OFFSET ?`, [...f.values, q.limit, q.offset]),
       statement(c.env.DB, `SELECT COUNT(*) AS count,SUM(CASE WHEN length(e.occurred_on)=7 THEN 1 ELSE 0 END) AS month_precision_count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
       statement(c.env.DB, `SELECT e.occurred_on,COUNT(*) AS count,SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END) AS expense_minor,SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END) AS income_minor FROM ${joined} WHERE ${f.sql} GROUP BY e.occurred_on ORDER BY e.occurred_on DESC`, f.values),
+      statement(c.env.DB, `SELECT e.owner_id,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor,COUNT(*) AS count FROM ${joined} WHERE ${barF.sql} GROUP BY e.owner_id`, barF.values),
     ]);
-    return c.json({ entries: result[0].results, totals: result[1].results[0], days: result[2].results, limit: q.limit, offset: q.offset });
+    return c.json({ entries: result[0].results, totals: result[1].results[0], days: result[2].results, owner_totals: result[3].results, limit: q.limit, offset: q.offset });
   });
   app.get('/api/entries/:id', async c => {
     const entry = await first(c.env.DB, `SELECT ${entryColumns} FROM ${joined} WHERE e.ledger_id=? AND e.id=?`, [c.get('ledger').id, c.req.param('id')]);
@@ -111,7 +175,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const db = c.env.DB, ledger = c.get('ledger').id;
     await validateCategory(db, ledger, value);
     const now = stamp();
-    const entry = { id: crypto.randomUUID(), ...value, version: 1, created_at: now, updated_at: now, deleted_at: null };
+    const entry = { id: crypto.randomUUID(), ...value, subcategory: value.subcategory || null, owner_id: value.owner_id || null, version: 1, created_at: now, updated_at: now, deleted_at: null };
     const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'create-entry', value }, { entry }, [entryInsert(db, ledger, entry)]);
     return c.json(result, 201);
   });
@@ -122,9 +186,11 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const old = await first(db, 'SELECT * FROM entries WHERE ledger_id=? AND id=?', [ledger, id]);
     if (!old) throw new ApiError(404, 'NOT_FOUND', '记录不存在或无权访问');
     await validateCategory(db, ledger, value, old);
+    const nextSub = value.subcategory === undefined ? old.subcategory : (value.subcategory || null);
+    const nextOwner = value.owner_id === undefined ? old.owner_id : (value.owner_id || null);
     const updated_at = stamp();
-    const entry = { id, ...value, version: version + 1, created_at: old.created_at, updated_at, deleted_at: null };
-    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-entry', id, version, value }, { entry }, [statement(db, 'UPDATE entries SET type=?,amount_minor=?,category_id=?,occurred_on=?,note=?,version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=? AND deleted_at IS NULL', [value.type, value.amount_minor, value.category_id, value.occurred_on, value.note, updated_at, ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM entries WHERE ledger_id=? AND id=? AND version=? AND deleted_at IS NULL)', values: [ledger, id, version] });
+    const entry = { id, ...value, subcategory: nextSub, owner_id: nextOwner, version: version + 1, created_at: old.created_at, updated_at, deleted_at: null };
+    const result = await operation(db, c.get('user'), ledger, c.req.header('Idempotency-Key'), { route: 'update-entry', id, version, value }, { entry }, [statement(db, 'UPDATE entries SET type=?,amount_minor=?,category_id=?,subcategory=?,owner_id=?,occurred_on=?,note=?,version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=? AND deleted_at IS NULL', [value.type, value.amount_minor, value.category_id, nextSub, nextOwner, value.occurred_on, value.note, updated_at, ledger, id, version])], { sql: 'EXISTS(SELECT 1 FROM entries WHERE ledger_id=? AND id=? AND version=? AND deleted_at IS NULL)', values: [ledger, id, version] });
     return c.json(result);
   });
   for (const action of ['delete', 'restore']) {
@@ -148,14 +214,17 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     const periodSql = bucket === 'day' ? 'e.occurred_on' : 'substr(e.occurred_on,1,7)';
     const result = await c.env.DB.batch([
       statement(c.env.DB, `SELECT COUNT(*) AS count,SUM(CASE WHEN length(e.occurred_on)=7 THEN 1 ELSE 0 END) AS month_precision_count,COALESCE(SUM(CASE WHEN e.type='expense' THEN e.amount_minor ELSE 0 END),0) AS expense_minor,COALESCE(SUM(CASE WHEN e.type='income' THEN e.amount_minor ELSE 0 END),0) AS income_minor FROM ${joined} WHERE ${f.sql}`, f.values),
-      statement(c.env.DB, `SELECT c.id,c.name,c.color_key,c.icon,c.archived,c.spending_label,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY c.id ORDER BY amount_minor DESC,c.id`, f.values),
+      statement(c.env.DB, `SELECT c.id,c.name,c.color_key,c.icon,c.archived,c.spending_label,c.subcategories_json,c.default_owner_id,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY c.id ORDER BY amount_minor DESC,c.id`, f.values),
       statement(c.env.DB, `SELECT ${periodSql} AS bucket,e.category_id,SUM(e.amount_minor) AS amount_minor FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY bucket,e.category_id ORDER BY bucket,e.category_id`, f.values),
+      statement(c.env.DB, `SELECT e.category_id,e.subcategory,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY e.category_id,e.subcategory ORDER BY amount_minor DESC`, f.values),
+      statement(c.env.DB, `SELECT e.category_id,e.subcategory,e.owner_id,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY e.category_id,e.subcategory,e.owner_id`, f.values),
+      statement(c.env.DB, `SELECT e.owner_id,SUM(e.amount_minor) AS amount_minor,COUNT(*) AS count FROM ${joined} WHERE ${f.sql} AND e.type='expense' GROUP BY e.owner_id ORDER BY amount_minor DESC`, f.values),
     ]);
     const totals = result[0].results[0];
     for (const value of [totals.expense_minor, totals.income_minor]) if (!Number.isSafeInteger(value)) throw new ApiError(422, 'AMOUNT_OVERFLOW', '账本金额超出精确计算范围');
     const series=result[2].results;
     const unknownMonths=bucket==='day'?[...new Set(series.filter(v=>v.bucket.length===7).map(v=>v.bucket))]:[];
-    return c.json({ from, to, bucket, buckets: [...buckets(from, to, bucket),...unknownMonths], totals, categories: result[1].results.map(categoryRow), series });
+    return c.json({ from, to, bucket, buckets: [...buckets(from, to, bucket),...unknownMonths], totals, categories: result[1].results.map(categoryRow), series, subcategories: result[3].results, matrix: result[4].results, owner_totals: result[5].results });
   });
   app.get('/api/export.csv', async c => {
     const f = filters(query(c), c.get('ledger').id);
@@ -173,6 +242,7 @@ export function createApp({ verifyIdentity = authenticate, onUnexpectedError = n
     if (error instanceof z.ZodError) return c.json({ error: { code: 'VALIDATION', message: '输入内容不符合要求，请检查金额、日期和分类', details: error.issues.map(e => `${e.path.join('.')}: ${e.message}`).slice(0, 10) } }, 400);
     if (error instanceof SyntaxError) return c.json({ error: { code: 'INVALID_JSON', message: '文件或请求不是有效的 JSON' } }, 400);
     if (/UNIQUE constraint failed: categories/.test(error.message)) return c.json({ error: { code: 'DUPLICATE_CATEGORY', message: '同类型下已有这个分类名称' } }, 409);
+    if (/UNIQUE constraint failed: owners/.test(error.message)) return c.json({ error: { code: 'DUPLICATE_OWNER', message: '已有相同名称的归属人' } }, 409);
     // No request bodies, entry text, tokens, or personal financial data are logged.
     onUnexpectedError?.(error);
     console.error('moneytalk_request_failed', error.name);
